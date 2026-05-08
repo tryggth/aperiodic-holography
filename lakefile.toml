@@ -1,0 +1,14 @@
+name = "spectrebound"
+version = "0.1.0"
+defaultTargets = ["spectrebound"]
+
+[[lean_lib]]
+name = "Spectrebound"
+
+[[lean_exe]]
+name = "spectrebound"
+root = "Main"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"

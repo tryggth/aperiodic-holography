@@ -1,0 +1,12 @@
+⚠ [1024/1030] Built Spectrebound.SpectreHolography (1.9s)
+warning: Spectrebound/SpectreHolography.lean:116:6: declaration uses `sorry`
+warning: Spectrebound/SpectreHolography.lean:121:6: declaration uses `sorry`
+warning: Spectrebound/SpectreHolography.lean:126:18: declaration uses `sorry`
+warning: Spectrebound/SpectreHolography.lean:148:6: declaration uses `sorry`
+warning: Spectrebound/SpectreHolography.lean:501:6: declaration uses `sorry`
+warning: Spectrebound/SpectreHolography.lean:506:6: declaration uses `sorry`
+✔ [1025/1030] Built Spectrebound.SpectreHolography:c.o (525ms)
+✔ [1026/1030] Built Spectrebound (1.1s)
+✔ [1028/1030] Built Main (1.1s)
+✔ [1030/1030] Built spectrebound:exe (3.2s)
+Build completed successfully (1030 jobs).
