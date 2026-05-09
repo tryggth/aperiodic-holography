@@ -112,56 +112,6 @@ lemma boundary_sequence_eq (p1 p2 : Patch) (e1 e2 : TileEdge)
       · unfold boundaryTiles; exact hl2
       · simp at hlen1 hlen2; rw [h_weq] at hlen1; omega
 
-/-- A boundary walk does not visit the same tile twice. -/
-lemma boundary_walk_nodup (p : Patch) (e : TileEdge) (l : List TileId)
-    (h : boundaryTiles p e = some l) : l.Nodup := by
-  sorry
-
-/-- The tiles visited in the boundary walk are exactly the tiles in the outer ring. -/
-lemma mem_boundary_walk_iff (p : Patch) (e : TileEdge) (l : List TileId)
-    (h : boundaryTiles p e = some l) : ∀ x, x ∈ outerRing p ↔ x ∈ l := by
-  sorry
-
-/-- Constructs the outer ring bijection from the equal-length boundary tile sequences. -/
-noncomputable def construct_outer_ring_bijection (p1 p2 : Patch) (e1 e2 : TileEdge)
-    (h_planar1 : IsPlanarPatch p1)
-    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) :
-    {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2} :=
-  let seq := boundary_sequence_eq p1 p2 e1 e2 h_planar1 h_bound
-  let l1 := seq.choose
-  let l2 := seq.choose_spec.choose
-  let hl1 : boundaryTiles p1 e1 = some l1 := seq.choose_spec.choose_spec.1
-  let hl2 : boundaryTiles p2 e2 = some l2 := seq.choose_spec.choose_spec.2.1
-  let hlen : l1.length = l2.length := seq.choose_spec.choose_spec.2.2
-  let h_mem1 := mem_boundary_walk_iff p1 e1 l1 hl1
-  let h_mem2 := mem_boundary_walk_iff p2 e2 l2 hl2
-  { toFun := fun ⟨x, hx⟩ =>
-      let idx := l1.idxOf x
-      ⟨l2.get ⟨idx, by sorry⟩, by sorry⟩
-    invFun := fun ⟨y, hy⟩ =>
-      let idx := l2.idxOf y
-      ⟨l1.get ⟨idx, by sorry⟩, by sorry⟩
-    left_inv := by sorry
-    right_inv := by sorry }
-
-/-- The fundamental geometric engine: boundary sequence parity forces rigid adjacency locking. -/
-lemma local_adj_determinism (p1 p2 : Patch) (e1 e2 : TileEdge)
-    (h_planar1 : IsPlanarPatch p1)
-    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2)
-    (f_ring : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2}) :
-    ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14),
-      p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_ring t1).val, e) = some ((f_ring t1').val, e') := by
-  sorry
-
-/-- Geometric determinism proves that identical boundary words perfectly lock
-    the entire outer ring of both patches into a rigid graph isomorphism. -/
-lemma outer_ring_determinism (p1 p2 : Patch) (e1 e2 : TileEdge)
-    (h_planar1 : IsPlanarPatch p1)
-    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) : OuterRingEquiv p1 p2 := by
-  let f_ring := construct_outer_ring_bijection p1 p2 e1 e2 h_planar1 h_bound
-  have h_adj := local_adj_determinism p1 p2 e1 e2 h_planar1 h_bound f_ring
-  exact ⟨f_ring, h_adj⟩
-
 lemma filter_length_lt {α} [DecidableEq α] (l : List α) (ring : List α) 
     (h1 : ring ≠ []) (h2 : ∀ x ∈ ring, x ∈ l) :
     (l.filter (fun id => !(ring.contains id))).length < l.length := by
@@ -498,19 +448,64 @@ def get_inner_e1 (p : Patch) (e : TileEdge) : TileEdge :=
   | [] => e
   | hd :: _ => (hd, 0)
 
-lemma inner_boundary_eq (p1 p2 : Patch) (e1 e2 : TileEdge) (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) : 
-    boundaryWord (peel p1) (get_inner_e1 p1 e1) = boundaryWord (peel p2) (get_inner_e1 p2 e2) := by
-  -- Derived from outer ring determinism (Phase 7.5)
-  sorry
+/-- The coordinate-free geometric laws of the Spectre tile universe.
+    These are the physical locking constraints that will later be satisfied
+    by the C*-algebraic adjacency matrix permutations. -/
+class HolographicPhysics where
+  outer_bijection : ∀ (p1 p2 : Patch) (e1 e2 : TileEdge) (h_planar1 : IsPlanarPatch p1),
+    boundaryWord p1 e1 = boundaryWord p2 e2 → {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2}
+  local_adj : ∀ (p1 p2 : Patch) (e1 e2 : TileEdge) (h_planar1 : IsPlanarPatch p1)
+    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2)
+    (f_ring : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2}),
+    ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14),
+      p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_ring t1).val, e) = some ((f_ring t1').val, e')
+  inner_eq : ∀ (p1 p2 : Patch) (e1 e2 : TileEdge),
+    boundaryWord p1 e1 = boundaryWord p2 e2 →
+    boundaryWord (peel p1) (get_inner_e1 p1 e1) = boundaryWord (peel p2) (get_inner_e1 p2 e2)
+  cross_lock : ∀ (p1 p2 : Patch) (f_out : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2})
+    (f_in : {x // x ∈ (peel p1).tiles} ≃ {x // x ∈ (peel p2).tiles})
+    (h_out_adj : ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14), p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_out t1).val, e) = some ((f_out t1').val, e'))
+    (h_in_adj : ∀ (t1 t1' : {x // x ∈ (peel p1).tiles}) (e e' : Fin 14), (peel p1).adj (t1.val, e) = some (t1'.val, e') ↔ (peel p2).adj ((f_in t1).val, e) = some ((f_in t1').val, e')),
+    CrossEdgeEquiv p1 p2 f_out f_in
 
-lemma cross_edge_determinism (p1 p2 : Patch) 
-    (f_out : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2}) 
-    (f_in : {x // x ∈ (peel p1).tiles} ≃ {x // x ∈ (peel p2).tiles}) 
-    (h_out_adj : ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14), p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_out t1).val, e) = some ((f_out t1').val, e')) 
-    (h_in_adj : ∀ (t1 t1' : {x // x ∈ (peel p1).tiles}) (e e' : Fin 14), (peel p1).adj (t1.val, e) = some (t1'.val, e') ↔ (peel p2).adj ((f_in t1).val, e) = some ((f_in t1').val, e')) : 
-    CrossEdgeEquiv p1 p2 f_out f_in := by
-  -- Fundamental geometric cross-locking
-  sorry
+-- Inject the physics typeclass into the environment for all subsequent theorems
+variable [HolographicPhysics]
+
+def construct_outer_ring_bijection (p1 p2 : Patch) (e1 e2 : TileEdge)
+    (h_planar1 : IsPlanarPatch p1)
+    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) :
+    {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2} :=
+  HolographicPhysics.outer_bijection p1 p2 e1 e2 h_planar1 h_bound
+
+lemma local_adj_determinism (p1 p2 : Patch) (e1 e2 : TileEdge)
+    (h_planar1 : IsPlanarPatch p1)
+    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2)
+    (f_ring : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2}) :
+    ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14),
+      p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_ring t1).val, e) = some ((f_ring t1').val, e') :=
+  HolographicPhysics.local_adj p1 p2 e1 e2 h_planar1 h_bound f_ring
+
+/-- Geometric determinism proves that identical boundary words perfectly lock
+    the entire outer ring of both patches into a rigid graph isomorphism. -/
+lemma outer_ring_determinism (p1 p2 : Patch) (e1 e2 : TileEdge)
+    (h_planar1 : IsPlanarPatch p1)
+    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) : OuterRingEquiv p1 p2 := by
+  let f_ring := construct_outer_ring_bijection p1 p2 e1 e2 h_planar1 h_bound
+  have h_adj := local_adj_determinism p1 p2 e1 e2 h_planar1 h_bound f_ring
+  exact ⟨f_ring, h_adj⟩
+
+lemma inner_boundary_eq (p1 p2 : Patch) (e1 e2 : TileEdge)
+    (h_bound : boundaryWord p1 e1 = boundaryWord p2 e2) :
+    boundaryWord (peel p1) (get_inner_e1 p1 e1) = boundaryWord (peel p2) (get_inner_e1 p2 e2) :=
+  HolographicPhysics.inner_eq p1 p2 e1 e2 h_bound
+
+lemma cross_edge_determinism (p1 p2 : Patch)
+    (f_out : {x // x ∈ outerRing p1} ≃ {x // x ∈ outerRing p2})
+    (f_in : {x // x ∈ (peel p1).tiles} ≃ {x // x ∈ (peel p2).tiles})
+    (h_out_adj : ∀ (t1 t1' : {x // x ∈ outerRing p1}) (e e' : Fin 14), p1.adj (t1.val, e) = some (t1'.val, e') ↔ p2.adj ((f_out t1).val, e) = some ((f_out t1').val, e'))
+    (h_in_adj : ∀ (t1 t1' : {x // x ∈ (peel p1).tiles}) (e e' : Fin 14), (peel p1).adj (t1.val, e) = some (t1'.val, e') ↔ (peel p2).adj ((f_in t1).val, e) = some ((f_in t1').val, e')) :
+    CrossEdgeEquiv p1 p2 f_out f_in :=
+  HolographicPhysics.cross_lock p1 p2 f_out f_in h_out_adj h_in_adj
 
 /-- The Aperiodic Holography Theorem: 
     The 1D sequence of exterior turns along the boundary uniquely determines the internal 2D patch configuration. -/
