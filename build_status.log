@@ -1,17 +1,20 @@
-⚠ [517/1026] Replayed Spectrebound.SpectreHolography
-warning: Spectrebound/SpectreHolography.lean:204:8: declaration uses `sorry`
-warning: Spectrebound/SpectreHolography.lean:210:8: declaration uses `sorry`
-⚠ [518/1026] Replayed Spectrebound.SpectreBoundary
-warning: Spectrebound/SpectreBoundary.lean:68:4: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:222:59: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+✔ [992/1002] Built Spectrebound.SpectreGeometry (86s)
+✔ [993/1002] Built Spectrebound.SpectreGeometry:c.o (1.3s)
+⚠ [994/1002] Built Spectrebound.SpectreBoundary (16s)
+warning: Spectrebound/SpectreBoundary.lean:60:4: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:214:59: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
 
 Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
-warning: Spectrebound/SpectreBoundary.lean:268:57: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+warning: Spectrebound/SpectreBoundary.lean:260:57: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
 
 Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
-warning: Spectrebound/SpectreBoundary.lean:600:8: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:626:8: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:637:8: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:644:4: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:696:8: declaration uses `sorry`
-Build completed successfully (1026 jobs).
+warning: Spectrebound/SpectreBoundary.lean:580:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:606:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:617:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:624:4: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:676:8: declaration uses `sorry`
+✔ [996/1002] Built Spectrebound.SpectreHolography (1000ms)
+✔ [998/1002] Built Spectrebound (918ms)
+✔ [1000/1002] Built Main (952ms)
+✔ [1002/1002] Built spectrebound:exe (762ms)
+Build completed successfully (1002 jobs).

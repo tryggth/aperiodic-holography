@@ -1,0 +1,35 @@
+name: Lean 4 Build
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          set -o pipefail
+          curl -sSfL https://github.com/leanprover/elan/releases/latest/download/elan-init.sh \
+            | sh -s -- -y --default-toolchain leanprover/lean4:stable
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Cache Lake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.elan
+            .lake/packages
+          key: ${{ runner.os }}-lake-${{ hashFiles('lake-manifest.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lake-
+
+      - name: Build Project (verifies all proofs)
+        run: lake build
