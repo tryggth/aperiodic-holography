@@ -36,7 +36,8 @@ lemma sumAngles_ge_270 (a b c : InteriorAngle) (tl : List InteriorAngle) :
   omega
 
 theorem zero_degree_anchor (angles : List InteriorAngle) :
-    vertexTurn angles = some ExteriorTurn.t_0 → angles = [InteriorAngle.a90, InteriorAngle.a90] := by
+    vertexTurn angles = some ExteriorTurn.t_0 → 
+    angles = [InteriorAngle.a180] ∨ angles = [InteriorAngle.a90, InteriorAngle.a90] := by
   intro h
   unfold vertexTurn at h
   have h_sum : angles.foldl (fun acc x => acc + x.toDegrees) 0 = 180 := by
@@ -128,9 +129,7 @@ theorem positive_turn_90 (angles : List InteriorAngle) :
 theorem negative_turn_60 (angles : List InteriorAngle) :
     vertexTurn angles = some ExteriorTurn.t_minus_60 →
     angles = [InteriorAngle.a240] ∨
-    angles = [InteriorAngle.a120, InteriorAngle.a120] ∨
-    angles = [InteriorAngle.a90, InteriorAngle.a150] ∨
-    angles = [InteriorAngle.a150, InteriorAngle.a90] := by
+    angles = [InteriorAngle.a120, InteriorAngle.a120] := by
   intro h
   unfold vertexTurn at h
   have h_sum : angles.foldl (fun acc x => acc + x.toDegrees) 0 = 240 := by
@@ -147,8 +146,8 @@ theorem negative_turn_60 (angles : List InteriorAngle) :
 theorem negative_turn_90 (angles : List InteriorAngle) :
     vertexTurn angles = some ExteriorTurn.t_minus_90 →
     angles = [InteriorAngle.a270] ∨
-    angles = [InteriorAngle.a120, InteriorAngle.a150] ∨
-    angles = [InteriorAngle.a150, InteriorAngle.a120] ∨
+    angles = [InteriorAngle.a180, InteriorAngle.a90] ∨
+    angles = [InteriorAngle.a90, InteriorAngle.a180] ∨
     angles = [InteriorAngle.a90, InteriorAngle.a90, InteriorAngle.a90] := by
   intro h
   unfold vertexTurn at h
@@ -164,7 +163,7 @@ theorem negative_turn_90 (angles : List InteriorAngle) :
   · have h_big := sumAngles_ge_360 a b c d tl
     omega
 
-lemma collapse_example (a b : InteriorAngle) (h1 : a = InteriorAngle.a120) (h_pair : isValidNativePair a b = true) : b = InteriorAngle.a150 ∨ b = InteriorAngle.a90 := by
+lemma collapse_example (a b : InteriorAngle) (h1 : a = InteriorAngle.a120) (h_pair : isValidNativePair a b = true) : b = InteriorAngle.a270 := by
   revert h_pair
   rw [h1]
   cases b <;> decide

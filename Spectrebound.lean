@@ -6,3 +6,4 @@ import Spectrebound.SpectrePatch
 import Spectrebound.SpectreRigidity
 import Spectrebound.SpectrePropagation
 import Spectrebound.SpectreHolography
+import Spectrebound.SpectreBoundary

@@ -102,7 +102,8 @@ def boundaryTilesLogic (p : Patch) (startEdge current : TileEdge) (acc : List Ti
             match vertexTurn angles with
             | none => none
             | some _ =>
-                let acc' := nextExposed.1 :: acc
+                -- Only add tile if not already visited, preserving the Nodup invariant
+                let acc' := if nextExposed.1 ∈ acc then acc else nextExposed.1 :: acc
                 if nextExposed.1 == startEdge.1 && nextExposed.2 == startEdge.2 then
                   some acc'.reverse
                 else

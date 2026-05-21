@@ -1,0 +1,54 @@
+# Phase 9 Complete: Foundational Algebra — `antigravity_response.txt`
+**Date**: 2026-05-20  
+**Status**: ✅ BUILD SUCCEEDS — 1032/1032 jobs, 0 errors
+
+---
+
+## Summary of Changes
+
+### Root Cause of the Compilation Failure
+
+The core blocker was that `ExteriorTurn` in `SpectreGeometry.lean` only derived `DecidableEq, Repr` — NOT `BEq`. This meant `==` on `ExteriorTurn` was routed through `instBEqOfDecidableEq`, which wraps `Decidable.rec`. Neither `dsimp only`, `simp only`, nor `decide` could reduce expressions like `ExteriorTurn.t_minus_90 == ExteriorTurn.t_90` to `false` because the `Decidable.rec` projection was opaque to all those tactics.
+
+### Fix 1: `SpectreGeometry.lean`
+Added `BEq` to `ExteriorTurn`'s `deriving` clause:
+```lean
+deriving Repr, DecidableEq, BEq
+```
+With `BEq` derived directly, `==` on concrete constructors becomes definitionally `true`/`false` via `rfl`.
+
+### Fix 2: `SpectreBoundary.lean` — `foldl_add_distrib`
+- Base case: `rfl` → `simp [List.foldl_nil]` (fold on nil isn't definitional enough for `rfl` across the `+0`)
+- Cons case: the key insight was to use `ih (0 + d)`, then `rw [h3]` (where `h3 : 0 + d = d` by `omega`) to normalize the argument, then close with `omega` using `h1` and `h2`.
+
+### Fix 3: `SpectreBoundary.lean` — `turn_sum_eq_linear_combo`
+- Replaced the looping `simp only [foldl_add_distrib]` with `rw [foldl_add_distrib]`
+- Used `cases hd with | mk turn dir parity` + `cases turn` + full `show ... from rfl` BEq evaluation table
+- Created `ih'` by unfolding `countL90/countL60/countR60/countR90/countTurn/ExteriorTurn.toDegrees` in `ih`
+- Closed each of the 5 constructor cases with `rw [ih']; push_cast; omega`
+
+### Fix 4: `SpectreBoundary.lean` — `parityFlips_eq_counts`
+- Used the proven-in-test-harness strategy: `cases hd with | mk turn dir parity` + `cases turn`
+- `have ih' := ih; simp only [parityFlips, countL90, countR90, countTurn] at ih'`
+- Per-constructor BEq evaluation via `show ... from rfl` lemmas in `simp only`
+- Closed with `omega` using `ih'`
+
+---
+
+## Build Results
+
+```
+✔ [1032/1032] Built spectrebound:exe
+Build completed successfully (1032 jobs).
+```
+
+**Remaining warnings (expected, pre-existing stubs):**
+- `SpectreBoundary.lean:68` — `isSimple` topological axiom (agreed in Phase 1)
+- `SpectreBoundary.lean:511, 537` — `peelBoundary` sorry stubs (Phase 4 future work)
+- `SpectreHolography.lean:205, 211` — Phase 7 holography stubs
+
+---
+
+## Key Technical Lesson
+
+**`BEq` vs `DecidableEq`-derived `BEq`**: When `inductive T deriving DecidableEq` is used, the `==` operator is `instBEqOfDecidableEq.1` which is a **projected typeclass instance** that goes through `Decidable.rec`. This is **not definitionally equal** to `true`/`false` on concrete constructors — it requires kernel reduction that simp/dsimp/decide don't trigger. The correct fix is `deriving BEq` which generates a structural match returning `Bool` directly, making concrete `==` calls definitionally true/false via `rfl`.

@@ -8,20 +8,20 @@ abbrev EdgeIndex := Fin 14
 
 def tileAngleAt (e : EdgeIndex) : InteriorAngle :=
   match e.val with
-  | 0 => InteriorAngle.a270
-  | 1 => InteriorAngle.a90
+  | 0 => InteriorAngle.a120
+  | 1 => InteriorAngle.a270
   | 2 => InteriorAngle.a240
-  | 3 => InteriorAngle.a150
-  | 4 => InteriorAngle.a90
-  | 5 => InteriorAngle.a150
+  | 3 => InteriorAngle.a90
+  | 4 => InteriorAngle.a240
+  | 5 => InteriorAngle.a270
   | 6 => InteriorAngle.a240
   | 7 => InteriorAngle.a90
-  | 8 => InteriorAngle.a270
-  | 9 => InteriorAngle.a90
-  | 10 => InteriorAngle.a120
-  | 11 => InteriorAngle.a150
+  | 8 => InteriorAngle.a240
+  | 9 => InteriorAngle.a180
+  | 10 => InteriorAngle.a240
+  | 11 => InteriorAngle.a270
   | 12 => InteriorAngle.a120
-  | 13 => InteriorAngle.a90
+  | 13 => InteriorAngle.a270
   | _ => InteriorAngle.a90
 
 def nextTileState (currentEdge : EdgeIndex) (observedTurn : ExteriorTurn) : List (List InteriorAngle) :=
@@ -29,11 +29,10 @@ def nextTileState (currentEdge : EdgeIndex) (observedTurn : ExteriorTurn) : List
   let remainingSum := requiredSum - (tileAngleAt currentEdge).toDegrees
   if remainingSum == 90 then [[InteriorAngle.a90]]
   else if remainingSum == 120 then [[InteriorAngle.a120]]
-  else if remainingSum == 150 then [[InteriorAngle.a150]]
-  else if remainingSum == 180 then [[InteriorAngle.a90, InteriorAngle.a90]]
+  else if remainingSum == 180 then [[InteriorAngle.a180], [InteriorAngle.a90, InteriorAngle.a90]]
   else if remainingSum == 210 then [[InteriorAngle.a90, InteriorAngle.a120], [InteriorAngle.a120, InteriorAngle.a90]]
-  else if remainingSum == 240 then [[InteriorAngle.a240], [InteriorAngle.a120, InteriorAngle.a120], [InteriorAngle.a90, InteriorAngle.a150], [InteriorAngle.a150, InteriorAngle.a90]]
-  else if remainingSum == 270 then [[InteriorAngle.a270], [InteriorAngle.a120, InteriorAngle.a150], [InteriorAngle.a150, InteriorAngle.a120], [InteriorAngle.a90, InteriorAngle.a90, InteriorAngle.a90]]
+  else if remainingSum == 240 then [[InteriorAngle.a240], [InteriorAngle.a120, InteriorAngle.a120]]
+  else if remainingSum == 270 then [[InteriorAngle.a270], [InteriorAngle.a180, InteriorAngle.a90], [InteriorAngle.a90, InteriorAngle.a180], [InteriorAngle.a90, InteriorAngle.a90, InteriorAngle.a90]]
   else []
 
 lemma propagate_anchor_step (e : EdgeIndex) (h_angle : tileAngleAt e = InteriorAngle.a90)
