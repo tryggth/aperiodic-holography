@@ -2,7 +2,6 @@ import Mathlib.Data.List.Basic
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Int.Basic
 import Spectrebound.SpectreGeometry
-import Spectrebound.SpectrePatch
 
 namespace Spectrebound
 
@@ -25,13 +24,6 @@ inductive EdgeParity where
   | reversed
   deriving Repr, DecidableEq
 
-/-- Maps an ExteriorTurn to the corresponding shift in EdgeDirection steps (units of 30°) -/
-def ExteriorTurn.toStep30 : ExteriorTurn → Int
-  | t_minus_90 => -3
-  | t_minus_60 => -2
-  | t_0 => 0
-  | t_60 => 2
-  | t_90 => 3
 
 /-- A single step along a boundary path, combining geometric and topological data -/
 structure BoundaryStep where
@@ -364,18 +356,6 @@ def getTurnTriplet (B : BoundaryPath) (i : Fin B.steps.length) : ExteriorTurn ×
   let next_step := B.steps.get ⟨if i.val + 1 = n then 0 else i.val + 1, h_next⟩
   (prev_step.turn, curr_step.turn, next_step.turn)
 
-/-- Cyclically rotates a list by `k` elements. -/
-def rotateList {α : Type} (l : List α) (k : Nat) : List α :=
-  let n := l.length
-  if n = 0 then
-    []
-  else
-    let shift := k % n
-    l.drop shift ++ l.take shift
-
-/-- Generates all cyclic rotations of a list. -/
-def allRotations {α : Type} (l : List α) : List (List α) :=
-  (List.range l.length).map (fun k => rotateList l k)
 
 /-- Checks if a cyclic rotation matches the anchor triplet. -/
 def matchTriplet (rot : List ExteriorTurn) (triplet : ExteriorTurn × ExteriorTurn × ExteriorTurn) : Bool :=

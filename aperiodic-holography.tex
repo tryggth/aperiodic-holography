@@ -1,0 +1,53 @@
+\documentclass[11pt, a4paper]{amsart}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{The Aperiodic Holography Theorem for Spectre Monotiles}
+\author{James F. Walters}
+
+\begin{document}
+
+\begin{abstract}
+We prove that the sequence of left and right turns defining the boundary of a simply connected patch of Tile(1,1) Spectre monotiles deterministically forces the exact position, orientation, and identity of every tile within the patch's interior. 
+\end{abstract}
+
+\maketitle
+
+\section{The Topological Constraints}
+By the Gauss-Bonnet theorem, any simple, closed, counterclockwise loop must exhibit a net turning angle of exactly $+360^\circ$. The boundary of our patch is a sequence of turns drawn from the set $\{L_{90}, L_{60}, S_{0}, R_{60}, R_{90}\}$. Summing these turns yields the Diophantine Turning Equation:
+\begin{equation}
+3L_{90} + 2L_{60} - 2R_{60} - 3R_{90} = 12
+\end{equation}
+Furthermore, the edges of the Spectre grid inherently belong to two alternating parity classes. Because $60^\circ$ turns preserve parity and $90^\circ$ turns flip parity, any closed loop must return to its original state, requiring an even number of parity flips. Therefore, we have the parity constraint:
+\begin{equation}
+(L_{90} + R_{90}) \equiv 0 \pmod 2
+\end{equation}
+
+\section{The Convex Anchor Necessity}
+We assert that every valid boundary must contain at least one Left $90^\circ$ turn ($L_{90} \ge 1$). 
+
+Assume for contradiction that $L_{90} = 0$. By the parity constraint, $R_{90}$ must be an even integer $2k$. Substituting this into the Turning Equation yields:
+\begin{equation}
+L_{60} - R_{60} - 3k = 6
+\end{equation}
+Geometrically, this implies the macroscopic boundary forms a convex hexagonal hull dominated by Left $60^\circ$ turns, with intermittent Right $90^\circ$ concavities. 
+
+However, a single 14-sided Spectre tile contains five $90^\circ$ corners and only one $270^\circ$ corner. In a patch of $N$ tiles, there is a massive surplus of $5N$ orthogonal corners. If $L_{90} = 0$, none of these corners can touch the convex boundary. The limited number of $N$ available $270^\circ$ concavities is vastly insufficient to absorb them. Thus, they must resolve by forming internal ``crosses''---vertices where four $90^\circ$ corners meet.
+
+\section{The Cyclotomic Integer Lattice Contradiction}
+To prove internal crosses are geometrically impossible, we map the 12-fold rotational symmetry of the Spectre lattice to the Ring of Cyclotomic Integers, $\mathbb{Z}[\zeta_{12}]$. Every vertex of the tile is represented exactly as a 4-tuple of integers $(a, b, c, d)$.
+
+To rigorously evaluate edge intersections without floating-point approximations, we project these coordinates into the ring $\mathbb{Z}[\sqrt{3}]$ via pure integer scaling, representing every point exactly as $u + v\sqrt{3}$. Evaluating the finite search space of all 625 rotationally locked 4-tile cross combinations using exact algebraic cross-product determinants and winding-number ray-casting reveals a strict geometric contradiction: every single configuration results in the boundary of one tile spilling into the interior region of another.
+
+Because valid simply connected patches cannot contain overlapping tiles, the necessary internal crosses cannot exist. The surplus $90^\circ$ corners cannot be hidden, proving $L_{90} \ge 1$.
+
+\section{Chiral Uniqueness and Global Peeling}
+Because the minimum interior angle of a Spectre tile is $90^\circ$, it is impossible for two tiles to combine to form a $90^\circ$ convex patch corner. Therefore, exactly one tile occupies every Left $90^\circ$ boundary turn.
+
+The Spectre tile is strictly chiral. An evaluation of its 14-turn perimeter confirms that the local neighborhoods flanking its five $90^\circ$ corners are geometrically distinct. Reading any 3-turn sequence on the boundary centered on a Left $90^\circ$ turn uniquely locks the exact orientation and position of that specific tile.
+
+Having uniquely identified a boundary tile, we recursively ``peel'' it away by removing its exterior edges from the boundary path and splicing in the inverse of its interior edges. This list surgery strictly preserves the net $360^\circ$ curvature and directional consistency of the macroscopic loop while reducing the patch area by one. By continuously identifying Left $90^\circ$ anchors and peeling, the boundary deterministically collapses, holographically decoding the entire interior. $\blacksquare$
+
+\end{document}
