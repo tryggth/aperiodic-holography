@@ -1,8 +1,7 @@
 import Mathlib.Logic.Equiv.Basic
 import Spectrebound.SpectrePatch
 import Spectrebound.SpectreGeometry
-import Spectrebound.SpectreRigidity
-import Spectrebound.SpectrePropagation
+
 
 namespace Spectrebound
 
