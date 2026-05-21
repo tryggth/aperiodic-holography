@@ -1,7 +1,7 @@
-⚠ [516/804] Replayed Spectrebound.SpectreHolography
+⚠ [517/1026] Replayed Spectrebound.SpectreHolography
 warning: Spectrebound/SpectreHolography.lean:204:8: declaration uses `sorry`
 warning: Spectrebound/SpectreHolography.lean:210:8: declaration uses `sorry`
-⚠ [517/804] Replayed Spectrebound.SpectreBoundary
+⚠ [518/1026] Replayed Spectrebound.SpectreBoundary
 warning: Spectrebound/SpectreBoundary.lean:68:4: declaration uses `sorry`
 warning: Spectrebound/SpectreBoundary.lean:222:59: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
 
@@ -9,9 +9,9 @@ Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus fa
 warning: Spectrebound/SpectreBoundary.lean:268:57: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
 
 Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
-warning: Spectrebound/SpectreBoundary.lean:511:4: declaration uses `sorry`
-warning: Spectrebound/SpectreBoundary.lean:537:8: declaration uses `sorry`
-✔ [1024/1026] Built Main (1.1s)
-✔ [1025/1026] Built Main:c.o (71ms)
-✔ [1026/1026] Built spectrebound:exe (2.6s)
+warning: Spectrebound/SpectreBoundary.lean:600:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:626:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:637:8: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:644:4: declaration uses `sorry`
+warning: Spectrebound/SpectreBoundary.lean:696:8: declaration uses `sorry`
 Build completed successfully (1026 jobs).
