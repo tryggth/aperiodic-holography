@@ -32,9 +32,13 @@ Assume for contradiction that $L_{90} = 0$. By the parity constraint, $R_{90}$ m
 \begin{equation}
 L_{60} - R_{60} - 3k = 6
 \end{equation}
-Geometrically, this implies the macroscopic boundary forms a convex hexagonal hull dominated by Left $60^\circ$ turns, with intermittent Right $90^\circ$ concavities. 
+Geometrically, this implies the macroscopic boundary forms a hexagonal hull dominated by Left $60^\circ$ turns, with intermittent flat edges and Right $90^\circ$ concavities, but entirely lacking outward-pointing $90^\circ$ convexities.
 
-However, a single 14-sided Spectre tile contains five $90^\circ$ corners and only one $270^\circ$ corner. In a patch of $N$ tiles, there is a massive surplus of $5N$ orthogonal corners. If $L_{90} = 0$, none of these corners can touch the convex boundary. The limited number of $N$ available $270^\circ$ concavities is vastly insufficient to absorb them. Thus, they must resolve by forming internal ``crosses''---vertices where four $90^\circ$ corners meet.
+However, a single 14-sided Spectre tile contains five $90^\circ$ corners and only one $270^\circ$ corner. In a patch of $N$ tiles, there is a massive surplus of $5N$ orthogonal corners. While some of these $90^\circ$ corners can touch the boundary by pairing together to form flat edges or macroscopic concavities, the boundary length grows proportionally to $\sqrt{N}$, whereas the number of corners grows proportionally to $N$. The vast majority of these $5N$ corners must therefore be absorbed entirely within the interior. 
+
+One might ask if the $R_{60}$ boundary concavities (representing $240^\circ$ interior angles) can assist in absorbing this surplus. For a vertex to be valid in the tiling, the interior angles meeting at that point must sum exactly to $360^\circ$. A $90^\circ$ corner paired with a $240^\circ$ concavity sums to $330^\circ$, leaving an unfillable $30^\circ$ gap, as the Spectre tile possesses no $30^\circ$ angles. Furthermore, attempting to combine a $240^\circ$ corner with a $270^\circ$ corner yields $510^\circ$, which is geometrically impossible. Thus, $240^\circ$ concavities are mathematical dead ends for the purpose of hiding orthogonal corners.
+
+Because there are only $N$ available $270^\circ$ corners in the entire patch to absorb the surplus (via $90^\circ + 270^\circ = 360^\circ$ matches), the remaining $90^\circ$ corners must inevitably resolve by forming orthogonal ``crosses''---internal vertices where four $90^\circ$ corners meet.
 
 \section{The Cyclotomic Integer Lattice Contradiction}
 To prove internal crosses are geometrically impossible, we map the 12-fold rotational symmetry of the Spectre lattice to the Ring of Cyclotomic Integers, $\mathbb{Z}[\zeta_{12}]$. Every vertex of the tile is represented exactly as a 4-tuple of integers $(a, b, c, d)$.

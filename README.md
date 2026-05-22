@@ -17,7 +17,7 @@ This is a discrete analogue of holography: the boundary determines the bulk. The
 1. **Lemma 1 — Local Boundary Forcing:** A single tile's 14-step boundary walk is uniquely determined by the cyclic sequence of exterior turning angles. Every valid adjacent tile pairing at a shared corner is forced by the boundary data alone.
 2. **Theorem 2 — Global Holography:** Given any boundary path on the Spectre lattice, the full interior patch is recursively and uniquely decoded. This yields an injective decoder: distinct boundary paths map to distinct interiors, and every reachable interior is accounted for.
 
-The preprint is available in this repository: [`Aperiodic_Holography.pdf`](Aperiodic_Holography.pdf) / [`aperiodic-holography.tex`](aperiodic-holography.tex).
+The preprint is available in this repository: [`aperiodic_holography.pdf`](aperiodic_holography.pdf) / [`aperiodic_holography.tex`](aperiodic_holography.tex).
 
 ---
 

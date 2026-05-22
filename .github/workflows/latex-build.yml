@@ -1,0 +1,25 @@
+name: Compile LaTeX Document
+on:
+  push:
+    paths:
+      - 'aperiodic_holography.tex'
+    branches: [ "main", "master" ]
+jobs:
+  build_pdf:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: aperiodic_holography.tex
+
+      - name: Commit compiled PDF
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: auto-compile updated LaTeX to PDF"
+          file_pattern: "aperiodic_holography.pdf"
