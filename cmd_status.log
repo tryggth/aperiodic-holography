@@ -1,8 +1,0 @@
-⚠ [1024/1030] Built Spectrebound.SpectreHolography (3.8s)
-warning: Spectrebound/SpectreHolography.lean:205:8: declaration uses `sorry`
-warning: Spectrebound/SpectreHolography.lean:211:8: declaration uses `sorry`
-✔ [1025/1030] Built Spectrebound.SpectreHolography:c.o (420ms)
-✔ [1026/1030] Built Spectrebound (1.1s)
-✔ [1028/1030] Built Main (968ms)
-✔ [1030/1030] Built spectrebound:exe (1.8s)
-Build completed successfully (1030 jobs).

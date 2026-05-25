@@ -10,5 +10,10 @@
 __pycache__/
 *.pyc
 
-# Log files (except build_status which is checked in as proof record)
-cmd_status.log
+# Log files
+*.log
+
+# Quarantined local folders (not needed for remote proof validation)
+/scratch/
+/papers/
+/scripts/
