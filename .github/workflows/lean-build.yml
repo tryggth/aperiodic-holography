@@ -37,17 +37,23 @@ jobs:
 
       - name: Mathlib Dependency Cache Retrieval
         run: |
+          echo "::group::Checking and retrieving Mathlib build cache..."
           if lake exe cache >/dev/null 2>&1; then
             echo "Mathlib cache configuration detected. Fetching pre-compiled oleans..."
             lake exe cache get
           else
             echo "No pre-compiled Mathlib cache executable found. Continuing clean build..."
           fi
+          echo "::endgroup::"
 
       - name: Synchronize package configuration dependencies
         run: |
+          echo "::group::Synchronizing package configuration dependencies..."
           lake setup
+          echo "::endgroup::"
 
       - name: Build validation verification
         run: |
+          echo "::group::Running package verification build..."
           lake build
+          echo "::endgroup::"
