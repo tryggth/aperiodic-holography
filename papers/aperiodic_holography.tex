@@ -90,10 +90,44 @@ However, the verified \texttt{crosses\_always\_overlap} theorem in our library p
 
 
 \section{The Cyclotomic Integer Lattice Contradiction}
-To prove internal crosses are geometrically impossible, we map the 12-fold rotational symmetry of the Spectre lattice to the Ring of Cyclotomic Integers, $\mathbb{Z}[\zeta_{12}]$. Every vertex of the tile is represented exactly as a 4-tuple of integers $(a, b, c, d)$.
+To evaluate local boundary intersections and tile overlaps without any floating-point round-off errors, we formalize the underlying grid geometry. The 12-fold rotational symmetry of the Spectre grid is modeled algebraically via the 12th cyclotomic ring $\mathbb{Z}[\zeta_{12}]$, where $\zeta_{12} = e^{i\pi/6} = \frac{\sqrt{3}}{2} + \frac{i}{2}$ represents a primitive 12th root of unity. The cyclotomic polynomial $\Phi_{12}(x) = x^4 - x^2 + 1 = 0$ implies that $\mathbb{Z}[\zeta_{12}]$ is a free $\mathbb{Z}$-module of rank 4. Consequently, every vertex coordinate (represented as a \texttt{LatticePoint} structure in the \texttt{spectrebound} library) is uniquely described as a 4-tuple of integers $(a, b, c, d) \in \mathbb{Z}^4$ representing the complex coordinate:
+\begin{equation}
+z = a + b\zeta_{12} + c\zeta_{12}^2 + d\zeta_{12}^3
+\end{equation}
+A counterclockwise rotation of the grid by $30^\circ$ corresponds to multiplication of the complex coordinate by $\zeta_{12}$. Under the free $\mathbb{Z}$-module basis $\{1, \zeta_{12}, \zeta_{12}^2, \zeta_{12}^3\}$, this multiplication is a linear map. Using the relation $\zeta_{12}^4 = \zeta_{12}^2 - 1$, the multiplication simplifies to:
+\begin{equation}
+\zeta_{12}(a + b\zeta_{12} + c\zeta_{12}^2 + d\zeta_{12}^3) = -d + a\zeta_{12} + (b + d)\zeta_{12}^2 + c\zeta_{12}^3
+\end{equation}
+Expressed as a matrix operation, the rotation of the 4D coordinate vector is given by the companion matrix $R_{30}$:
+\begin{equation}
+\begin{pmatrix} a' \\ b' \\ c' \\ d' \end{pmatrix} = \begin{pmatrix} 0 & 0 & 0 & -1 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 1 \\ 0 & 0 & 1 & 0 \end{pmatrix} \begin{pmatrix} a \\ b \\ c \\ d \end{pmatrix} = \begin{pmatrix} -d \\ a \\ b + d \\ c \end{pmatrix}
+\end{equation}
 
-To rigorously evaluate edge intersections without floating-point approximations, we project these coordinates into the ring $\mathbb{Z}[\sqrt{3}]$ via pure integer scaling, representing every point exactly as $u + v\sqrt{3}$. Evaluating the finite search space of all 625 rotationally locked 4-tile cross combinations using exact algebraic cross-product determinants and winding-number ray-casting reveals a strict geometric contradiction: every single configuration results in the boundary of one tile spilling into the interior region of another.
+For geometric calculations such as winding numbers and line intersection checks, we require exact 2D real and imaginary Cartesian projections. Since $\zeta_{12} = \frac{\sqrt{3}}{2} + \frac{i}{2}$, $\zeta_{12}^2 = \frac{1}{2} + \frac{i\sqrt{3}}{2}$, and $\zeta_{12}^3 = i$, the Cartesian coordinates $(x, y) = (\text{Re}(z), \text{Im}(z))$ can be scaled by a factor of 2 to yield exact integer coefficients. This 2D projection mapping, implemented in the function \texttt{toPoint2D}, projects each 4D lattice point into a 2D coordinate system where each axis coordinate is an element of the quadratic ring $\mathbb{Z}[\sqrt{3}]$:
+\begin{equation}
+\begin{aligned}
+X &= 2\text{Re}(z) = (2a + c) + b\sqrt{3} \\
+Y &= 2\text{Im}(z) = (b + 2d) + c\sqrt{3}
+\end{aligned}
+\end{equation}
+In the \texttt{spectrebound} library, elements of $\mathbb{Z}[\sqrt{3}]$ are represented as \texttt{Z3} structures, storing the pair of integers $(u, v) \in \mathbb{Z}^2$ for $u + v\sqrt{3}$. Ring operations (addition, subtraction, and multiplication) are executed using exact integer arithmetic, and sign determination avoids floating-point round-off errors:
+\begin{equation}
+\begin{aligned}
+(u_1 + v_1\sqrt{3}) + (u_2 + v_2\sqrt{3}) &= (u_1 + u_2) + (v_1 + v_2)\sqrt{3} \\
+(u_1 + v_1\sqrt{3}) \times (u_2 + v_2\sqrt{3}) &= (u_1 u_2 + 3 v_1 v_2) + (u_1 v_2 + v_1 u_2)\sqrt{3}
+\end{aligned}
+\end{equation}
 
+We utilize this exact 2D arithmetic framework to evaluate the finite state-space of internal crosses. An internal cross is a vertex shared by four tiles meeting at their convex $90^\circ$ corners. Since the Spectre tile has five convex $90^\circ$ corners, there are exactly $5^4 = 625$ distinct rotationally locked combinations. To prove these are all physically impossible, the library implements a decidable checker that evaluates all 625 combinations:
+\begin{itemize}
+    \item It computes the exact 2D boundaries of the four tiles using projected coordinates in $\mathbb{Z}[\sqrt{3}]$.
+    \item It checks for overlaps using algebraic cross-product determinants to test line segment intersections and winding-number ray casting to detect interior points.
+    \item Because all coordinate evaluations are exact in $\mathbb{Z}[\sqrt{3}]$, the sign of the cross products is computed without floating-point inaccuracies.
+\end{itemize}
+The exhaustive decision procedure certifies that every single one of the 625 cross configurations results in a physical boundary overlap. This is formalized in the kernel-certified, verified theorem:
+\begin{equation}
+\text{theorem crosses\_always\_overlap : } \forall \, (c : \text{CrossConfig}), \, \text{overlaps } c
+\end{equation}
 Because valid simply connected patches cannot contain overlapping tiles, the necessary internal crosses cannot exist. The surplus $90^\circ$ corners cannot be hidden, proving $L_{90} \ge 1$.
 
 \section{Chiral Uniqueness and Global Peeling}
