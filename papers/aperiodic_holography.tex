@@ -26,19 +26,68 @@ Furthermore, the edges of the Spectre grid inherently belong to two alternating 
 \end{equation}
 
 \section{The Convex Anchor Necessity}
-We assert that every valid boundary must contain at least one Left $90^\circ$ turn ($L_{90} \ge 1$).
+To formalize the discrete boundary loop mechanics, we model the boundary as a finite sequence of directed steps. In the \texttt{spectrebound} Lean 4 library, each step along the boundary is formalized as a \texttt{BoundaryStep} structure containing three fields:
+\begin{itemize}
+    \item \texttt{dir} of type \texttt{EdgeDirection}, valued in $\mathbb{Z}_{12}$ representing the absolute spatial heading of the step in the 12-fold symmetric grid;
+    \item \texttt{turn} of type \texttt{ExteriorTurn}, valued in the set $\{L_{90}, L_{60}, S_{0}, R_{60}, R_{90}\}$ representing the local exterior turn at the vertex;
+    \item \texttt{parity} of type \texttt{EdgeParity}, taking values in $\{\text{standard}, \text{reversed}\}$ representing the binary tiling parity which governs edge profile compatibility.
+\end{itemize}
+This precise state model enforces that $60^\circ$ turns preserve edge parity while $90^\circ$ turns alternate it, yielding the structural parity constraint of Equation (2).
 
-Assume for contradiction that $L_{90} = 0$. By the parity constraint, $R_{90}$ must be an even integer $2k$. Substituting this into the Turning Equation yields:
+We establish the Convex Anchor Necessity by showing that any valid boundary path enclosing a non-empty patch must possess a non-trivial convex corner. Formally, this requires that the count of Left $90^\circ$ turns is at least one:
+\begin{equation}
+L_{90} \ge 1
+\end{equation}
+We proceed via proof by contradiction. Assume there exists a valid, simple closed boundary path enclosing a patch of $N$ tiles such that:
+\begin{equation}
+L_{90} = 0
+\end{equation}
+By the global parity constraint (Equation 2), the sum of $L_{90}$ and $R_{90}$ must be even. Under the hypothesis $L_{90} = 0$, we have $R_{90} \equiv 0 \pmod 2$. Thus, the total number of Right $90^\circ$ turns must be an even integer:
+\begin{equation}
+R_{90} = 2k, \quad \text{for } k \in \mathbb{Z}
+\end{equation}
+Substituting $L_{90} = 0$ and $R_{90} = 2k$ into the Diophantine Turning Equation (Equation 1) yields the reduced curvature statement:
 \begin{equation}
 L_{60} - R_{60} - 3k = 6
 \end{equation}
-Geometrically, this implies the macroscopic boundary forms a hexagonal hull dominated by Left $60^\circ$ turns, with intermittent flat edges and Right $90^\circ$ concavities, but entirely lacking outward-pointing $90^\circ$ convexities.
+Solving for the number of Left $60^\circ$ turns gives the final load shift equation:
+\begin{equation}
+L_{60} = 6 + R_{60} + 3k
+\end{equation}
+Since $L_{60}$ and $R_{60}$ must be non-negative integers, this load shift equation forces the macroscopic boundary to form a rigid hexagonal hull dominated by Left $60^\circ$ turns. It allows only flat segments ($S_0$) and Right $90^\circ$ concave inlets, completely lacking any outward-pointing convex $90^\circ$ corners.
 
-However, a single 14-sided Spectre tile contains five $90^\circ$ corners and only one $270^\circ$ corner. In a patch of $N$ tiles, there is a massive surplus of $5N$ orthogonal corners. While some of these $90^\circ$ corners can touch the boundary by pairing together to form flat edges or macroscopic concavities, the boundary length grows proportionally to $\sqrt{N}$, whereas the number of corners grows proportionally to $N$. The vast majority of these $5N$ corners must therefore be absorbed entirely within the interior.
+Next, we establish that this boundary configuration is geometrically incompatible with the internal bulk topology. Consider a patch comprising $N$ individual Spectre monotiles. Each individual 14-sided Spectre tile possesses exactly five internal $90^\circ$ corners and only one internal $270^\circ$ corner. Thus, across the entire patch, the constituent tiles generate a massive pool of $5N$ orthogonal ($90^\circ$) corners. 
 
-One might ask if the $R_{60}$ boundary concavities (representing $240^\circ$ interior angles) can assist in absorbing this surplus. For a vertex to be valid in the tiling, the interior angles meeting at that point must sum exactly to $360^\circ$. A $90^\circ$ corner paired with a $240^\circ$ concavity sums to $330^\circ$, leaving an unfillable $30^\circ$ gap, as the Spectre tile possesses no $30^\circ$ angles. Furthermore, attempting to combine a $240^\circ$ corner with a $270^\circ$ corner yields $510^\circ$, which is geometrically impossible. Thus, $240^\circ$ concavities are mathematical dead ends for the purpose of hiding orthogonal corners.
+To prevent geometric overlaps and maintain a simply connected topology, these orthogonal corners must be matched at the patch's vertices. Let $V$ be the set of all vertices in the patch. The vertices can be classified into boundary vertices $V_{\partial}$ and interior vertices $V_{\text{int}}$. 
+At any boundary vertex $v \in V_{\partial}$, a subset of these orthogonal corners can be exposed directly to the exterior. However, because the boundary path is simple and closed, its length (measured in edge steps) is bounded by a perimeter scaling of $O(\sqrt{N})$ under standard area-to-perimeter isoperimetric inequalities for packed two-dimensional patches. Consequently, the total capacity of the boundary to absorb orthogonal corners is strictly limited to $O(\sqrt{N})$:
+\begin{equation}
+|V_{\partial}| \le C \sqrt{N}
+\end{equation}
+for some positive constant $C$. Since the number of generated orthogonal corners grows linearly as $5N$, the vast majority of these corners must reside within the interior $V_{\text{int}}$. Specifically, for sufficiently large $N$, we have:
+\begin{equation}
+5N - C\sqrt{N} > 0
+\end{equation}
+meaning a surplus of $5N - O(\sqrt{N})$ orthogonal corners must be absorbed entirely within the interior vertices.
 
-Because there are only $N$ available $270^\circ$ corners in the entire patch to absorb the surplus (via $90^\circ + 270^\circ = 360^\circ$ matches), the remaining $90^\circ$ corners must inevitably resolve by forming orthogonal ``crosses''---internal vertices where four $90^\circ$ corners meet.
+At any interior vertex $v \in V_{\text{int}}$, the sum of the interior angles of the meeting tiles must equal exactly $360^\circ$ to satisfy Euclidean flatness. We analyze the possible corner-matching combinations at interior vertices:
+\begin{itemize}
+    \item A $270^\circ$ corner can pair with exactly one $90^\circ$ corner to form a perfect flat match ($270^\circ + 90^\circ = 360^\circ$). Since there are at most $N$ internal $270^\circ$ corners (one per Spectre tile), this can absorb at most $N$ of the $5N$ orthogonal corners.
+    \item An $R_{60}$ boundary concavity or internal tile vertex with a $240^\circ$ exterior-like turn could potentially be considered. However, pairing a $90^\circ$ corner with a $240^\circ$ corner results in an interior angle sum of:
+    \begin{equation}
+    90^\circ + 240^\circ = 330^\circ
+    \end{equation}
+    This leaves a rigid $30^\circ$ vertex-matching gap. Because the Spectre monotile geometry is defined entirely on a grid whose minimum internal angle is $60^\circ$, there are no $30^\circ$ angles available in the tile set to fill this gap. Hence, this combination is geometrically blocked.
+    \item Attempting to combine a $240^\circ$ corner with a $270^\circ$ corner yields $510^\circ$, which exceeds $360^\circ$ and is physically impossible.
+\end{itemize}
+
+Since $270^\circ$ corners can absorb at most $N$ orthogonal corners, the remaining surplus of at least $4N - O(\sqrt{N})$ orthogonal corners has only one remaining topological resolution: they must gather at interior vertices to form orthogonal ``crosses'' where four $90^\circ$ corners meet:
+\begin{equation}
+4 \times 90^\circ = 360^\circ
+\end{equation}
+For any patch with $N \ge 1$ without $L_{90}$ boundary convexities, the existence of at least one internal cross vertex is topologically forced by the pigeonhole principle on the corner matching.
+
+However, the verified \texttt{crosses\_always\_overlap} theorem in our library proves that the local boundary of any four tiles forming an internal cross must intersect, causing a physical overlap. Since valid, simply connected physical patches cannot contain overlapping tiles, such internal cross vertices are geometrically impossible. This contradiction refutes the hypothesis $L_{90} = 0$, completing the proof that $L_{90} \ge 1$.
+
 
 \section{The Cyclotomic Integer Lattice Contradiction}
 To prove internal crosses are geometrically impossible, we map the 12-fold rotational symmetry of the Spectre lattice to the Ring of Cyclotomic Integers, $\mathbb{Z}[\zeta_{12}]$. Every vertex of the tile is represented exactly as a 4-tuple of integers $(a, b, c, d)$.
