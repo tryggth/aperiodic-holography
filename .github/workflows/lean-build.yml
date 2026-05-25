@@ -1,35 +1,53 @@
-name: Lean 4 Build
+name: Continuous Integration
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [ "main", "master" ]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
   build:
+    name: Build and Verify
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install elan
-        run: |
-          set -o pipefail
-          curl -sSfL https://github.com/leanprover/elan/releases/latest/download/elan-init.sh \
-            | sh -s -- -y --default-toolchain leanprover/lean4:stable
-          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+      - name: Install elan (Lean Version Manager)
+        uses: leanprover/elan@v1
 
-      - name: Cache Lake packages
+      - name: Cache Mathlib oleans and Lake packages
         uses: actions/cache@v4
         with:
           path: |
+            .lake
             ~/.elan
-            .lake/packages
-          key: ${{ runner.os }}-lake-${{ hashFiles('lake-manifest.json') }}
+            ~/.elan/toolchains
+          key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain') }}-lake-${{ hashFiles('lake-manifest.json') }}
           restore-keys: |
-            ${{ runner.os }}-lake-
+            ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain') }}-lake-
+            ${{ runner.os }}-lean-
 
-      - name: Build Project (verifies all proofs)
-        run: lake build
+      - name: Mathlib Dependency Cache Retrieval
+        run: |
+          if lake exe cache >/dev/null 2>&1; then
+            echo "Mathlib cache configuration detected. Fetching pre-compiled oleans..."
+            lake exe cache get
+          else
+            echo "No pre-compiled Mathlib cache executable found. Continuing clean build..."
+          fi
+
+      - name: Synchronize package configuration dependencies
+        run: |
+          lake setup
+
+      - name: Build validation verification
+        run: |
+          lake build
