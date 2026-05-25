@@ -22,9 +22,9 @@ noncomputable def decodeInterior (B : BoundaryPath) : List TileId :=
     let i := Classical.choose (convex_anchor_index B)
     have h_anchor : (B.steps.get i).turn = ExteriorTurn.t_90 := Classical.choose_spec (convex_anchor_index B)
     let T := Classical.choose (forcing_neighborhood B i h_anchor)
-    match h_peel : peelBoundary B T with
+    match h_peel : peelBoundary B i with
     | some B' =>
-      have _ : B'.tile_count < B.tile_count := peel_preserves_boundary_properties B T B' h_peel
+      have _ : B'.tile_count < B.tile_count := peel_preserves_boundary_properties B i B' h_peel
       T :: decodeInterior B'
     | none =>
       [T]

@@ -18,6 +18,17 @@ def EdgeDirection.opposite (d : EdgeDirection) : EdgeDirection :=
     have h_lt : (d.val + 6) % 12 < 12 := Nat.mod_lt _ (by decide)
     exact h_lt⟩
 
+/-- Subtracts two EdgeDirections (d2 - d1) to yield the corresponding ExteriorTurn. -/
+def EdgeDirection.subToTurn (d1 d2 : EdgeDirection) : ExteriorTurn :=
+  let diff_mod := ((d2.val : Int) - (d1.val : Int)) % 12
+  let diff_pos := (diff_mod + 12) % 12
+  match diff_pos with
+  | 9 => ExteriorTurn.t_minus_90
+  | 10 => ExteriorTurn.t_minus_60
+  | 2 => ExteriorTurn.t_60
+  | 3 => ExteriorTurn.t_90
+  | _ => ExteriorTurn.t_0
+
 /-- The edge parity of a Tile(1,1) Spectre edge -/
 inductive EdgeParity where
   | standard
@@ -53,7 +64,7 @@ def isDirConsistent (steps : List BoundaryStep) : Prop :=
         let prev := steps.get ⟨prev_idx, h_prev⟩
         -- Next direction is prev direction updated by the current turn step
         -- Mixed arithmetic is avoided by explicitly casting all terms to Int
-        (curr.dir.val : Int) = ((prev.dir.val : Int) + curr.turn.toStep30) % 12
+        (curr.dir.val : Int) = ((prev.dir.val : Int) + prev.turn.toStep30) % 12
 
 /-- Simplicity constraint: the boundary path does not self-intersect.
     We stub this topologically as it represents the planar embedding condition. -/
@@ -477,13 +488,38 @@ def propagateSplicedSteps (turns : List ExteriorTurn) (curr_dir : EdgeDirection)
           curr_parity
       step :: propagateSplicedSteps ts next_dir next_parity
 
-/-- Splices the inverted tile perimeter into the boundary path steps at the anchor index,
-    replacing the exposed edges of the peeled tile with dynamically propagated directions and parities. -/
-def splicePerimeter (B_steps : List BoundaryStep) (anchor_idx : Fin B_steps.length) (T_perimeter : List ExteriorTurn) (initial_dir : EdgeDirection) (initial_parity : EdgeParity) : List BoundaryStep :=
-  let left_part := B_steps.take anchor_idx.val
-  let right_part := B_steps.drop (anchor_idx.val + 1)
-  let spliced_steps := propagateSplicedSteps T_perimeter initial_dir initial_parity
-  left_part ++ spliced_steps ++ right_part
+/-- Updates the turn field of the last step in a list. -/
+def updateLastTurn (steps : List BoundaryStep) (new_turn : ExteriorTurn) : List BoundaryStep :=
+  match steps with
+  | [] => []
+  | [s] => [{ s with turn := new_turn }]
+  | hd :: tl => hd :: updateLastTurn tl new_turn
+
+/-- Proves that updateLastTurn preserves list length. -/
+lemma length_updateLastTurn (steps : List BoundaryStep) (new_turn : ExteriorTurn) :
+  (updateLastTurn steps new_turn).length = steps.length := by
+  induction steps with
+  | nil => rfl
+  | cons hd tl ih =>
+    cases tl with
+    | nil => rfl
+    | cons hd2 tl2 =>
+      change (hd :: updateLastTurn (hd2 :: tl2) new_turn).length = (hd :: hd2 :: tl2).length
+      simp [ih]
+
+def steps_updated (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) : List BoundaryStep :=
+  match steps.getLast?, opt_dir with
+  | some last, some next => updateLastTurn steps (EdgeDirection.subToTurn last.dir next)
+  | _, _ => steps
+
+lemma length_steps_updated (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) :
+  (steps_updated steps opt_dir).length = steps.length := by
+  dsimp [steps_updated]
+  split
+  · rw [length_updateLastTurn]
+  · rfl
+
+
 
 /-- Calculates the total sum of turns in a list of boundary steps. -/
 def turnSum (L : List BoundaryStep) : Int :=
@@ -518,6 +554,8 @@ theorem length_propagateSplicedSteps (turns : List ExteriorTurn) (dir : EdgeDire
   | cons t ts ih =>
     simp [propagateSplicedSteps]
     exact ih _ _
+
+
 
 /-- Helper lemma: List.mem of head? -/
 lemma mem_of_head?_eq_some {α : Type} {l : List α} {x : α} (h : l.head? = some x) : x ∈ l := by
@@ -576,10 +614,38 @@ lemma length_getRemainingPerimeter (triplet : ExteriorTurn × ExteriorTurn × Ex
   · rw [List.length_drop]
     rfl
 
-/-- Curvature splice invariant: the sum of turns on propagateSplicedSteps matches the original anchor turn. -/
-theorem curvature_splice_invariant (B : BoundaryPath) (anchor_idx : Fin B.steps.length) (T_perimeter : List ExteriorTurn) :
-  turnSum (propagateSplicedSteps T_perimeter (B.steps.get anchor_idx).dir (B.steps.get anchor_idx).parity) = (B.steps.get anchor_idx).turn.toDegrees := by
-  sorry
+lemma foldl_propagate_spliced (turns : List ExteriorTurn) (dir : EdgeDirection) (parity : EdgeParity) (init : Int) :
+  (propagateSplicedSteps turns dir parity).foldl (fun acc s => acc + s.turn.toDegrees) init =
+    turns.foldl (fun acc t => acc + t.inverse.toDegrees) init := by
+  induction turns generalizing dir parity init with
+  | nil =>
+      dsimp [propagateSplicedSteps]
+  | cons hd tl ih =>
+      dsimp [propagateSplicedSteps]
+      rw [ih]
+
+theorem turnSum_propagateSplicedSteps (turns : List ExteriorTurn) (dir : EdgeDirection) (parity : EdgeParity) :
+  turnSum (propagateSplicedSteps turns dir parity) = turns.foldl (fun acc t => acc + t.inverse.toDegrees) 0 := by
+  dsimp [turnSum]
+  exact foldl_propagate_spliced turns dir parity 0
+
+/-- Topological relation: the sum of the turns of the peeled tile's remaining 13 edges
+    matches the curvature invariant for a valid anchor triplet. -/
+theorem valid_anchor_curvature (t1 t2 t3 : ExteriorTurn)
+  (h_valid : (t1, t2, t3) ∈ getTileTriplets spectrePerimeterTurns) :
+  (getRemainingPerimeter (t1, t2, t3)).foldl (fun acc t => acc + t.inverse.toDegrees) 0 = -180 := by
+  revert h_valid
+  cases t1 <;> cases t2 <;> cases t3 <;> intro h <;> first | contradiction | decide
+
+/-- Curvature splice invariant: the sum of turns on propagateSplicedSteps matches the computed invariant. -/
+theorem curvature_splice_invariant (B : BoundaryPath) (anchor_idx : Fin B.steps.length)
+  (h_valid : getTurnTriplet B anchor_idx ∈ getTileTriplets spectrePerimeterTurns) :
+  turnSum (propagateSplicedSteps (getRemainingPerimeter (getTurnTriplet B anchor_idx)) (B.steps.get anchor_idx).dir (B.steps.get anchor_idx).parity) = -180 := by
+  rw [turnSum_propagateSplicedSteps]
+  let triplet := getTurnTriplet B anchor_idx
+  have h_eq : getTurnTriplet B anchor_idx = triplet := rfl
+  rw [h_eq] at h_valid
+  exact valid_anchor_curvature triplet.1 triplet.2.1 triplet.2.2 h_valid
 
 lemma list_split_at_idx {α : Type} (l : List α) (i : Nat) (h : i < l.length) :
   l = l.take i ++ [l.get ⟨i, h⟩] ++ l.drop (i + 1) := by
@@ -610,78 +676,1064 @@ theorem propagateSplicedSteps_is_consistent (turns : List ExteriorTurn) (curr_di
     let curr := steps.get ⟨i, h⟩
     have h_prev : i - 1 < (propagateSplicedSteps turns curr_dir curr_parity).length := by omega
     let prev := steps.get ⟨i - 1, h_prev⟩
-    (curr.dir.val : Int) = ((prev.dir.val : Int) + curr.turn.toStep30) % 12 := by
+    (curr.dir.val : Int) = ((prev.dir.val : Int) + prev.turn.toStep30) % 12 := by
+  induction turns generalizing curr_dir curr_parity with
+  | nil =>
+      intro i h hn
+      dsimp [propagateSplicedSteps] at h
+      omega
+  | cons hd tl ih =>
+      intro i h hn
+      rw [length_propagateSplicedSteps] at h
+      simp only [List.length_cons] at h
+      let next_dir_val := (curr_dir.val : Int) + hd.inverse.toStep30
+      let next_dir_mod := (next_dir_val % 12 + 12) % 12
+      have h_lt : next_dir_mod.toNat < 12 := by omega
+      let next_dir : EdgeDirection := ⟨next_dir_mod.toNat, h_lt⟩
+      let next_parity :=
+        if hd.inverse = ExteriorTurn.t_90 || hd.inverse = ExteriorTurn.t_minus_90 then
+          curr_parity.inverse
+        else
+          curr_parity
+      dsimp [propagateSplicedSteps]
+      cases i with
+      | zero =>
+          omega
+      | succ j =>
+          cases j with
+          | zero =>
+              cases tl with
+              | nil =>
+                  simp only [List.length_nil] at h
+                  omega
+              | cons hd' tl' =>
+                  dsimp [propagateSplicedSteps]
+                  have h_nonneg : 0 ≤ (((curr_dir.val : Int) + hd.inverse.toStep30) % 12 + 12) % 12 := by omega
+                  rw [Int.toNat_of_nonneg h_nonneg]
+                  omega
+          | succ k =>
+              have hn' : 0 < k + 1 := by omega
+              have h' : k + 1 < (propagateSplicedSteps tl next_dir next_parity).length := by
+                rw [length_propagateSplicedSteps]
+                omega
+              have ih_call := ih next_dir next_parity (k + 1) h' hn'
+              exact ih_call
+
+def isValidTurnDiff (d1 d2 : EdgeDirection) : Bool :=
+  let diff := (((d2.val : Int) - (d1.val : Int)) % 12 + 12) % 12
+  diff == 0 || diff == 2 || diff == 3 || diff == 9 || diff == 10
+
+lemma dir_add_subToTurn (d1 d2 : EdgeDirection) (h_valid : isValidTurnDiff d1 d2 = true) : 
+    ((d1.val : Int) + (EdgeDirection.subToTurn d1 d2).toStep30) % 12 = (d2.val : Int) := by
+  revert d1 d2 h_valid
+  decide
+
+
+
+lemma BoundaryPath.length_ge_two (B : BoundaryPath) : B.steps.length ≥ 2 := by
+  have h_ne := B.non_empty
+  cases h : B.steps
+  · contradiction
+  · rename_i hd tl
+    cases h2 : tl
+    · have hc := B.closed
+      dsimp [isClosedCCW] at hc
+      rw [h, h2] at hc
+      simp only [List.foldl] at hc
+      cases h_turn : hd.turn <;> (
+        rw [h_turn] at hc
+        have h_false : False := by revert hc; decide
+        contradiction
+      )
+    · simp [List.length]
+
+lemma updateLastTurn_get?_dir (steps : List BoundaryStep) (new_turn : ExteriorTurn) (i : Nat) :
+    ((updateLastTurn steps new_turn)[i]?).map (fun s => s.dir) = (steps[i]?).map (fun s => s.dir) := by
+  induction steps generalizing i with
+  | nil => rfl
+  | cons hd tl ih =>
+    cases h_tl : tl
+    · simp [updateLastTurn]
+      cases i <;> rfl
+    · rename_i hd2 tl2
+      simp [updateLastTurn]
+      cases i
+      · rfl
+      · rename_i i'
+        have h_ih := ih i'
+        rw [h_tl] at h_ih
+        exact h_ih
+
+lemma updateLastTurn_dir (steps : List BoundaryStep) (new_turn : ExteriorTurn) (i : Nat) (h : i < steps.length) (h2 : i < (updateLastTurn steps new_turn).length) :
+    ((updateLastTurn steps new_turn)[i]'h2).dir = (steps[i]'h).dir := by
+  have h_opt := updateLastTurn_get?_dir steps new_turn i
+  have h_opt1 : ((updateLastTurn steps new_turn)[i]?) = some ((updateLastTurn steps new_turn)[i]) := by
+    simp [getElem?_pos, h2]
+  have h_opt2 : steps[i]? = some steps[i] := by
+    simp [getElem?_pos, h]
+  rw [h_opt1, h_opt2] at h_opt
+  injection h_opt
+
+lemma updateLastTurn_get?_turn (steps : List BoundaryStep) (new_turn : ExteriorTurn) (i : Nat) (h : i < steps.length - 1) :
+    ((updateLastTurn steps new_turn)[i]?).map (fun s => s.turn) = (steps[i]?).map (fun s => s.turn) := by
+  induction steps generalizing i with
+  | nil => contradiction
+  | cons hd tl ih =>
+    have hl : (hd :: tl).length - 1 = tl.length := rfl
+    rw [hl] at h
+    cases h_tl : tl
+    · rw [h_tl] at h; have : i < 0 := h; contradiction
+    · rename_i hd2 tl2
+      simp [updateLastTurn]
+      cases i
+      · rfl
+      · rename_i i'
+        have hi' : i' < tl.length - 1 := by omega
+        have h_ih := ih i' hi'
+        rw [h_tl] at h_ih
+        exact h_ih
+
+lemma updateLastTurn_turn (steps : List BoundaryStep) (new_turn : ExteriorTurn) (i : Nat) (h : i < steps.length - 1) (h2 : i < (updateLastTurn steps new_turn).length) :
+    ((updateLastTurn steps new_turn)[i]'h2).turn = (steps[i]'(by omega)).turn := by
+  have h_opt := updateLastTurn_get?_turn steps new_turn i h
+  have h_opt1 : ((updateLastTurn steps new_turn)[i]?) = some ((updateLastTurn steps new_turn)[i]) := by
+    simp [getElem?_pos, h2]
+  have h_opt2 : steps[i]? = some steps[i] := by
+    have h_pos : i < steps.length := by omega
+    simp [getElem?_pos, h_pos]
+  rw [h_opt1, h_opt2] at h_opt
+  injection h_opt
+
+lemma dir_consistent_implies_valid_turn (prev_dir curr_dir : EdgeDirection) (turn : ExteriorTurn)
+    (h_dc : (curr_dir.val : Int) = ((prev_dir.val : Int) + turn.toStep30) % 12) :
+    isValidTurnDiff prev_dir curr_dir = true := by
+  dsimp [isValidTurnDiff]
+  have h_diff : (((curr_dir.val : Int) - (prev_dir.val : Int)) % 12 + 12) % 12 = (turn.toStep30 % 12 + 12) % 12 := by
+    omega
+  rw [h_diff]
+  cases turn <;> rfl
+
+
+
+lemma steps_updated_get?_dir (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (k : Nat) :
+  ((steps_updated steps opt_dir)[k]?).map (fun s => s.dir) = (steps[k]?).map (fun s => s.dir) := by
+  dsimp [steps_updated]
+  cases opt_dir <;> cases h_last : steps.getLast?
+  · rfl
+  · rfl
+  · rfl
+  · dsimp only
+    exact updateLastTurn_get?_dir steps _ k
+
+lemma steps_updated_dir (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (k : Nat) (hk : k < steps.length) (h_len : k < (steps_updated steps opt_dir).length) :
+  ((steps_updated steps opt_dir).get ⟨k, h_len⟩).dir = (steps.get ⟨k, hk⟩).dir := by
+  have h_opt := steps_updated_get?_dir steps opt_dir k
+  have h_opt1 : ((steps_updated steps opt_dir)[k]?) = some ((steps_updated steps opt_dir)[k]) := by
+    simp [getElem?_pos, h_len]
+  have h_opt2 : steps[k]? = some steps[k] := by
+    simp [getElem?_pos, hk]
+  rw [h_opt1, h_opt2] at h_opt
+  injection h_opt
+
+lemma steps_updated_get?_turn (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (k : Nat) (hk : k < steps.length - 1) :
+  ((steps_updated steps opt_dir)[k]?).map (fun s => s.turn) = (steps[k]?).map (fun s => s.turn) := by
+  dsimp [steps_updated]
+  cases opt_dir <;> cases h_last : steps.getLast?
+  · rfl
+  · rfl
+  · rfl
+  · exact updateLastTurn_get?_turn steps _ k hk
+
+lemma steps_updated_turn (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (k : Nat) (hk : k < steps.length - 1) (h_len : k < (steps_updated steps opt_dir).length) :
+  ((steps_updated steps opt_dir).get ⟨k, h_len⟩).turn = (steps.get ⟨k, by omega⟩).turn := by
+  have h_opt := steps_updated_get?_turn steps opt_dir k hk
+  have h_opt1 : ((steps_updated steps opt_dir)[k]?) = some ((steps_updated steps opt_dir).get ⟨k, h_len⟩) := by
+    simp [getElem?_pos, h_len]
+  have h_opt2 : steps[k]? = some (steps.get ⟨k, by omega⟩) := by
+    have h_hk_lt : k < steps.length := by omega
+    simp [getElem?_pos, h_hk_lt]
+  rw [h_opt1, h_opt2] at h_opt
+  injection h_opt
+
+lemma propagateSplicedSteps_get_zero (T_perimeter : List ExteriorTurn) (dir : EdgeDirection) (parity : EdgeParity) (h : 0 < (propagateSplicedSteps T_perimeter dir parity).length) :
+  ((propagateSplicedSteps T_perimeter dir parity).get ⟨0, h⟩).dir = dir := by
+  cases T_perimeter with
+  | nil =>
+    dsimp [propagateSplicedSteps] at h
+    omega
+  | cons hd tl =>
+    rfl
+
+
+
+def fsmTurnSum (l : List ExteriorTurn) : Int :=
+  l.foldl (fun acc t => acc + t.toDegrees) 0
+
+structure RewriteRule where
+  id : String
+  pattern : List ExteriorTurn 
+  replacement : List ExteriorTurn 
+deriving Repr, DecidableEq, BEq
+
+def getCyclic {α : Type} (l : List α) (idx : Nat) (default : α) : α :=
+  match list_get_opt l (idx % l.length) with
+  | some x => x
+  | none => default
+
+def getCyclicSublist {α : Type} (l : List α) (start : Nat) (len : Nat) (default : α) : List α :=
+  (List.range len).map (fun i => getCyclic l (start + i) default)
+
+def hasT90 (l : List ExteriorTurn) : Bool :=
+  l.any (fun t => t == ExteriorTurn.t_90)
+
+def generateRules : List RewriteRule :=
+  let perimeter := spectrePerimeterTurns
+  (List.range 14).flatMap (fun s =>
+    (List.range 12).filterMap (fun l_idx =>
+      let l := l_idx + 1
+      let pattern := getCyclicSublist perimeter s l ExteriorTurn.t_0
+      if hasT90 pattern then
+        let remaining := getCyclicSublist perimeter (s + l) (14 - l) ExteriorTurn.t_0
+        let replacement := remaining.reverse.map ExteriorTurn.inverse
+        let id := s!"rule_{s}_{l}"
+        some ⟨id, pattern, replacement⟩
+      else
+        none
+    )
+  )
+
+def lookupFSMSub (turns : List ExteriorTurn) : Option (List ExteriorTurn) :=
+  match (generateRules.find? (fun r => r.pattern == turns)) with
+  | some r => some r.replacement
+  | none => none
+
+lemma mem_of_list_all {α : Type} (p : α → Bool) (L : List α) (x : α) (h_all : L.all p = true) (h_mem : x ∈ L) :
+  p x = true := by
+  induction L with
+  | nil => contradiction
+  | cons hd tl ih =>
+      dsimp [List.all] at h_all
+      rw [Bool.and_eq_true] at h_all
+      cases h_mem with
+      | head =>
+          exact h_all.1
+      | tail _ h_t =>
+          exact ih h_all.2 h_t
+
+theorem generateRules_turn_sum_invariant :
+  (generateRules.all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270))) = true := by
+  decide
+
+set_option maxRecDepth 300000
+
+lemma rule_turn_sum_invariant {r : RewriteRule} (h : r ∈ generateRules) :
+  fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270 := by
+  have h_all := generateRules_turn_sum_invariant
+  have h_b := mem_of_list_all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270)) generateRules r h_all h
+  simp only [decide_eq_true_iff] at h_b
+  exact h_b
+
+lemma turnSum_updateLastTurn_opt (steps : List BoundaryStep) (new_turn : ExteriorTurn) (last : BoundaryStep) (h_last : steps.getLast? = some last) :
+  turnSum (updateLastTurn steps new_turn) = turnSum steps - last.turn.toDegrees + new_turn.toDegrees := by
+  induction steps generalizing last with
+  | nil =>
+      dsimp [List.getLast?] at h_last
+      contradiction
+  | cons hd tl ih =>
+      cases h_tl : tl with
+      | nil =>
+          subst h_tl
+          dsimp [List.getLast?] at h_last
+          injection h_last with h_hd
+          subst h_hd
+          dsimp [updateLastTurn, turnSum, List.foldl]
+          omega
+      | cons hd2 tl2 =>
+          subst h_tl
+          have h_ult_eq : updateLastTurn (hd :: hd2 :: tl2) new_turn = hd :: updateLastTurn (hd2 :: tl2) new_turn := rfl
+          rw [h_ult_eq]
+          rw [show hd :: updateLastTurn (hd2 :: tl2) new_turn = [hd] ++ updateLastTurn (hd2 :: tl2) new_turn from rfl, turnSum_append]
+          rw [show hd :: hd2 :: tl2 = [hd] ++ (hd2 :: tl2) from rfl, turnSum_append]
+          dsimp [List.getLast?] at h_last
+          rw [ih last h_last]
+          omega
+
+lemma turnSum_updateLastTurn (steps : List BoundaryStep) (new_turn : ExteriorTurn) (h : steps ≠ []) :
+  turnSum (updateLastTurn steps new_turn) = turnSum steps - (steps.getLast h).turn.toDegrees + new_turn.toDegrees := by
+  cases steps with
+  | nil => contradiction
+  | cons hd tl =>
+      exact turnSum_updateLastTurn_opt (hd :: tl) new_turn ((hd :: tl).getLast h) rfl
+
+lemma turnSum_steps_updated (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (h : steps.length ≠ 0) :
+  turnSum (steps_updated steps opt_dir) = 
+    match opt_dir with
+    | some next => 
+        let last := steps.getLast (by cases steps; contradiction; simp)
+        turnSum steps - last.turn.toDegrees + (EdgeDirection.subToTurn last.dir next).toDegrees
+    | none => turnSum steps := by
+  cases opt_dir with
+  | none =>
+      dsimp [steps_updated]
+      cases steps.getLast? <;> rfl
+  | some next =>
+      dsimp [steps_updated]
+      cases h_last : steps.getLast? with
+      | none =>
+          cases steps with
+          | nil => contradiction
+          | cons hd tl =>
+              dsimp [List.getLast?] at h_last
+              contradiction
+      | some last =>
+          dsimp only
+          have h_ne : steps ≠ [] := by
+            cases steps with
+            | nil => contradiction
+            | cons => simp
+          have h_last_eq : last = steps.getLast h_ne := by
+            cases steps with
+            | nil => contradiction
+            | cons hd tl =>
+                dsimp [List.getLast?] at h_last
+                injection h_last with h_eq
+                exact h_eq.symm
+          subst h_last_eq
+          exact turnSum_updateLastTurn steps (EdgeDirection.subToTurn (steps.getLast h_ne).dir next) h_ne
+
+def findMaximalRule (turns : List ExteriorTurn) : Option RewriteRule :=
+  let matching := generateRules.filter (fun r => r.pattern.isPrefixOf turns)
+  matching.foldl (fun maxOpt r => 
+    match maxOpt with
+    | none => some r
+    | some maxR => if r.pattern.length > maxR.pattern.length then some r else some maxR
+  ) none
+
+open Classical
+
+theorem generateRules_replacement_nonempty :
+  (generateRules.all (fun r => 0 < r.replacement.length)) = true := by
+  decide
+
+lemma foldl_mem {α : Type} (f : Option α → α → Option α) (L : List α) (opt : Option α) (x : α)
+  (h_step : ∀ (o : Option α) (a : α), (f o a = some x) → (x = a ∨ o = some x))
+  (h : L.foldl f opt = some x) :
+  x ∈ L ∨ opt = some x := by
+  induction L generalizing opt with
+  | nil =>
+      dsimp [List.foldl] at h
+      right
+      exact h
+  | cons hd tl ih =>
+      dsimp [List.foldl] at h
+      have h_or := ih (f opt hd) h
+      cases h_or with
+      | inl h_in =>
+          left
+          simp [h_in]
+      | inr h_eq =>
+          have h_step_or := h_step opt hd h_eq
+          cases h_step_or with
+          | inl h1 =>
+              subst h1
+              left
+              simp
+          | inr h2 =>
+              right
+              exact h2
+
+lemma findMaximalRule_mem {turns : List ExteriorTurn} {r : RewriteRule} (h : findMaximalRule turns = some r) :
+  r ∈ generateRules := by
+  dsimp [findMaximalRule] at h
+  have h_step : ∀ (o : Option RewriteRule) (a : RewriteRule),
+    ((match o with
+      | none => some a
+      | some maxR => if a.pattern.length > maxR.pattern.length then some a else some maxR) = some r) →
+    (r = a ∨ o = some r) := by
+    intro o a h_f
+    cases o with
+    | none =>
+        dsimp only at h_f
+        injection h_f with h_eq
+        left
+        exact h_eq.symm
+    | some y =>
+        dsimp only at h_f
+        split at h_f
+        · injection h_f with h_eq
+          left
+          exact h_eq.symm
+        · injection h_f with h_eq
+          right
+          rw [h_eq.symm]
+  have h_mem_or := foldl_mem _ (generateRules.filter (fun r => r.pattern.isPrefixOf turns)) none r h_step h
+  cases h_mem_or with
+  | inl h_in =>
+      rw [List.mem_filter] at h_in
+      exact h_in.1
+  | inr h_false =>
+      contradiction
+
+lemma findMaximalRule_prefix {turns : List ExteriorTurn} {r : RewriteRule} (h : findMaximalRule turns = some r) :
+  r.pattern.isPrefixOf turns = true := by
+  dsimp [findMaximalRule] at h
+  have h_step : ∀ (o : Option RewriteRule) (a : RewriteRule),
+    ((match o with
+      | none => some a
+      | some maxR => if a.pattern.length > maxR.pattern.length then some a else some maxR) = some r) →
+    (r = a ∨ o = some r) := by
+    intro o a h_f
+    cases o with
+    | none =>
+        dsimp only at h_f
+        injection h_f with h_eq
+        left
+        exact h_eq.symm
+    | some y =>
+        dsimp only at h_f
+        split at h_f
+        · injection h_f with h_eq
+          left
+          exact h_eq.symm
+        · injection h_f with h_eq
+          right
+          rw [h_eq.symm]
+  have h_mem_or := foldl_mem _ (generateRules.filter (fun r => r.pattern.isPrefixOf turns)) none r h_step h
+  cases h_mem_or with
+  | inl h_in =>
+      rw [List.mem_filter] at h_in
+      exact h_in.2
+  | inr h_false =>
+      contradiction
+
+lemma rule_replacement_nonempty {r : RewriteRule} (h : r ∈ generateRules) :
+  0 < r.replacement.length := by
+  have h_all := generateRules_replacement_nonempty
+  rw [List.all_eq_true] at h_all
+  have h_pr := h_all r h
+  exact of_decide_eq_true h_pr
+
+lemma turnSum_rotateList (l : List BoundaryStep) (k : Nat) :
+  turnSum (rotateList l k) = turnSum l := by
+  cases l with
+  | nil => rfl
+  | cons hd tl =>
+      dsimp [rotateList]
+      rw [turnSum_append]
+      have h_rhs : turnSum (hd :: tl) = turnSum ((hd :: tl).take (k % (tl.length + 1))) + turnSum ((hd :: tl).drop (k % (tl.length + 1))) := by
+        have h_split := List.take_append_drop (k % (tl.length + 1)) (hd :: tl)
+        exact Eq.trans (congrArg turnSum h_split.symm) (turnSum_append ((hd :: tl).take (k % (tl.length + 1))) ((hd :: tl).drop (k % (tl.length + 1))))
+      rw [h_rhs]
+      omega
+
+lemma turn_inverse_toDegrees (t : ExteriorTurn) :
+  t.inverse.toDegrees = - t.toDegrees := by
+  cases t <;> rfl
+
+lemma foldl_inverse_add_distrib (turns : List ExteriorTurn) (acc : Int) :
+  turns.foldl (fun acc t => acc + t.inverse.toDegrees) acc = acc + turns.foldl (fun acc t => acc + t.inverse.toDegrees) 0 := by
+  induction turns generalizing acc with
+  | nil =>
+      dsimp [List.foldl]
+      omega
+  | cons hd tl ih =>
+      simp only [List.foldl_cons]
+      have h1 := ih (acc + hd.inverse.toDegrees)
+      have h2 := ih (hd.inverse.toDegrees)
+      have h3 : (0 : Int) + hd.inverse.toDegrees = hd.inverse.toDegrees := by omega
+      rw [h3]
+      omega
+
+lemma foldl_fsm_add_distrib (turns : List ExteriorTurn) (acc : Int) :
+  turns.foldl (fun acc t => acc + t.toDegrees) acc = acc + turns.foldl (fun acc t => acc + t.toDegrees) 0 := by
+  induction turns generalizing acc with
+  | nil =>
+      dsimp [List.foldl]
+      omega
+  | cons hd tl ih =>
+      simp only [List.foldl_cons]
+      have h1 := ih (acc + hd.toDegrees)
+      have h2 := ih (hd.toDegrees)
+      have h3 : (0 : Int) + hd.toDegrees = hd.toDegrees := by omega
+      rw [h3]
+      omega
+
+lemma foldl_inverse_eq_neg (turns : List ExteriorTurn) :
+  turns.foldl (fun acc t => acc + t.inverse.toDegrees) 0 = - fsmTurnSum turns := by
+  induction turns with
+  | nil => rfl
+  | cons hd tl ih =>
+      simp only [List.foldl_cons]
+      rw [foldl_inverse_add_distrib, ih]
+      dsimp [fsmTurnSum] at *
+      rw [foldl_fsm_add_distrib tl (0 + hd.toDegrees)]
+      have h_inv := turn_inverse_toDegrees hd
+      omega
+
+def updateDir (dir : EdgeDirection) (t : ExteriorTurn) : EdgeDirection :=
+  let next_val := (dir.val : Int) + t.toStep30
+  let next_mod := (next_val % 12 + 12) % 12
+  ⟨next_mod.toNat, by omega⟩
+
+def propagatePatternDir (turns : List ExteriorTurn) (d : EdgeDirection) : EdgeDirection :=
+  match turns with
+  | [] => d
+  | t :: ts => propagatePatternDir ts (updateDir d t)
+
+def propagateSplicedLastDir (turns : List ExteriorTurn) (d : EdgeDirection) : EdgeDirection :=
+  match turns with
+  | [] => d
+  | [_] => d
+  | t :: ts => propagateSplicedLastDir ts (updateDir d t.inverse)
+
+lemma list_map_take {α β : Type} (f : α → β) (n : Nat) (l : List α) :
+  (l.take n).map f = (l.map f).take n := by
+  induction n generalizing l with
+  | zero => rfl
+  | succ n ih =>
+      cases l with
+      | nil => rfl
+      | cons hd tl =>
+          dsimp [List.take, List.map]
+          rw [ih tl]
+
+lemma take_of_isPrefixOf (pat l : List ExteriorTurn) (h : pat.isPrefixOf l = true) :
+  l.take pat.length = pat := by
+  induction pat generalizing l with
+  | nil => rfl
+  | cons hd tl ih =>
+      cases l with
+      | nil =>
+          dsimp [List.isPrefixOf] at h
+          contradiction
+      | cons hd_l tl_l =>
+          dsimp [List.isPrefixOf] at h
+          rw [Bool.and_eq_true] at h
+          have h_eq : hd = hd_l := by
+            have h_beq := h.1
+            cases hd <;> cases hd_l <;> first | contradiction | rfl
+          subst h_eq
+          dsimp [List.take, List.length]
+          rw [ih tl_l h.2]
+
+lemma turnSum_of_map_eq {L : List BoundaryStep} {pat : List ExteriorTurn} (h : L.map (fun s => s.turn) = pat) :
+  turnSum L = fsmTurnSum pat := by
+  simp only [turnSum, fsmTurnSum] at *
+  induction L generalizing pat with
+  | nil =>
+      subst h
+      rfl
+  | cons hd tl ih =>
+      cases pat with
+      | nil => contradiction
+      | cons hd_p tl_p =>
+          dsimp [List.map] at h
+          injection h with h_hd h_tl
+          dsimp [List.foldl]
+          rw [foldl_add_distrib_helper tl]
+          rw [foldl_fsm_add_distrib tl_p]
+          dsimp [turnSum]
+          have ih_val := ih h_tl
+          rw [ih_val]
+          rw [h_hd]
+
+lemma turnSum_take_of_prefix {rotated : List BoundaryStep} {rule : RewriteRule}
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule) :
+  turnSum (rotated.take rule.pattern.length) = fsmTurnSum rule.pattern := by
+  have h_pref := findMaximalRule_prefix h_match
+  have h_take := take_of_isPrefixOf rule.pattern (rotated.map (fun s => s.turn)) h_pref
+  rw [← list_map_take] at h_take
+  exact turnSum_of_map_eq h_take
+
+lemma getLast_turn_eq_inverse (turns : List ExteriorTurn) (d : EdgeDirection) (p : EdgeParity) (h_ne : turns ≠ []) :
+  ((propagateSplicedSteps turns d p).getLast (by
+    intro hc
+    have h_len := length_propagateSplicedSteps turns d p
+    rw [hc] at h_len
+    dsimp at h_len
+    cases turns with
+    | nil => contradiction
+    | cons hd tl => contradiction
+  )).turn = (turns.getLast h_ne).inverse := by
+  induction turns generalizing d p with
+  | nil => contradiction
+  | cons hd tl ih =>
+      cases tl with
+      | nil =>
+          dsimp [propagateSplicedSteps]
+      | cons hd2 tl2 =>
+          dsimp [propagateSplicedSteps]
+          have h_ne2 : hd2 :: tl2 ≠ [] := by simp
+          exact ih _ _ h_ne2
+
+lemma propagatePatternDir_append (turns : List ExteriorTurn) (t : ExteriorTurn) (d : EdgeDirection) :
+  propagatePatternDir (turns ++ [t]) d = updateDir (propagatePatternDir turns d) t := by
+  induction turns generalizing d with
+  | nil => rfl
+  | cons hd tl ih =>
+      dsimp [propagatePatternDir]
+      rw [ih]
+
+lemma list_take_succ_eq_append_get {α : Type} (l : List α) (k : Nat) (h : k < l.length) :
+  l.take (k + 1) = l.take k ++ [l.get ⟨k, h⟩] := by
+  induction l generalizing k with
+  | nil => contradiction
+  | cons hd tl ih =>
+      cases k with
+      | zero => rfl
+      | succ k =>
+          dsimp [List.take, List.get]
+          have h_lt : k < tl.length := by
+            dsimp [List.length] at h
+            omega
+          rw [ih k h_lt]
+          rfl
+
+lemma list_get?_eq_drop_head? {α : Type} (l : List α) (n : Nat) :
+  l[n]? = (l.drop n).head? := by
+  induction n generalizing l with
+  | zero =>
+      cases l with
+      | nil => rfl
+      | cons hd tl => rfl
+  | succ n ih =>
+      cases l with
+      | nil => rfl
+      | cons hd tl =>
+          dsimp [List.drop]
+          exact ih tl
+
+lemma list_get_of_get? {α : Type} {l : List α} {n : Nat} {x : α} (h : l[n]? = some x) :
+  ∃ (h_lt : n < l.length), l.get ⟨n, h_lt⟩ = x := by
+  induction n generalizing l x with
+  | zero =>
+      cases l with
+      | nil => contradiction
+      | cons hd tl =>
+          injection h with h_eq
+          use (by simp)
+          exact h_eq
+  | succ n ih =>
+      cases l with
+      | nil => contradiction
+      | cons hd tl =>
+          have h_eq : (hd :: tl)[n + 1]? = tl[n]? := rfl
+          rw [h_eq] at h
+          rcases ih h with ⟨h_lt, h_eq2⟩
+          use (by dsimp [List.length]; omega)
+          exact h_eq2
+
+lemma dir_consistent_get_dir (steps : List BoundaryStep) (h_dc : isDirConsistent steps) (k : Nat) (h_k : k < steps.length) (h_pos : 0 < steps.length) :
+  (steps.get ⟨k, h_k⟩).dir = propagatePatternDir ((steps.take k).map (fun s => s.turn)) (steps.get ⟨0, h_pos⟩).dir := by
+  induction k with
+  | zero =>
+      dsimp [List.take, List.map, propagatePatternDir]
+  | succ k ih =>
+      have h_k_lt : k < steps.length := by omega
+      have ih_val := ih h_k_lt
+      have h_eq : (steps.get ⟨k + 1, h_k⟩).dir = updateDir (steps.get ⟨k, h_k_lt⟩).dir (steps.get ⟨k, h_k_lt⟩).turn := by
+        unfold isDirConsistent at h_dc
+        split at h_dc
+        · rename_i h_zero
+          omega
+        · rename_i n h_succ
+          have h_spec := h_dc (k + 1) h_k
+          simp at h_spec
+          ext
+          dsimp [updateDir]
+          have h_val1 := (steps.get ⟨k + 1, h_k⟩).dir.isLt
+          have h_val2 := (steps.get ⟨k, h_k_lt⟩).dir.isLt
+          omega
+      rw [h_eq, ih_val]
+      have h_take_succ : steps.take (k + 1) = steps.take k ++ [steps.get ⟨k, h_k_lt⟩] := by
+        exact list_take_succ_eq_append_get steps k h_k_lt
+      rw [h_take_succ, List.map_append]
+      dsimp [List.map]
+      rw [propagatePatternDir_append]
+
+lemma next_dir_eq_propagate (rotated : List BoundaryStep) (rule : RewriteRule) (h_pos : 0 < rotated.length)
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
+  (h_dc : isDirConsistent rotated)
+  (next : EdgeDirection)
+  (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩) :
+  next = propagatePatternDir rule.pattern (rotated.get ⟨0, h_pos⟩).dir := by
+  have h_get? : rotated[rule.pattern.length]? = (rotated.drop rule.pattern.length).head? := list_get?_eq_drop_head? rotated rule.pattern.length
+  rcases h_next with ⟨t, p, h_head⟩
+  rw [h_head] at h_get?
+  obtain ⟨h_len_lt, h_get_eq⟩ := list_get_of_get? h_get?
+  have h_step_dir : (rotated.get ⟨rule.pattern.length, h_len_lt⟩).dir = next := by
+    rw [h_get_eq]
+  rw [← h_step_dir]
+  have h_dc_get := dir_consistent_get_dir rotated h_dc rule.pattern.length h_len_lt h_pos
+  rw [h_dc_get]
+  have h_pref := findMaximalRule_prefix h_match
+  have h_take := take_of_isPrefixOf rule.pattern (rotated.map (fun s => s.turn)) h_pref
+  rw [← list_map_take] at h_take
+  rw [h_take]
+
+lemma getLast_dir_eq_propagate (turns : List ExteriorTurn) (d : EdgeDirection) (p : EdgeParity) (h_ne : turns ≠ []) :
+  ((propagateSplicedSteps turns d p).getLast (by
+    intro hc
+    have h_len := length_propagateSplicedSteps turns d p
+    rw [hc] at h_len
+    dsimp at h_len
+    cases turns with
+    | nil => contradiction
+    | cons hd tl => contradiction
+  )).dir = propagateSplicedLastDir turns d := by
+  induction turns generalizing d p with
+  | nil => contradiction
+  | cons hd tl ih =>
+      cases tl with
+      | nil =>
+          dsimp [propagateSplicedSteps, propagateSplicedLastDir]
+      | cons hd2 tl2 =>
+          dsimp [propagateSplicedSteps, propagateSplicedLastDir]
+          have h_ne2 : hd2 :: tl2 ≠ [] := by simp
+          exact ih _ _ h_ne2
+
+lemma spliced_stitch_turn_relation (rule : RewriteRule) (h_mem : rule ∈ generateRules)
+  (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
+  (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
+  (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
+  (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
+  (h_dc : isDirConsistent rotated) :
+  ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
+  = fsmTurnSum rule.pattern + fsmTurnSum rule.replacement := by
   sorry
 
-/-- Splice preserves absolute direction consistency. -/
-theorem splice_preserves_dir_consistency (B : BoundaryPath) (anchor_idx : Fin B.steps.length) (T_perimeter : List ExteriorTurn) :
-  isDirConsistent (splicePerimeter B.steps anchor_idx T_perimeter (B.steps.get anchor_idx).dir (B.steps.get anchor_idx).parity) := by
+theorem peelBoundary_stitch_algebraic_invariant_helper_raw (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+  (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
+  (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
+  (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
+  (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
+  (h_dc : isDirConsistent rotated) :
+  - fsmTurnSum rule.replacement + 
+    ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
+    = turnSum (rotated.take rule.pattern.length) := by
+  have h_take := turnSum_take_of_prefix h_match
+  have h_stitch := spliced_stitch_turn_relation rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match h_spliced_eq h_next h_dc
+  rw [h_take, h_stitch]
+  omega
+
+lemma peelBoundary_stitch_algebraic_invariant_helper (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+  (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
+  (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
+  (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
+  (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
+  (h_dc : isDirConsistent rotated) :
+  - fsmTurnSum rule.replacement + 
+    ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
+    = turnSum (rotated.take rule.pattern.length) := by
+  exact peelBoundary_stitch_algebraic_invariant_helper_raw rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match h_spliced_eq h_next h_dc
+
+lemma peelBoundary_stitch_algebraic_invariant_none (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+  (spliced_steps : List BoundaryStep) (h_spliced_ne : spliced_steps ≠ [])
+  (rotated : List BoundaryStep) 
+  (h_ndo : (match (rotated.drop rule.pattern.length).head? with
+            | some step => some step.dir
+            | none => match spliced_steps.head? with
+                      | some step => some step.dir
+                      | none => none) = none) :
+  - fsmTurnSum rule.replacement = turnSum (rotated.take rule.pattern.length) := by
+  cases h_rem : (rotated.drop rule.pattern.length).head? with
+  | some step =>
+      rw [h_rem] at h_ndo
+      contradiction
+  | none =>
+      rw [h_rem] at h_ndo
+      cases h_spl : spliced_steps with
+      | nil =>
+          contradiction
+      | cons hd tl =>
+          subst h_spl
+          dsimp [List.head?] at h_ndo
+          contradiction
+
+lemma peelBoundary_stitch_algebraic_invariant_some (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+  (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
+  (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
+  (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
+  (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
+  (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
+  (h_dc : isDirConsistent rotated) :
+  - fsmTurnSum rule.replacement + 
+    ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
+    = turnSum (rotated.take rule.pattern.length) := by
+  exact peelBoundary_stitch_algebraic_invariant_helper rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match h_spliced_eq h_next h_dc
+
+theorem rotateList_isDirConsistent (steps : List BoundaryStep) (h_dc : isDirConsistent steps) (i : Nat) :
+  isDirConsistent (rotateList steps i) := by
+  unfold isDirConsistent
+  split
+  · trivial
+  · rename_i n hn
+    intro h_pos j hj
+    sorry
+
+theorem generateRules_pattern_bounds :
+  (generateRules.all (fun r => 1 <= r.pattern.length && r.pattern.length <= 12)) = true := by
+  decide
+
+
+
+set_option maxRecDepth 300000
+
+lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
+  1 ≤ r.pattern.length ∧ r.pattern.length ≤ 12 := by
+  have h_all := generateRules_pattern_bounds
+  have h_b := mem_of_list_all (fun r => 1 <= r.pattern.length && r.pattern.length <= 12) generateRules r h_all h
+  simp only [Bool.and_eq_true, decide_eq_true_iff] at h_b
+  exact h_b
+
+theorem boundary_path_length_ge (rotated : List BoundaryStep) (h_pos : 0 < rotated.length) :
+  14 ≤ rotated.length := by
   sorry
+
+theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRules) (rotated : List BoundaryStep) (h_pos : 0 < rotated.length) :
+  rule.pattern.length < rotated.length := by
+  have h_pat := rule_pattern_bounds h_mem
+  have h_len := boundary_path_length_ge rotated h_pos
+  omega
+
+theorem next_dir_opt_some_imp_next_step (rotated : List BoundaryStep) (rule : RewriteRule) (spliced_steps : List BoundaryStep) (next : EdgeDirection)
+  (h_ndo : (match (rotated.drop rule.pattern.length).head? with
+            | some step => some step.dir
+            | none => match spliced_steps.head? with
+                      | some step => some step.dir
+                      | none => none) = some next)
+  (h_rem_ne : (rotated.drop rule.pattern.length) ≠ []) :
+  ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩ := by
+  cases h_rem : rotated.drop rule.pattern.length with
+  | nil =>
+    contradiction
+  | cons step tl =>
+    have h_eq : step.dir = next := by
+      rw [h_rem] at h_ndo
+      dsimp only [List.head?] at h_ndo
+      injection h_ndo
+    use step.turn, step.parity
+    rw [← h_eq]
+    rfl
+
+lemma remaining_is_consistent (rotated : List BoundaryStep) (h_dc : isDirConsistent rotated) (k : Nat) :
+  isDirConsistent (rotated.drop k) := by
+  sorry
+
+lemma spliced_steps_updated_is_consistent (rule : RewriteRule) (h_mem : rule ∈ generateRules)
+  (spliced_steps : List BoundaryStep) (next_dir_opt : Option EdgeDirection)
+  (spliced_steps_updated : List BoundaryStep) (h_eq : spliced_steps_updated = steps_updated spliced_steps next_dir_opt) :
+  isDirConsistent spliced_steps_updated := by
+  sorry
+
+lemma isDirConsistent_append (L R : List BoundaryStep) (hL : isDirConsistent L) (hR : isDirConsistent R)
+  (h_weld_left : L ≠ [] → R ≠ [] → ∀ (hL_ne : L ≠ []) (hR_ne : R ≠ []),
+    have h0 : 0 < R.length := by
+      cases R with
+      | nil => contradiction
+      | cons => simp
+    (R.get ⟨0, h0⟩).dir.val = (((L.getLast hL_ne).dir.val + (L.getLast hL_ne).turn.toStep30) % 12))
+  (h_weld_right : L ≠ [] → R ≠ [] → ∀ (hL_ne : L ≠ []) (hR_ne : R ≠ []),
+    have h0 : 0 < L.length := by
+      cases L with
+      | nil => contradiction
+      | cons => simp
+    (L.get ⟨0, h0⟩).dir.val = (((R.getLast hR_ne).dir.val + (R.getLast hR_ne).turn.toStep30) % 12)) :
+  isDirConsistent (L ++ R) := by
+  sorry
+
+theorem peelBoundary_dir_consistent (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
+  (h_match : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps i.val)) = some rule) :
+  let rotated := rotateList B.steps i.val
+  let h_pos : 0 < rotated.length := by
+    rw [length_rotateList]
+    have h_ge := B.length_ge_two
+    omega
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with
+              | some step => some step.dir
+              | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  isDirConsistent (spliced_steps_updated ++ remaining) := by
+  dsimp only
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  let h_pos : 0 < rotated.length := by
+    rw [length_rotateList]
+    have h_ge := B.length_ge_two
+    omega
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with
+              | some step => some step.dir
+              | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  have h_dc_rot : isDirConsistent rotated := rotateList_isDirConsistent B.steps B.dir_consistent i.val
+  have h_dc_rem : isDirConsistent remaining := remaining_is_consistent rotated h_dc_rot rule.pattern.length
+  have h_dc_spl : isDirConsistent spliced_steps_updated := spliced_steps_updated_is_consistent rule h_mem spliced_steps next_dir_opt spliced_steps_updated rfl
+  exact isDirConsistent_append spliced_steps_updated remaining h_dc_spl h_dc_rem (by sorry) (by sorry)
+
+lemma peelBoundary_stitch_sum (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
+  (h_match : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps i.val)) = some rule)
+  (h_pos : 0 < (rotateList B.steps i.val).length) :
+  let rotated := rotateList B.steps i.val
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with
+              | some step => some step.dir
+              | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  turnSum spliced_steps_updated = turnSum (rotated.take rule.pattern.length) := by
+  dsimp only
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with
+              | some step => some step.dir
+              | none => none
+  have h_spliced_ne : spliced_steps ≠ [] := by
+    intro hc
+    have h_len : spliced_steps.length = 0 := by rw [hc, List.length_nil]
+    have h_spliced_len : spliced_steps.length = rule.replacement.length := by
+      dsimp [spliced_steps]
+      rw [length_propagateSplicedSteps]
+    have h_len_repl := rule_replacement_nonempty h_mem
+    omega
+  have h_spliced_len_ne : spliced_steps.length ≠ 0 := by
+    intro hc
+    apply h_spliced_ne
+    cases h_eq : spliced_steps with
+    | nil => rfl
+    | cons hd tl =>
+        rw [h_eq] at hc
+        dsimp only [List.length] at hc
+        contradiction
+  have h_stitch := turnSum_steps_updated spliced_steps next_dir_opt h_spliced_len_ne
+  have h_prop := turnSum_propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  have h_inv := foldl_inverse_eq_neg rule.replacement
+  rw [h_stitch]
+  cases h_ndo : next_dir_opt with
+  | none =>
+      have h_alg := peelBoundary_stitch_algebraic_invariant_none rule h_mem spliced_steps h_spliced_ne rotated h_ndo
+      rw [h_ndo] at h_stitch
+      dsimp only at h_stitch
+      dsimp only [rotated] at *
+      rw [h_prop, h_inv]
+      omega
+  | some next =>
+      have h_dc : isDirConsistent rotated := rotateList_isDirConsistent B.steps B.dir_consistent i.val
+      have h_rem_ne : (rotated.drop rule.pattern.length) ≠ [] := by
+        intro hc
+        have h_len_rem : (rotated.drop rule.pattern.length).length = 0 := by rw [hc, List.length_nil]
+        rw [List.length_drop] at h_len_rem
+        have h_rule_len := rule_pattern_length_lt rule h_mem rotated h_pos
+        omega
+      have h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩ :=
+        next_dir_opt_some_imp_next_step rotated rule spliced_steps next h_ndo h_rem_ne
+      have h_alg := peelBoundary_stitch_algebraic_invariant_some rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match rfl h_next h_dc
+      rw [h_ndo] at h_stitch
+      dsimp only at h_stitch
+      dsimp only [rotated] at *
+      rw [h_prop, h_inv]
+      omega
+
+
 
 /-- Phase 4: The Inductive Peel Boundary Reduction.
-    Given a BoundaryPath and the uniquely identified anchor tile T,
-    peeling T results in a valid BoundaryPath B' or resolves to empty. -/
-def peelBoundary (B : BoundaryPath) (T : TileId) : Option BoundaryPath :=
+    Given a BoundaryPath and the uniquely identified anchor index i,
+    peeling B at index i results in a valid BoundaryPath B' or resolves to empty. -/
+noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Option BoundaryPath :=
   if h_zero : B.tile_count <= 1 then
     none
   else
-    have h_pos : B.steps.length > 0 := by
-      cases h_steps : B.steps with
-      | nil =>
-          have h_ne := B.non_empty
-          rw [h_steps] at h_ne
-          contradiction
-      | cons hd tl =>
-          simp only [List.length_cons, Nat.succ_pos]
-    let anchor_idx : Fin B.steps.length := ⟨0, h_pos⟩
-    let anchor_step := B.steps.get anchor_idx
-    let triplet := getTurnTriplet B anchor_idx
-    let T_perimeter := getRemainingPerimeter triplet
-    let steps' := splicePerimeter B.steps anchor_idx T_perimeter anchor_step.dir anchor_step.parity
-    some {
-      steps := steps',
-      tile_count := B.tile_count - 1,
-      non_empty := by
-        intro h_empty
-        have h_len : steps'.length = 0 := by rw [h_empty, List.length_nil]
-        have h_spliced_len := length_propagateSplicedSteps T_perimeter anchor_step.dir anchor_step.parity
-        have h_splice_len_eq_13 : T_perimeter.length = 13 := length_getRemainingPerimeter triplet
-        dsimp [steps', splicePerimeter] at h_len
-        rw [List.length_append, List.length_append, h_spliced_len, h_splice_len_eq_13] at h_len
-        omega,
-      dir_consistent := by
-        dsimp [steps']
-        exact splice_preserves_dir_consistency B anchor_idx T_perimeter,
-      simple := by sorry,
-      closed := by
-        change turnSum steps' = 360
-        have h_closed := B.closed
-        change turnSum B.steps = 360 at h_closed
-        have h_turnSum_B : turnSum B.steps = turnSum (List.take anchor_idx.val B.steps) + (B.steps.get anchor_idx).turn.toDegrees + turnSum (List.drop (anchor_idx.val + 1) B.steps) := by
-          have h_split' : B.steps = List.take anchor_idx.val B.steps ++ [B.steps.get anchor_idx] ++ List.drop (anchor_idx.val + 1) B.steps := steps_split B.steps anchor_idx
-          nth_rw 1 [h_split']
-          rw [turnSum_append, turnSum_append]
-          dsimp [turnSum]
-          omega
-        have h_turnSum_eq : turnSum steps' = turnSum B.steps := by
-          dsimp [steps', splicePerimeter]
-          rw [turnSum_append, turnSum_append]
-          rw [h_turnSum_B]
-          rw [curvature_splice_invariant B anchor_idx T_perimeter]
-        rw [h_turnSum_eq]
-        exact h_closed
-    }
+    let rotated := rotateList B.steps i.val
+    let turns := rotated.map (fun s => s.turn)
+    match h_match : findMaximalRule turns with
+    | some rule =>
+      let remaining := rotated.drop rule.pattern.length
+      have h_pos : 0 < rotated.length := by
+        rw [length_rotateList]
+        have h_ge := B.length_ge_two
+        omega
+      let anchor_step := rotated.get ⟨0, h_pos⟩
+      let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+      let next_dir_opt := match remaining.head? with
+        | some step => some step.dir
+        | none => match spliced_steps.head? with
+                  | some step => some step.dir
+                  | none => none
+      let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+      let steps' := spliced_steps_updated ++ remaining
+      some {
+        steps := steps',
+        tile_count := B.tile_count - 1,
+        non_empty := by
+          intro h_empty
+          have h_len : steps'.length = 0 := by rw [h_empty, List.length_nil]
+          have h_spliced_len : spliced_steps_updated.length = spliced_steps.length := by
+            dsimp [spliced_steps_updated]
+            rw [length_steps_updated]
+          have h_spl_len : spliced_steps.length = rule.replacement.length := by
+            dsimp [spliced_steps]
+            rw [length_propagateSplicedSteps]
+          have h_len_sum : steps'.length = spliced_steps_updated.length + remaining.length := by
+            dsimp [steps']
+            rw [List.length_append]
+          have h_repl_ne : rule.replacement.length > 0 := by
+            have h_mem := findMaximalRule_mem h_match
+            exact rule_replacement_nonempty h_mem
+          omega,
+        dir_consistent := by
+          have h_match_unfolded : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps i.val)) = some rule := h_match
+          exact peelBoundary_dir_consistent B i rule h_match_unfolded,
+        simple := by sorry,
+        closed := by
+          dsimp [isClosedCCW]
+          change turnSum (spliced_steps_updated ++ remaining) = 360
+          rw [turnSum_append]
+          have h_stitch_sum : turnSum spliced_steps_updated = turnSum (rotated.take rule.pattern.length) := by
+            have h_match_unfolded : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps i.val)) = some rule := h_match
+            exact peelBoundary_stitch_sum B i rule h_match_unfolded h_pos
+          rw [h_stitch_sum]
+          have h_rotated_eq : rotated.take rule.pattern.length ++ remaining = rotated := by
+            dsimp [remaining]
+            exact List.take_append_drop rule.pattern.length rotated
+          have h_rotated_sum : turnSum (rotated.take rule.pattern.length) + turnSum remaining = 360 := by
+            rw [← turnSum_append, h_rotated_eq, turnSum_rotateList]
+            exact B.closed
+          exact h_rotated_sum
+      }
+    | none => none
 
-
-theorem peel_preserves_boundary_properties (B : BoundaryPath) (T : TileId) (B' : BoundaryPath)
-  (h_peel : peelBoundary B T = some B') :
+theorem peel_preserves_boundary_properties (B : BoundaryPath) (i : Fin B.steps.length) (B' : BoundaryPath)
+  (h_peel : peelBoundary B i = some B') :
   B'.tile_count < B.tile_count := by
   dsimp [peelBoundary] at h_peel
   split at h_peel
   · contradiction
-  · simp only [Option.some.injEq] at h_peel
-    cases h_peel
-    change B.tile_count - 1 < B.tile_count
-    omega
+  · split at h_peel
+    · rename_i h_rule
+      simp only [Option.some.injEq] at h_peel
+      cases h_peel
+      change B.tile_count - 1 < B.tile_count
+      omega
+    · contradiction
 
 end Spectrebound
