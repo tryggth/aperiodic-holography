@@ -8,9 +8,9 @@
 
 ## The Theorem
 
-The **Aperiodic Holography Theorem** formalises a striking rigidity property of the Spectre tile (Smith, Myers, Kaplan & Goodman-Strauss, 2023):
+The **Aperiodic Holography Theorem** formalises a striking bulk-boundary rigidity property of patches composed of Spectre tiles (Smith, Myers, Kaplan & Goodman-Strauss, 2023):
 
-> *In any valid tiling by the Spectre monotile, the sequence of exterior boundary turns of a single tile uniquely encodes the full interior neighbourhood — including the arrangement of all adjacent tiles. No two distinct interior configurations can produce the same boundary walk.*
+> *Given the 1D sequence of exterior boundary steps enclosing any finite, simply connected patch of Spectre monotiles, the combinatorial data of the perimeter walk uniquely and deterministically reconstructs the entire 2D interior bulk configuration. No two distinct interior tile arrangements can project the same global boundary walk.*
 
 This is a discrete analogue of holography: the boundary determines the bulk. The proof proceeds in two parts:
 
