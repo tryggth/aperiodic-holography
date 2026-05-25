@@ -1,0 +1,174 @@
+\documentclass[10pt]{beamer}
+
+% Choose a professional, clean academic theme
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm, amsfonts}
+\usepackage{listings}
+\usepackage{color}
+
+% Configure syntax highlighting for Lean 4 snippets
+\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % Reddish keywords
+\definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % Muted gray comments
+\definecolor{stringcolor}{rgb}{0.1, 0.5, 0.1}    % Soft green strings
+\definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}    % Deep blue types/tactics
+
+\lstdefinelanguage{Lean4}{
+    keywords={theorem, lemma, def, abbrev, structure, inductive, namespace, open, match, with, if, then, else, let, have, by, exact, rw, simp, cases, induction, obtain, use, term, termination_by, noncomputable},
+    sensitive=true,
+    comment=[l]{--},
+    morecomment=[s]{/-}{-/},
+    morestring=[b]",
+    basicstyle=\ttfamily\scriptsize,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    commentstyle=\color{commentcolor}\itshape,
+    stringstyle=\color{stringcolor},
+    breaklines=true,
+    extendedchars=true,
+    literate={→}{{$\to$}}1 {⦃}{{$\{\![$}}1 {⦄}{{$]\!\}$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {≡}{{$\equiv$}}1 {ℤ}{{$\mathbb{Z}$}}1 {ζ}{{$\zeta$}}1 {√}{{$\sqrt{}$}}1 {𝕏}{{$\mathbb{X}$}}1 {∈}{{$\in$}}1 {⋯}{{$\dots$}}1
+}
+
+% Presentation Metadata
+\title[Aperiodic Holography]{The Aperiodic Holography Theorem for Spectre Monotiles}
+\subtitle{Formally Verifying 2D Bulk Rigidity from 1D Boundary Strings in Lean 4}
+\author[James F. Walters]{James F. Walters}
+\institute[Port Townsend]{Port Townsend Recreational Math Club}
+\date{\today}
+
+\begin{document}
+
+% Title Slide
+\frame{\titlepage}
+
+% SECTION 1: THE HOOK
+\section{Dimensionality Reduction}
+
+\begin{frame}{The Hook: Reducing Tiling Dimensionality}
+\begin{itemize}
+    \item \textbf{The Discovery:} The Spectre monotile establishes a strictly chiral Einstein parameter space—enforcing non-periodic planar tilings under translation and rotation without reflections.
+    \item \textbf{The Geometric Obstacle:} Traditional multi-tile patch validation requires continuous 2D planar graph tracking, ray-casting intersection checks, and float-heavy coordinate sweeps.
+    \item \textbf{Our Formulation:} The \textbf{Aperiodic Holography Theorem} completely bypasses multi-dimensional search fields.
+    \item \textbf{The Core Thesis:} The 1D sequence of exterior boundary turns enclosing a finite, simply connected patch uniquely and deterministically dictates the full 2D interior configuration.
+\end{itemize}
+\begin{block}{The Holographic Paradigm}
+The boundary path string entirely determines the bulk. Distinct perimeters map injectively to distinct interiors.
+\end{block}
+\end{frame}
+
+\begin{frame}{Formalizing the 1D Lattice Walk}
+Each boundary step along the path is serialized as an inductive structure tracking local and absolute geometric invariants:
+\begin{block}{The BoundaryStep Structure (Lean 4)}
+\begin{itemize}
+    \item \texttt{dir : EdgeDirection} $\implies$ Absolute compass heading mapped flatly to $\mathbb{Z}_{12}$ (\texttt{Fin 12}) via 30$^\circ$ discretization steps.
+    \item \texttt{turn : ExteriorTurn} $\implies$ Localized change in direction matching one of five discrete rotational lattice vertices.
+    \item \texttt{parity : EdgeParity} $\implies$ Alternating binary tracking state mapping the current edge segment to its structural type.
+\end{itemize}
+\end{block}
+\vfill
+$$\text{Permissible Turns} \in \{t_{-90}, t_{-60}, t_{0}, t_{60}, t_{90}\}$$
+\end{frame}
+
+% SECTION 2: CORE INVARIANTS
+\section{Core Invariants}
+
+\begin{frame}{The Curvature Constraint (Discrete Gauss-Bonnet)}
+A valid path traversing a closed counterclockwise boundary loop must accumulate a total net rotation of exactly $+360^\circ$ to achieve valid loop closure.
+\vfill
+\begin{itemize}
+    \item \textbf{The Diophantine Turning Equation:} Dividing the loop rotation by our scale factor of 30$^\circ$ yields an absolute algebraic invariant:
+    \begin{equation}
+    3L_{90} + 2L_{60} - 2R_{60} - 3R_{90} = 12
+    \end{equation}
+    \item \textbf{The Edge Parity Constraint:} Because $60^\circ$ steps preserve parity and $90^\circ$ steps toggle it, returning to the starting segment requires an even number of orthogonal transitions:
+    \begin{equation}
+    (L_{90} + R_{90}) \equiv 0 \pmod 2
+    \end{equation}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Convex Anchor Theorem}
+\begin{theorem}[Convex Anchor Necessity]
+Every valid, non-empty boundary path $B$ enclosing a multi-tile bulk patch mathematically requires at least one academic, outward-pointing left 90$^\circ$ corner ($L_{90} \ge 1$).
+\end{theorem}
+\vfill
+\textbf{Proof Sketch by Contradiction:}
+\begin{enumerate}
+    \item Assume $L_{90} = 0 \implies R_{90}$ is an even integer $2k$ via parity constraint.
+    \item Substituting into the Turning Equation yields: $L_{60} = 6 + R_{60} + 3k$.
+    \item This forces a major surplus of Left $60^\circ$ transitions ($L_{60} \ge 6$), forming a wrapped hull that traps internal vertices.
+    \item The massive pool of interior $90^\circ$ corners ($5N$ corners scaling against an $O(\sqrt{N})$ boundary capacity) cannot escape, forcing them to assemble into internal four-tile crosses.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]{The Cyclotomic Integer Lattice Contradiction}
+To eliminate floating-point rounding errors, all geometry is performed over the ring of cyclotomic integers $\mathbb{Z}[\zeta_{12}]$ as a free $\mathbb{Z}$-module of rank 4: $(a, b, c, d) \in \mathbb{Z}^4$.
+\vfill
+To evaluate segment collisions exactly, points project into the quadratic integer sub-ring $\mathbb{Z}[\sqrt{3}] \subset \mathbb{R}$ via integer scaling:
+$$\text{toPoint2D}(a, b, c, d) = \Big( (2a + c) + b\sqrt{3}, \ (b + 2d) + c\sqrt{3} \Big)$$
+\vfill
+\begin{lstlisting}[language=Lean4]
+-- Exact compile-time evaluation of all 625 cross orientations
+theorem crosses_always_overlap : ∀ c ∈ generateCrosses, checkCrossOverlap c = true := by
+  decide
+\end{lstlisting}
+\begin{block}{Contradiction Closed}
+The Lean kernel certifies that all 625 cross configurations result in physical overlaps. Internal crosses cannot exist $\implies L_{90} \ge 1$.
+\end{block}
+\end{frame}
+
+% SECTION 3: THE RECURSIVE ENGINE
+\section{The Peeling Pipeline}
+
+\begin{frame}[fragile]{Chiral Forcing and the 155-Rule FSM}
+\begin{itemize}
+    \item Because the Spectre monotile is strictly chiral and asymmetric, no two $90^\circ$ corners on a single tile share the same flanking turns.
+    \item Minimum interior angles are $90^\circ$, meaning exactly one tile can occupy a convex corner vertex without causing overlap violations.
+\end{itemize}
+\vfill
+\begin{lstlisting}[language=Lean4]
+-- Computational proof that all 3-turn corner profiles are unique
+theorem spectre_corners_are_unique : (getTileTriplets spectrePerimeterTurns).Nodup := by
+  decide
+\end{lstlisting}
+\vfill
+Reading the 3-turn sliding window centered on a convex anchor uniquely forces the identity and orientation of that tile, matching a static lookup database of \textbf{155 deterministic prefix rewrite rules}.
+\end{frame}
+
+\begin{frame}{The Peeling Operator and Seam Welding}
+The reduction of a patch perimeter is governed by the core single-tile peeling operator \texttt{peelBoundary} inside \texttt{SpectreBoundary.lean}:
+\vfill
+\begin{enumerate}
+    \item \textbf{Cropping:} Rotates the list to the anchor index and drops matching exposed external turns via \texttt{List.drop rule.pattern.length}.
+    \item \textbf{Splicing:} Generates and splices in the inverted sequence of unexposed interior steps via \texttt{propagateSplicedSteps}.
+    \item \textbf{Stitch Welding:} Calculates and updates interface headings at connection joints via \texttt{steps\_updated} and \texttt{updateLastTurn} to preserve directional alignment.
+\end{enumerate}
+\vfill
+\begin{block}{Certified Boundary Conservation}
+The Lean kernel formally certifies that this list surgery preserves macroscopic consistency: \texttt{peelBoundary\_dir\_consistent} verifies heading alignment and loop curvature closure across connection seams.
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]{Well-Founded Global Uniqueness}
+The recursive decoder dynamically targets a convex anchor, maps the forced neighborhood, and peels the boundary to establish a well-founded reduction loop:
+\vfill
+\begin{lstlisting}[language=Lean4]
+noncomputable def decodeInterior (B : BoundaryPath) : List TileId :=
+  if B.tile_count <= 1 then []
+  else
+    let i := Classical.choose (convex_anchor_index B)
+    let T := Classical.choose (forcing_neighborhood B i ...)
+    match h_peel : peelBoundary B i with
+    | some B' => T :: decodeInterior B'
+    | none    => [T]
+termination_by B.tile_count
+\end{lstlisting}
+\vfill
+Because each peel strictly decreases the patch area (\texttt{B'.tile\_count < B.tile\_count}), Lean certifies termination and closes global uniqueness:
+\begin{center}
+\texttt{theorem aperiodic\_holography\_uniqueness} $\implies$ The 1D boundary path string uniquely determines the 2D interior tile bulk.
+\end{center}
+\end{frame}
+
+\end{document}
