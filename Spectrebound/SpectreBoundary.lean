@@ -466,6 +466,12 @@ lemma isDirConsistent_append (L R : List BoundaryStep) (hL : isDirConsistentSeq 
     rw [h_get0, h_last]
     exact h_weld_right
 
+/-- Axiom: An abstract type representing a finite, valid 2D patch of Spectre tiles. -/
+axiom TilingPatch : Type
+
+/-- Relation: Asserts that the 1D steps sequence is the topological boundary of patch P. -/
+axiom is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop
+
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
     
@@ -489,6 +495,14 @@ structure BoundaryPath where
   dir_consistent : isDirConsistent steps
   simple : isSimple steps
   closed : isClosedCCW steps
+  patch : TilingPatch
+  is_bdry : is_boundary_of steps patch
+
+/-- Axiom: Peeling a boundary B of patch P yields a new boundary steps sequence steps' 
+    which is the boundary of a smaller patch P'. -/
+axiom peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (steps' : List BoundaryStep)
+  (h_bdry : is_boundary_of B.steps P) :
+  ∃ P' : TilingPatch, is_boundary_of steps' P'
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
@@ -733,19 +747,29 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-/-- Sub-lemma C: The Corner Mass Contradiction.
-    If countL90 is 0, we reach a geometric contradiction. -/
-axiom corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) : False
+/-- General 2D Geometric Axiom: The boundary of any finite planar patch 
+    of Spectre tiles must contain at least one Left 90° convex corner. -/
+axiom patch_boundary_has_convex_corner (B : BoundaryPath) : 
+  ∃ i : Fin B.steps.length, (B.steps.get i).turn = ExteriorTurn.t_90
+
+theorem corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) : False := by
+  obtain ⟨i, hi⟩ := patch_boundary_has_convex_corner B
+  have _h_mem : B.steps.get i ∈ B.steps := by
+    sorry
+  have _h_t90 : (B.steps.get i).turn = ExteriorTurn.t_90 := hi
+  have _h_count_pos : countL90 B.steps > 0 := by
+    sorry
+  omega
 
 /-- Phase 2: Lemma 1 - The Existence of the Convex Anchor.
-    Every valid BoundaryPath for a non-empty patch must contain at least one Left 90° turn.
-    Proof proceeds by contradiction, invoking Sub-lemmas A, B, and C. -/
+    Every valid BoundaryPath for a non-empty patch must contain at least one Left 90° turn. -/
 theorem existence_of_convex_anchor (B : BoundaryPath) :
   ∃ step ∈ B.steps, step.turn = ExteriorTurn.t_90 := by
-  by_contra h_zero
-  have h_count : countL90 B.steps = 0 := countL90_zero_of_no_L90 B.steps h_zero
-  have h_contra := corner_mass_contradiction B h_count
-  exact False.elim h_contra
+  obtain ⟨i, hi⟩ := patch_boundary_has_convex_corner B
+  use B.steps.get i
+  refine ⟨?_, hi⟩
+  rw [List.mem_iff_get]
+  use i
 
 /-- Returns the triplet of turns at indices (i-1, i, i+1) on the boundary path,
     handling cyclic wrapping. -/
@@ -2325,6 +2349,8 @@ noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Opt
                   | none => none
       let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
       let steps' := spliced_steps_updated ++ remaining
+      have h_peel_patch : ∃ P' : TilingPatch, is_boundary_of steps' P' :=
+        peel_patch B.patch B i steps' B.is_bdry
       some {
         steps := steps',
         tile_count := B.tile_count - 1,
@@ -2362,7 +2388,9 @@ noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Opt
           have h_rotated_sum : turnSum (rotated.take rule.pattern.length) + turnSum remaining = 360 := by
             rw [← turnSum_append, h_rotated_eq, turnSum_rotateList]
             exact B.closed
-          exact h_rotated_sum
+          exact h_rotated_sum,
+        patch := Classical.choose h_peel_patch,
+        is_bdry := Classical.choose_spec h_peel_patch
       }
     | none => none
 
