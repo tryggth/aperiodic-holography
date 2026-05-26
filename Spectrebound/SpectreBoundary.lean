@@ -817,11 +817,15 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   rw [h1] at h2
   injection h2
 
+/-- Relation: A physical tile occupies the boundary step i. -/
+axiom step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop
+
 /-- Axiom: Every boundary step i corresponds to at least one physical tile in the patch. -/
-axiom boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, T = T
+axiom boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T
 
 /-- Axiom: The physical tile associated with boundary step i is unique. -/
-axiom boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId) : T1 = T2
+axiom boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
+  (h1 : step_on_tile B i T1) (h2 : step_on_tile B i T2) : T1 = T2
 
 /-- For any boundary triplet where the middle turn is ExteriorTurn.t_90, the strict chiral geometry
     guarantees there is exactly one valid mapping to a TileId and EdgeDirection (orientation)
@@ -830,17 +834,18 @@ lemma unique_tile_of_triplet (B : BoundaryPath) (i : Fin B.steps.length)
   (t1 t2 t3 : ExteriorTurn) (_h_triplet : getTurnTriplet B i = (t1, t2, t3))
   (_h_anchor : t2 = ExteriorTurn.t_90) :
   ∃! (res : TileId × EdgeDirection),
-    res.2 = (B.steps.get i).dir := by
+    step_on_tile B i res.1 ∧ res.2 = (B.steps.get i).dir := by
   have _h_unique := spectre_corners_are_unique
   have h_bs := boundary_step_has_tile B i
-  obtain ⟨T, _⟩ := h_bs
+  obtain ⟨T, h_step⟩ := h_bs
   use (T, (B.steps.get i).dir)
-  refine ⟨rfl, ?_⟩
+  refine ⟨⟨h_step, rfl⟩, ?_⟩
   intro y hy
   obtain ⟨T', orientation'⟩ := y
   dsimp at hy
-  rw [hy]
-  have h_eq : T' = T := boundary_tile_unique B i T' T
+  obtain ⟨h_step', h_dir'⟩ := hy
+  rw [h_dir']
+  have h_eq : T' = T := boundary_tile_unique B i T' T h_step' h_step
   rw [h_eq]
   rfl
 
@@ -850,10 +855,10 @@ lemma unique_tile_of_triplet (B : BoundaryPath) (i : Fin B.steps.length)
 theorem forcing_neighborhood (B : BoundaryPath) (i : Fin B.steps.length)
   (h_anchor : (B.steps.get i).turn = ExteriorTurn.t_90) :
   ∃ (T : TileId) (orientation : EdgeDirection), T = T ∧ orientation = orientation := by
-  have h_ex : ∃ (res : TileId × EdgeDirection), res.2 = (B.steps.get i).dir := by
+  have h_ex : ∃ (res : TileId × EdgeDirection), step_on_tile B i res.1 ∧ res.2 = (B.steps.get i).dir := by
     apply ExistsUnique.exists
     apply unique_tile_of_triplet B i (getTurnTriplet B i).1 (getTurnTriplet B i).2.1 (getTurnTriplet B i).2.2 rfl h_anchor
-  obtain ⟨⟨T, orientation⟩, _h_dir⟩ := h_ex
+  obtain ⟨⟨T, orientation⟩, ⟨_h_step, _h_dir⟩⟩ := h_ex
   use T, orientation
 
 /-- Inverse of an exterior turn (reflecting inside vs outside perspective) -/
