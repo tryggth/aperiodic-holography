@@ -639,6 +639,14 @@ theorem diophantine_turning_equation (B : BoundaryPath) :
   rw [turn_sum_eq_linear_combo] at hc
   omega
 
+/-- The Parity Constraint:
+    Because the path is closed and directionally consistent, the total number of
+    90-degree turns (L90 + R90) must be even (since a 90° turn changes grid parity). -/
+theorem parity_constraint (B : BoundaryPath) :
+  (countL90 B.steps + countR90 B.steps) % 2 = 0 := by
+  have h_dioph := diophantine_turning_equation B
+  omega
+
 def EdgeParity.toggle : EdgeParity → EdgeParity
   | standard => reversed
   | reversed => standard
@@ -674,10 +682,6 @@ lemma parityFlips_eq_counts (L : List BoundaryStep) :
                   Bool.or_true, Bool.or_false,
                   ite_true, ite_false, List.length_cons]; omega)
 
-/-- Axiom: For any closed boundary loop, traversing the turns toggles the initial parity
-    exactly parityFlips B.steps times and returns to the original parity. -/
-axiom boundary_parity_loop (B : BoundaryPath) :
-  applyToggle (parityFlips B.steps) EdgeParity.standard = EdgeParity.standard
 
 lemma parity_returns_iff_even_flips (n : Nat) :
   applyToggle n EdgeParity.standard = EdgeParity.standard ↔ n % 2 = 0 := by
@@ -700,16 +704,14 @@ lemma parity_returns_iff_even_flips (n : Nat) :
           contradiction
         omega
 
-/-- The Parity Constraint:
-    Because the path is closed and directionally consistent, the total number of
-    90-degree turns (L90 + R90) must be even (since a 90° turn changes grid parity). -/
-theorem parity_constraint (B : BoundaryPath) :
-  (countL90 B.steps + countR90 B.steps) % 2 = 0 := by
-  have h_loop := boundary_parity_loop B
+/-- Theorem: For any closed boundary loop, traversing the turns toggles the initial parity
+    exactly parityFlips B.steps times and returns to the original parity. -/
+theorem boundary_parity_loop (B : BoundaryPath) :
+  applyToggle (parityFlips B.steps) EdgeParity.standard = EdgeParity.standard := by
+  have h_even := parity_constraint B
+  rw [← parityFlips_eq_counts] at h_even
   have h_iff := parity_returns_iff_even_flips (parityFlips B.steps)
-  have h_even : parityFlips B.steps % 2 = 0 := h_iff.mp h_loop
-  rw [parityFlips_eq_counts] at h_even
-  exact h_even
+  exact h_iff.mpr h_even
 
 /-- Sub-lemma A: The Even R90 Consequence.
     If the number of L90 turns is 0, the number of R90 turns must be even. -/
