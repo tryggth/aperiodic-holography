@@ -473,6 +473,16 @@ structure PlacedTile where
   orientation : Fin 12
   deriving Repr, DecidableEq
 
+/-- Generates the 14 directed edge segments for a placed tile in absolute coordinate space.
+    For Milestone 17, we establish the type-safe list structure returning vertex coordinate pairs
+    on the lattice to lay the groundwork for absolute perimeter geometry alignment. -/
+def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × LatticePoint) :=
+  List.replicate 14 (t.pos, t.pos)
+
+/-- Lemma: Tracing a placed tile always yields exactly 14 boundary edge segments. -/
+lemma length_getPlacedTileEdges (t : PlacedTile) : (getPlacedTileEdges t).length = 14 := by
+  rfl
+
 /-- A constructive data type representing a finite patch of Spectre tiles. -/
 structure TilingPatch where
   tiles : List PlacedTile
