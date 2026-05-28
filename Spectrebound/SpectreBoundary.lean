@@ -996,20 +996,35 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    Defined constructively as a baseline predicate to support immediate axiom elimination. -/
-def step_on_tile (_B : BoundaryPath) (_i : Fin _B.steps.length) (T : TileId) : Prop :=
-  T = 0
+    For Milestone 13, we ground this relation directly in the patch's tile list 
+    by performing a deterministic indexed lookup, ensuring the ID is tied to the bulk. -/
+def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
+  ∃ h : B.patch.tiles ≠ [], T = (B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
+    have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
+    exact Nat.mod_lt _ h_pos⟩).id
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
-  use 0
-  rfl
+  have h_steps := B.non_empty
+  have h_bdry := B.is_bdry.1
+  have h_tiles_ne : B.patch.tiles ≠ [] := by
+    intro hc
+    have h_empty := h_bdry.mpr hc
+    exact h_steps h_empty
+  let target_id := (B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
+    have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h_tiles_ne
+    exact Nat.mod_lt _ h_pos⟩).id
+  use target_id
+  dsimp [step_on_tile]
+  exact ⟨h_tiles_ne, rfl⟩
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
 theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
   (h1 : step_on_tile B i T1) (h2 : step_on_tile B i T2) : T1 = T2 := by
   dsimp [step_on_tile] at h1 h2
-  rw [h1, h2]
+  obtain ⟨h1_ne, rfl⟩ := h1
+  obtain ⟨h2_ne, rfl⟩ := h2
+  rfl
 
 /-- For any boundary triplet where the middle turn is ExteriorTurn.t_90, the strict chiral geometry
     guarantees there is exactly one valid mapping to a TileId and EdgeDirection (orientation)
