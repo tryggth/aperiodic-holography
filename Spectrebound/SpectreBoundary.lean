@@ -519,9 +519,21 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
   · use { tiles := [] }
     dsimp [is_boundary_of]
     simp [h_steps]
-  · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
-    dsimp [is_boundary_of]
-    simp [h_steps]
+  · -- steps' ≠ []: Inherit and decrement the surviving tiles from patch P.
+    -- Case-split on whether the decremented tile list is itself empty, so we
+    -- can give a concrete non-empty witness in every branch.
+    by_cases h_nt : P.tiles.drop 1 = []
+    · -- Drop exhausted the list: fall back to a canonical singleton tile
+      use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
+      dsimp [is_boundary_of]
+      simp [h_steps]
+    · -- Drop left at least one tile: inherit the decremented list directly
+      use { tiles := P.tiles.drop 1 }
+      dsimp [is_boundary_of]
+      -- simp normalises `List.drop 1 P.tiles` → `P.tiles.tail` in the goal;
+      -- bring h_nt into the same normal form before the final close.
+      simp only [List.drop_one] at h_nt
+      simp [h_steps, h_nt]
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
