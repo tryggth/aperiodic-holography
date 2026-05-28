@@ -513,9 +513,21 @@ def sumPatchInventory (tiles : List PlacedTile) : TileCornerInventory :=
   | [] => { c90 := 0, c120 := 0, c180 := 0, c240 := 0, c270 := 0 }
   | _ :: ts => TileCornerInventory.add singleTileInventory (sumPatchInventory ts)
 
+lemma patch_inventory_inj (A B : TileCornerInventory)
+  (h : TileCornerInventory.add singleTileInventory A = TileCornerInventory.add singleTileInventory B) : A = B := by
+  cases A; cases B
+  dsimp [TileCornerInventory.add, singleTileInventory] at h
+  injection h with h90 h120 h180 h240 h270
+  congr
+  · omega
+  · omega
+  · omega
+  · omega
+  · omega
+
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 9, we enforce that the aggregate structural face inventory tracks 
-    consistently across the boundary representation. -/
+    For Milestone 10, we replace the reflexive placeholder tautology with a genuine physical 
+    ledger invariant asserting that the total accumulated corner mass equals the expected multi-tile corner pool footprint. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
   (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12) ∧
@@ -523,7 +535,7 @@ def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
     (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
   (∀ s ∈ steps, s.dir.val < 12) ∧
-  (sumPatchInventory P.tiles = sumPatchInventory P.tiles)
+  (sumPatchInventory P.tiles = patchCornerInventory P.tiles.length)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -601,7 +613,21 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
         rw [h_get1, h_get2]
         exact h_bdry.2.2.2.1 (1 + j) h_lt1 h_lt2
       · intro s hs; exact s.dir.isLt
-      · rfl
+      · have h_ledger := h_bdry.2.2.2.2.2
+        cases h_P : P.tiles with
+        | nil =>
+          rw [h_P] at h_nt
+          contradiction
+        | cons hd tl =>
+          rw [h_P] at h_ledger
+          change sumPatchInventory (hd :: tl) = patchCornerInventory (tl.length + 1) at h_ledger
+          have h_add : sumPatchInventory (hd :: tl) = TileCornerInventory.add singleTileInventory (sumPatchInventory tl) := rfl
+          have h_corner : patchCornerInventory (tl.length + 1) = TileCornerInventory.add singleTileInventory (patchCornerInventory tl.length) := by
+            dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
+            congr <;> omega
+          rw [h_add, h_corner] at h_ledger
+          have h_inj := patch_inventory_inj _ _ h_ledger
+          exact h_inj
 
 
 /-- Enumerate valid orthogonal vertex configurations whose interior angles sum to 360° -/
