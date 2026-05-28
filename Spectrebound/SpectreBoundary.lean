@@ -479,10 +479,10 @@ structure TilingPatch where
   deriving Repr, DecidableEq
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For this initial structural milestone, we define it as a valid placeholder predicate
-    to maintain strict downstream type-checking compatibility. -/
-def is_boundary_of (_steps : List BoundaryStep) (_P : TilingPatch) : Prop :=
-  True
+    For Milestone 2, we enforce the core structural invariant that a boundary path 
+    is empty if and only if its underlying tile patch is empty. -/
+def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
+  (steps = [] ↔ P.tiles = [])
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -515,9 +515,13 @@ structure BoundaryPath where
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (steps' : List BoundaryStep)
   (_h_bdry : is_boundary_of B.steps P) :
   ∃ P' : TilingPatch, is_boundary_of steps' P' := by
-  -- We construct an empty placeholder patch for this initial stability milestone
-  use { tiles := [] }
-  trivial
+  by_cases h_steps : steps' = []
+  · use { tiles := [] }
+    dsimp [is_boundary_of]
+    simp [h_steps]
+  · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
+    dsimp [is_boundary_of]
+    simp [h_steps]
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
