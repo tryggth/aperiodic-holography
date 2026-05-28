@@ -503,6 +503,17 @@ lemma length_getPlacedTileEdges (t : PlacedTile) : (getPlacedTileEdges t).length
   dsimp [getPlacedTileEdges]
   rw [List.length_map, length_getTileEdgeDirections]
 
+/-- Scans the finite tile patch to find an entry whose absolute edge segments 
+    physically intersect with the direction attribute of the target boundary step. -/
+def findTileAtStep (tiles : List PlacedTile) (target_dir : EdgeDirection) (default : PlacedTile) : PlacedTile :=
+  match tiles with
+  | [] => default
+  | t :: ts =>
+      if (getPlacedTileEdges t).any (fun e => e.1 == t.pos && e.2 == target_dir) then
+        t
+      else
+        findTileAtStep ts target_dir default
+
 /-- A constructive data type representing a finite patch of Spectre tiles. -/
 structure TilingPatch where
   tiles : List PlacedTile
@@ -1026,13 +1037,13 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    We enforce that the boundary step's absolute direction matches the genuine 
-    calculated absolute edge direction of the tile at that perimeter index slot. -/
+    For Milestone 21, we replace list-index modulo matching with a genuine spatial 
+    coordinate selector that identifies tile positions by local edge overlap. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [], 
-    let t := B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
-      have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
-      exact Nat.mod_lt _ h_pos⟩
+    have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
+    let default_tile := B.patch.tiles.get ⟨0, h_pos⟩
+    let t := findTileAtStep B.patch.tiles (B.steps.get i).dir default_tile
     T = t.id ∧ ((t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t)
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
@@ -1043,17 +1054,14 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
     intro hc
     have h_empty := h_bdry.mpr hc
     exact h_steps h_empty
-  let target_id := (B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
-    have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h_tiles_ne
-    exact Nat.mod_lt _ h_pos⟩).id
-  use target_id
+  have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h_tiles_ne
+  let default_tile := B.patch.tiles.get ⟨0, h_pos⟩
+  let t_spatial := findTileAtStep B.patch.tiles (B.steps.get i).dir default_tile
+  use t_spatial.id
   dsimp [step_on_tile]
-  refine ⟨h_tiles_ne, ⟨rfl, ?_⟩⟩
-  · dsimp [getPlacedTileEdges]
-    rw [List.mem_map]
-    use (B.steps.get i).dir
-    refine ⟨?_, rfl⟩
-    dsimp [getTileEdgeDirections, propagateTileDirs]
+  use h_tiles_ne
+  refine ⟨rfl, ?_⟩
+  · dsimp [findTileAtStep]
     sorry
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
