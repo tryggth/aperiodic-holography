@@ -473,16 +473,35 @@ structure PlacedTile where
   orientation : Fin 12
   deriving Repr, DecidableEq
 
-/-- Generates the 14 directed edge segments for a placed tile in absolute coordinate space.
-    For Milestone 19, we fully ground the list by generating an indexed sequence of directional 
-    offsets, removing the replicate placeholder symmetry. -/
-def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × Fin 14) :=
-  (List.finRange 14).map (fun k => (t.pos, k))
+/-- Helper function to compute the 14 absolute edge directions of a tile given an initial direction. -/
+def propagateTileDirs (turns : List ExteriorTurn) (curr_dir : EdgeDirection) : List EdgeDirection :=
+  match turns with
+  | [] => []
+  | t :: ts =>
+      let next_val := (curr_dir.val : Int) + t.toStep30
+      let next_mod := (next_val % 12 + 12) % 12
+      have h_lt : next_mod.toNat < 12 := by omega
+      let next_dir : EdgeDirection := ⟨next_mod.toNat, h_lt⟩
+      curr_dir :: propagateTileDirs ts next_dir
+
+/-- Computes the 14 true absolute edge directions for a placed tile based on its orientation. -/
+def getTileEdgeDirections (t : PlacedTile) : List EdgeDirection :=
+  propagateTileDirs spectrePerimeterTurns t.orientation
+
+/-- Lemma: A tile always has exactly 14 absolute edge directions. -/
+lemma length_getTileEdgeDirections (t : PlacedTile) : (getTileEdgeDirections t).length = 14 := by
+  dsimp [getTileEdgeDirections, propagateTileDirs]
+  rfl
+
+/-- Generates the 14 directed edge configurations for a placed tile in absolute space.
+    For Milestone 20, we pair the position with the genuine calculated absolute edge directions. -/
+def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × EdgeDirection) :=
+  (getTileEdgeDirections t).map (fun d => (t.pos, d))
 
 /-- Lemma: Tracing a placed tile always yields exactly 14 boundary edge segments. -/
 lemma length_getPlacedTileEdges (t : PlacedTile) : (getPlacedTileEdges t).length = 14 := by
   dsimp [getPlacedTileEdges]
-  rw [List.length_map, List.length_finRange]
+  rw [List.length_map, length_getTileEdgeDirections]
 
 /-- A constructive data type representing a finite patch of Spectre tiles. -/
 structure TilingPatch where
@@ -1007,14 +1026,14 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    We finalize this track by requiring that the selected tile index maps onto a non-trivial
-    indexed direction tuple inside the actual absolute edge array of the tile. -/
+    We enforce that the boundary step's absolute direction matches the genuine 
+    calculated absolute edge direction of the tile at that perimeter index slot. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [], 
     let t := B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
       have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
       exact Nat.mod_lt _ h_pos⟩
-    T = t.id ∧ ((t.pos, ⟨i.val % 14, by omega⟩) ∈ getPlacedTileEdges t)
+    T = t.id ∧ ((t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t)
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
@@ -1032,8 +1051,10 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   refine ⟨h_tiles_ne, ⟨rfl, ?_⟩⟩
   · dsimp [getPlacedTileEdges]
     rw [List.mem_map]
-    use ⟨i.val % 14, by omega⟩
-    refine ⟨List.mem_finRange _, rfl⟩
+    use (B.steps.get i).dir
+    refine ⟨?_, rfl⟩
+    dsimp [getTileEdgeDirections, propagateTileDirs]
+    sorry
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
 theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
