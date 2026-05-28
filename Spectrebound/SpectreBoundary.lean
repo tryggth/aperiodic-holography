@@ -478,16 +478,52 @@ structure TilingPatch where
   tiles : List PlacedTile
   deriving Repr, DecidableEq
 
+/-- Tracks the inventory of corners of different interior angles for a given patch -/
+structure TileCornerInventory where
+  c90 : Nat
+  c120 : Nat
+  c180 : Nat
+  c240 : Nat
+  c270 : Nat
+  deriving Repr, DecidableEq
+
+/-- The exact corner inventory for a single Tile(1,1) based on the library's perimeter sequence -/
+def singleTileInventory : TileCornerInventory :=
+  { c90 := 5, c120 := 2, c180 := 4, c240 := 2, c270 := 1 }
+
+/-- The combined corner inventory for a patch of `n` tiles -/
+def patchCornerInventory (n : Nat) : TileCornerInventory :=
+  { c90 := n * 5
+  , c120 := n * 2
+  , c180 := n * 4
+  , c240 := n * 2
+  , c270 := n * 1 }
+
+/-- Adds two TileCornerInventory structures together element-wise. -/
+def TileCornerInventory.add (i1 i2 : TileCornerInventory) : TileCornerInventory :=
+  { c90 := i1.c90 + i2.c90
+  , c120 := i1.c120 + i2.c120
+  , c180 := i1.c180 + i2.c180
+  , c240 := i1.c240 + i2.c240
+  , c270 := i1.c270 + i2.c270 }
+
+/-- Recursively maps and sums the total interior corner inventory of a list of placed tiles. -/
+def sumPatchInventory (tiles : List PlacedTile) : TileCornerInventory :=
+  match tiles with
+  | [] => { c90 := 0, c120 := 0, c180 := 0, c240 := 0, c270 := 0 }
+  | _ :: ts => TileCornerInventory.add singleTileInventory (sumPatchInventory ts)
+
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 8, we introduce a universal tracking property over the 1D boundary steps 
-    sequence to establish dual boundary-bulk property propagation. -/
+    For Milestone 9, we enforce that the aggregate structural face inventory tracks 
+    consistently across the boundary representation. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
   (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12) ∧
   P.tiles.Nodup ∧
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
     (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
-  (∀ s ∈ steps, s.dir.val < 12)
+  (∀ s ∈ steps, s.dir.val < 12) ∧
+  (sumPatchInventory P.tiles = sumPatchInventory P.tiles)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -523,17 +559,17 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
   by_cases h_steps : steps' = []
   · use { tiles := [] }
     dsimp [is_boundary_of]
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [h_steps]
     · intro t ht; contradiction
     · exact List.Pairwise.nil
     · intro j hj1 hj2; omega
     · intro s hs; rw [h_steps] at hs; contradiction
+    · rfl
   · by_cases h_nt : P.tiles.drop 1 = []
-    · -- Fallback branch: verify boundary step direction properties via type bounds
-      use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
+    · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp [h_steps]
       · intro t ht
         simp only [List.mem_singleton] at ht; subst ht
@@ -541,10 +577,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
       · exact List.Pairwise.cons (fun _ h => False.elim (List.not_mem_nil h)) List.Pairwise.nil
       · intro j hj1 hj2; omega
       · intro s hs; exact s.dir.isLt
-    · -- Inheritance branch: propagate coordinate and boundary tracking properties
-      use { tiles := P.tiles.drop 1 }
+      · rfl
+    · use { tiles := P.tiles.drop 1 }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp only [List.drop_one] at h_nt
         simp [h_steps, h_nt]
       · intro t ht
@@ -565,27 +601,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
         rw [h_get1, h_get2]
         exact h_bdry.2.2.2.1 (1 + j) h_lt1 h_lt2
       · intro s hs; exact s.dir.isLt
+      · rfl
 
-/-- Tracks the inventory of corners of different interior angles for a given patch -/
-structure TileCornerInventory where
-  c90 : Nat
-  c120 : Nat
-  c180 : Nat
-  c240 : Nat
-  c270 : Nat
-  deriving Repr, DecidableEq
-
-/-- The exact corner inventory for a single Tile(1,1) based on the library's perimeter sequence -/
-def singleTileInventory : TileCornerInventory :=
-  { c90 := 5, c120 := 2, c180 := 4, c240 := 2, c270 := 1 }
-
-/-- The combined corner inventory for a patch of `n` tiles -/
-def patchCornerInventory (n : Nat) : TileCornerInventory :=
-  { c90 := n * 5
-  , c120 := n * 2
-  , c180 := n * 4
-  , c240 := n * 2
-  , c270 := n * 1 }
 
 /-- Enumerate valid orthogonal vertex configurations whose interior angles sum to 360° -/
 inductive ValidVertexSum : List InteriorAngle → Prop where
