@@ -479,15 +479,14 @@ structure TilingPatch where
   deriving Repr, DecidableEq
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 6, we seed relative coordinate tracking between consecutive tiles 
-    to establish spatial adjacency invariants across the configuration. -/
+    For Milestone 7, we replace the structural tracking tautology with an explicit 
+    geometric step metric constraint bounding coordinate displacements between consecutive tiles. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
   (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12) ∧
   P.tiles.Nodup ∧
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
-    (P.tiles.get ⟨i, h1⟩).pos.a + (P.tiles.get ⟨i + 1, h2⟩).pos.a = 
-    (P.tiles.get ⟨i, h1⟩).pos.a + (P.tiles.get ⟨i + 1, h2⟩).pos.a)
+    (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int))
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -559,9 +558,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
           omega
         have h_get1 := get_drop_eq P.tiles 1 j hj1 h_lt1
         have h_get2 := get_drop_eq P.tiles 1 (j + 1) hj2 h_lt2
-        change ((P.tiles.drop 1).get ⟨j, hj1⟩).pos.a + ((P.tiles.drop 1).get ⟨j + 1, hj2⟩).pos.a =
-               ((P.tiles.drop 1).get ⟨j, hj1⟩).pos.a + ((P.tiles.drop 1).get ⟨j + 1, hj2⟩).pos.a
+        change ((P.tiles.drop 1).get ⟨j + 1, hj2⟩).pos.a - ((P.tiles.drop 1).get ⟨j, hj1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)
         rw [h_get1, h_get2]
+        exact h_bdry.2.2.2 (1 + j) h_lt1 h_lt2
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
