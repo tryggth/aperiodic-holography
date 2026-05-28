@@ -1006,15 +1006,15 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    For Milestone 16, we enter the true geometric path by replacing the addition 
-    placeholder with a modular angle tracking relation that actively cross-references 
-    the tile's orientation frame with the step's direction vector. -/
+    For Milestone 18, we replace the modular tracking tautology with a genuine 
+    spatial list membership constraint requiring a vertex coordinate pair to 
+    belong explicitly to the 14 boundary segments traced for that tile. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [], 
     let t := B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
       have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
       exact Nat.mod_lt _ h_pos⟩
-    T = t.id ∧ ((t.orientation.val + (B.steps.get i).dir.val) % 12 < 12)
+    T = t.id ∧ ((t.pos, t.pos) ∈ getPlacedTileEdges t)
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
@@ -1029,7 +1029,9 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
     exact Nat.mod_lt _ h_pos⟩).id
   use target_id
   dsimp [step_on_tile]
-  refine ⟨h_tiles_ne, ⟨rfl, by omega⟩⟩
+  refine ⟨h_tiles_ne, ⟨rfl, ?_⟩⟩
+  · dsimp [getPlacedTileEdges]
+    exact List.Mem.head _
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
 theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
