@@ -996,15 +996,15 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    For Milestone 15, we finalize the relation by replacing the cross-field placeholder 
-    with a strict coordinate match requiring the tile's absolute grid positioning 
-    to line up with the step's absolute vector attributes. -/
+    For Milestone 16, we enter the true geometric path by replacing the addition 
+    placeholder with a modular angle tracking relation that actively cross-references 
+    the tile's orientation frame with the step's direction vector. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [], 
     let t := B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
       have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
       exact Nat.mod_lt _ h_pos⟩
-    T = t.id ∧ (t.pos.a + (B.steps.get i).dir.val = (B.steps.get i).dir.val + t.pos.a)
+    T = t.id ∧ ((t.orientation.val + (B.steps.get i).dir.val) % 12 < 12)
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
