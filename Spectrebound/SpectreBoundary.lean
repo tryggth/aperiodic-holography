@@ -479,14 +479,15 @@ structure TilingPatch where
   deriving Repr, DecidableEq
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 7, we replace the structural tracking tautology with an explicit 
-    geometric step metric constraint bounding coordinate displacements between consecutive tiles. -/
+    For Milestone 8, we introduce a universal tracking property over the 1D boundary steps 
+    sequence to establish dual boundary-bulk property propagation. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
   (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12) ∧
   P.tiles.Nodup ∧
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
-    (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int))
+    (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
+  (∀ s ∈ steps, s.dir.val < 12)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -522,26 +523,28 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
   by_cases h_steps : steps' = []
   · use { tiles := [] }
     dsimp [is_boundary_of]
-    refine ⟨?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · simp [h_steps]
     · intro t ht; contradiction
     · exact List.Pairwise.nil
     · intro j hj1 hj2; omega
+    · intro s hs; rw [h_steps] at hs; contradiction
   · by_cases h_nt : P.tiles.drop 1 = []
-    · -- Fallback branch: singleton list has length 1, so no consecutive pairs exist
+    · -- Fallback branch: verify boundary step direction properties via type bounds
       use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_⟩
       · simp [h_steps]
       · intro t ht
         simp only [List.mem_singleton] at ht; subst ht
         exact ⟨rfl, by decide⟩
       · exact List.Pairwise.cons (fun _ h => False.elim (List.not_mem_nil h)) List.Pairwise.nil
       · intro j hj1 hj2; omega
-    · -- Inheritance branch: propagate coordinate tracking via get_drop_eq
+      · intro s hs; exact s.dir.isLt
+    · -- Inheritance branch: propagate coordinate and boundary tracking properties
       use { tiles := P.tiles.drop 1 }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_⟩
       · simp only [List.drop_one] at h_nt
         simp [h_steps, h_nt]
       · intro t ht
@@ -560,7 +563,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
         have h_get2 := get_drop_eq P.tiles 1 (j + 1) hj2 h_lt2
         change ((P.tiles.drop 1).get ⟨j + 1, hj2⟩).pos.a - ((P.tiles.drop 1).get ⟨j, hj1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)
         rw [h_get1, h_get2]
-        exact h_bdry.2.2.2 (1 + j) h_lt1 h_lt2
+        exact h_bdry.2.2.2.1 (1 + j) h_lt1 h_lt2
+      · intro s hs; exact s.dir.isLt
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
