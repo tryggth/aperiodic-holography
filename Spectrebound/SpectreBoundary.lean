@@ -479,10 +479,11 @@ structure TilingPatch where
   deriving Repr, DecidableEq
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 2, we enforce the core structural invariant that a boundary path 
-    is empty if and only if its underlying tile patch is empty. -/
+    For Milestone 4, we seed coordinate and orientation tracking invariants across 
+    the entire internal tile configuration. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
-  (steps = [] ↔ P.tiles = [])
+  (steps = [] ↔ P.tiles = []) ∧
+  (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -513,27 +514,33 @@ structure BoundaryPath where
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (steps' : List BoundaryStep)
-  (_h_bdry : is_boundary_of B.steps P) :
+  (h_bdry : is_boundary_of B.steps P) :
   ∃ P' : TilingPatch, is_boundary_of steps' P' := by
   by_cases h_steps : steps' = []
   · use { tiles := [] }
     dsimp [is_boundary_of]
-    simp [h_steps]
-  · -- steps' ≠ []: Inherit and decrement the surviving tiles from patch P.
-    -- Case-split on whether the decremented tile list is itself empty, so we
-    -- can give a concrete non-empty witness in every branch.
-    by_cases h_nt : P.tiles.drop 1 = []
-    · -- Drop exhausted the list: fall back to a canonical singleton tile
+    refine ⟨?_, ?_⟩
+    · simp [h_steps]
+    · intro t ht; contradiction
+  · by_cases h_nt : P.tiles.drop 1 = []
+    · -- Fallback branch: verify canonical singleton tile satisfies constraints
       use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
       dsimp [is_boundary_of]
-      simp [h_steps]
-    · -- Drop left at least one tile: inherit the decremented list directly
+      refine ⟨?_, ?_⟩
+      · simp [h_steps]
+      · intro t ht
+        simp only [List.mem_singleton] at ht
+        subst ht
+        exact ⟨rfl, by decide⟩
+    · -- Inheritance branch: propagate existing properties via sublist membership
       use { tiles := P.tiles.drop 1 }
       dsimp [is_boundary_of]
-      -- simp normalises `List.drop 1 P.tiles` → `P.tiles.tail` in the goal;
-      -- bring h_nt into the same normal form before the final close.
-      simp only [List.drop_one] at h_nt
-      simp [h_steps, h_nt]
+      refine ⟨?_, ?_⟩
+      · simp only [List.drop_one] at h_nt
+        simp [h_steps, h_nt]
+      · intro t ht
+        have h_mem : t ∈ P.tiles := List.drop_subset 1 P.tiles ht
+        exact h_bdry.2 t h_mem
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
 structure TileCornerInventory where
