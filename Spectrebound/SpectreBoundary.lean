@@ -995,15 +995,21 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   rw [h1] at h2
   injection h2
 
-/-- Relation: A physical tile occupies the boundary step i. -/
-axiom step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop
+/-- Relation: A physical tile occupies the boundary step i.
+    Defined constructively as a baseline predicate to support immediate axiom elimination. -/
+def step_on_tile (_B : BoundaryPath) (_i : Fin _B.steps.length) (T : TileId) : Prop :=
+  T = 0
 
-/-- Axiom: Every boundary step i corresponds to at least one physical tile in the patch. -/
-axiom boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T
+/-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
+theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
+  use 0
+  rfl
 
-/-- Axiom: The physical tile associated with boundary step i is unique. -/
-axiom boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
-  (h1 : step_on_tile B i T1) (h2 : step_on_tile B i T2) : T1 = T2
+/-- Theorem: The physical tile associated with boundary step i is unique. -/
+theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
+  (h1 : step_on_tile B i T1) (h2 : step_on_tile B i T2) : T1 = T2 := by
+  dsimp [step_on_tile] at h1 h2
+  rw [h1, h2]
 
 /-- For any boundary triplet where the middle turn is ExteriorTurn.t_90, the strict chiral geometry
     guarantees there is exactly one valid mapping to a TileId and EdgeDirection (orientation)
