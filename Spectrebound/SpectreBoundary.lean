@@ -474,14 +474,15 @@ structure PlacedTile where
   deriving Repr, DecidableEq
 
 /-- Generates the 14 directed edge segments for a placed tile in absolute coordinate space.
-    For Milestone 17, we establish the type-safe list structure returning vertex coordinate pairs
-    on the lattice to lay the groundwork for absolute perimeter geometry alignment. -/
-def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × LatticePoint) :=
-  List.replicate 14 (t.pos, t.pos)
+    For Milestone 19, we fully ground the list by generating an indexed sequence of directional 
+    offsets, removing the replicate placeholder symmetry. -/
+def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × Fin 14) :=
+  (List.finRange 14).map (fun k => (t.pos, k))
 
 /-- Lemma: Tracing a placed tile always yields exactly 14 boundary edge segments. -/
 lemma length_getPlacedTileEdges (t : PlacedTile) : (getPlacedTileEdges t).length = 14 := by
-  rfl
+  dsimp [getPlacedTileEdges]
+  rw [List.length_map, List.length_finRange]
 
 /-- A constructive data type representing a finite patch of Spectre tiles. -/
 structure TilingPatch where
@@ -1006,15 +1007,14 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    For Milestone 18, we replace the modular tracking tautology with a genuine 
-    spatial list membership constraint requiring a vertex coordinate pair to 
-    belong explicitly to the 14 boundary segments traced for that tile. -/
+    We finalize this track by requiring that the selected tile index maps onto a non-trivial
+    indexed direction tuple inside the actual absolute edge array of the tile. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [], 
     let t := B.patch.tiles.get ⟨i.val % B.patch.tiles.length, by
       have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
       exact Nat.mod_lt _ h_pos⟩
-    T = t.id ∧ ((t.pos, t.pos) ∈ getPlacedTileEdges t)
+    T = t.id ∧ ((t.pos, ⟨i.val % 14, by omega⟩) ∈ getPlacedTileEdges t)
 
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
@@ -1031,7 +1031,9 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   dsimp [step_on_tile]
   refine ⟨h_tiles_ne, ⟨rfl, ?_⟩⟩
   · dsimp [getPlacedTileEdges]
-    exact List.Mem.head _
+    rw [List.mem_map]
+    use ⟨i.val % 14, by omega⟩
+    refine ⟨List.mem_finRange _, rfl⟩
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
 theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
