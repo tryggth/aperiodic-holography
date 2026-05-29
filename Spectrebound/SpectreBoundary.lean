@@ -1080,16 +1080,20 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   dsimp [step_on_tile]
   use h_tiles_ne
   refine ⟨rfl, ?_⟩
-  · have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ []),
-      let t := findTileAtStep L (B.steps.get i).dir def_tile
-      t.pos = t.pos ∧ (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
+  · have h_exists_somewhere : ∃ t ∈ B.patch.tiles, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
+      -- Macro-topological boundary support hypothesis placeholder for Milestone 22
+      sorry
+    have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ []) 
+        (h_ex : ∃ t ∈ L, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t),
+        let t := findTileAtStep L (B.steps.get i).dir def_tile
+        t.pos = t.pos ∧ (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
       intro L
       induction L with
       | nil =>
-          intro def_tile h_L
+          intro def_tile h_L h_ex
           contradiction
       | cons hd tl ih =>
-          intro def_tile h_L
+          intro def_tile h_L h_ex
           dsimp [findTileAtStep]
           change (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos = (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos ∧ ((if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos, (B.steps.get i).dir) ∈ getPlacedTileEdges (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile)
           by_cases h_any : (getPlacedTileEdges hd).any (fun e => e.1 == hd.pos && e.2 == (B.steps.get i).dir) = true
@@ -1112,11 +1116,30 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
             rw [if_neg (by rw [h_any_false]; decide)]
             by_cases h_tl_ne : tl = []
             · subst h_tl_ne
-              dsimp [findTileAtStep]
-              exact ⟨rfl, by sorry⟩
-            · have ih_call := ih def_tile h_tl_ne
-              exact ih_call
-    exact (h_match B.patch.tiles default_tile h_tiles_ne).2
+              rcases h_ex with ⟨t_elem, h_mem_list, h_edge⟩
+              simp only [List.mem_singleton] at h_mem_list
+              rw [h_mem_list] at h_edge
+              have h_any_true : (getPlacedTileEdges hd).any (fun e => e.1 == hd.pos && e.2 == (B.steps.get i).dir) = true := by
+                rw [List.any_eq_true]
+                use (hd.pos, (B.steps.get i).dir)
+                refine ⟨h_edge, ?_⟩
+                simp
+              rw [h_any_true] at h_any_false
+              contradiction
+            · have h_ex_tl : ∃ t ∈ tl, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
+                rcases h_ex with ⟨t_elem, h_mem_list, h_edge⟩
+                rw [List.mem_cons] at h_mem_list
+                rcases h_mem_list with rfl | h_tl_mem
+                · have h_any_true : (getPlacedTileEdges t_elem).any (fun e => e.1 == t_elem.pos && e.2 == (B.steps.get i).dir) = true := by
+                    rw [List.any_eq_true]
+                    use (t_elem.pos, (B.steps.get i).dir)
+                    refine ⟨h_edge, ?_⟩
+                    simp
+                  rw [h_any_true] at h_any_false
+                  contradiction
+                · exact ⟨t_elem, h_tl_mem, h_edge⟩
+              exact ih def_tile h_tl_ne h_ex_tl
+    exact (h_match B.patch.tiles default_tile h_tiles_ne h_exists_somewhere).2
 
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
