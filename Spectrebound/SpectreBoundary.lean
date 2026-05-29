@@ -654,7 +654,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · intro j hj1 hj2; omega
       · intro s hs; exact s.dir.isLt
       · rfl
-      · intro j; sorry
+      · intro j
+        have h_peel_ex : ∃ t ∈ [⟨0, LatticePoint.zero, 0⟩], (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
+          sorry
+        rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
+        exact ⟨t, ht_mem, ht_edge⟩
     · use { tiles := P.tiles.drop 1 }
       dsimp [is_boundary_of]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -693,7 +697,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rw [h_add, h_corner] at h_ledger
           have h_inj := patch_inventory_inj _ _ h_ledger
           exact h_inj
-      · intro j; sorry
+      · intro j
+        have h_peel_ex : ∃ t ∈ P.tiles.drop 1, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
+          sorry
+        rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
+        exact ⟨t, ht_mem, ht_edge⟩
 
 
 /-- Enumerate valid orthogonal vertex configurations whose interior angles sum to 360° -/
