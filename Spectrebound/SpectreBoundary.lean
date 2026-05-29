@@ -473,6 +473,25 @@ structure PlacedTile where
   orientation : Fin 12
   deriving Repr, DecidableEq
 
+instance : LawfulBEq LatticePoint where
+  eq_of_beq {a b} h := by
+    cases a; cases b
+    dsimp [BEq.beq, instBEqLatticePoint.beq] at h
+    rw [Bool.and_eq_true] at h
+    rw [Bool.and_eq_true] at h
+    rw [Bool.and_eq_true] at h
+    rw [decide_eq_true_iff] at h
+    rw [decide_eq_true_iff] at h
+    rw [decide_eq_true_iff] at h
+    rw [decide_eq_true_iff] at h
+    obtain ⟨ha, hb, hc, h_d_eq⟩ := h
+    subst ha hb hc h_d_eq
+    rfl
+  rfl {a} := by
+    cases a
+    dsimp [BEq.beq, instBEqLatticePoint.beq]
+    simp
+
 /-- Helper function to compute the 14 absolute edge directions of a tile given an initial direction. -/
 def propagateTileDirs (turns : List ExteriorTurn) (curr_dir : EdgeDirection) : List EdgeDirection :=
   match turns with
@@ -1061,8 +1080,44 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   dsimp [step_on_tile]
   use h_tiles_ne
   refine ⟨rfl, ?_⟩
-  · dsimp [findTileAtStep]
-    sorry
+  · have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ []),
+      let t := findTileAtStep L (B.steps.get i).dir def_tile
+      t.pos = t.pos ∧ (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
+      intro L
+      induction L with
+      | nil =>
+          intro def_tile h_L
+          contradiction
+      | cons hd tl ih =>
+          intro def_tile h_L
+          dsimp [findTileAtStep]
+          change (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos = (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos ∧ ((if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile).pos, (B.steps.get i).dir) ∈ getPlacedTileEdges (if ((getPlacedTileEdges hd).any fun e => e.fst == hd.pos && e.snd == (B.steps.get i).dir) = true then hd else findTileAtStep tl (B.steps.get i).dir def_tile)
+          by_cases h_any : (getPlacedTileEdges hd).any (fun e => e.1 == hd.pos && e.2 == (B.steps.get i).dir) = true
+          · rw [if_pos h_any]
+            rw [List.any_eq_true] at h_any
+            obtain ⟨e, he_mem, he_cond⟩ := h_any
+            rw [Bool.and_eq_true] at he_cond
+            rw [beq_iff_eq] at he_cond
+            rw [beq_iff_eq] at he_cond
+            have h_e_eq : e = (hd.pos, (B.steps.get i).dir) := by
+              cases e
+              simp only [Prod.mk.injEq]
+              exact ⟨he_cond.left, he_cond.right⟩
+            subst h_e_eq
+            exact ⟨rfl, he_mem⟩
+          · have h_any_false : (getPlacedTileEdges hd).any (fun e => e.1 == hd.pos && e.2 == (B.steps.get i).dir) = false := by
+              cases h_bool : (getPlacedTileEdges hd).any (fun e => e.1 == hd.pos && e.2 == (B.steps.get i).dir)
+              · rfl
+              · contradiction
+            rw [if_neg (by rw [h_any_false]; decide)]
+            by_cases h_tl_ne : tl = []
+            · subst h_tl_ne
+              dsimp [findTileAtStep]
+              exact ⟨rfl, by sorry⟩
+            · have ih_call := ih def_tile h_tl_ne
+              exact ih_call
+    exact (h_match B.patch.tiles default_tile h_tiles_ne).2
+
 
 /-- Theorem: The physical tile associated with boundary step i is unique. -/
 theorem boundary_tile_unique (B : BoundaryPath) (i : Fin B.steps.length) (T1 T2 : TileId)
