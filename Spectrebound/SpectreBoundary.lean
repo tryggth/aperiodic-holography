@@ -641,7 +641,8 @@ lemma peel_patch_singleton_remainder (steps' : List BoundaryStep) (j : Fin steps
   rw [List.mem_map]
   use (steps'.get j).dir
   refine ⟨?_, rfl⟩
-  · -- Isolate direction extraction for the singleton remainder tile
+  · dsimp [getTileEdgeDirections, propagateTileDirs]
+    -- Terminal directional matching constraint for singleton remainder loop
     sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
@@ -663,7 +664,8 @@ lemma peel_patch_general_remainder (P : TilingPatch) (steps' : List BoundaryStep
   rw [List.mem_map]
   use (steps'.get j).dir
   refine ⟨?_, rfl⟩
-  · -- Isolate direction extraction for the general drop-1 remainder tile
+  · dsimp [getTileEdgeDirections, propagateTileDirs]
+    -- Terminal directional matching constraint for general drop-1 remainder loop
     sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
