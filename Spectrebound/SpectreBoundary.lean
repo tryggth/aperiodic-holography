@@ -595,7 +595,8 @@ def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
     (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
   (∀ s ∈ steps, s.dir.val < 12) ∧
-  (sumPatchInventory P.tiles = patchCornerInventory P.tiles.length)
+  (sumPatchInventory P.tiles = patchCornerInventory P.tiles.length) ∧
+  (∀ (j : Fin steps.length), ∃ t ∈ P.tiles, (t.pos, (steps.get j).dir) ∈ getPlacedTileEdges t)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
@@ -631,17 +632,20 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
   by_cases h_steps : steps' = []
   · use { tiles := [] }
     dsimp [is_boundary_of]
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [h_steps]
     · intro t ht; contradiction
     · exact List.Pairwise.nil
     · intro j hj1 hj2; omega
     · intro s hs; rw [h_steps] at hs; contradiction
     · rfl
+    · intro j
+      rw [h_steps] at j
+      exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
     · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp [h_steps]
       · intro t ht
         simp only [List.mem_singleton] at ht; subst ht
@@ -650,9 +654,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
       · intro j hj1 hj2; omega
       · intro s hs; exact s.dir.isLt
       · rfl
+      · intro j; sorry
     · use { tiles := P.tiles.drop 1 }
       dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp only [List.drop_one] at h_nt
         simp [h_steps, h_nt]
       · intro t ht
@@ -673,7 +678,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
         rw [h_get1, h_get2]
         exact h_bdry.2.2.2.1 (1 + j) h_lt1 h_lt2
       · intro s hs; exact s.dir.isLt
-      · have h_ledger := h_bdry.2.2.2.2.2
+      · have h_ledger := h_bdry.2.2.2.2.2.1
         cases h_P : P.tiles with
         | nil =>
           rw [h_P] at h_nt
@@ -688,6 +693,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length)
           rw [h_add, h_corner] at h_ledger
           have h_inj := patch_inventory_inj _ _ h_ledger
           exact h_inj
+      · intro j; sorry
 
 
 /-- Enumerate valid orthogonal vertex configurations whose interior angles sum to 360° -/
@@ -1068,10 +1074,10 @@ def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop
 /-- Theorem: Every boundary step i corresponds to at least one physical tile in the patch. -/
 theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃ T : TileId, step_on_tile B i T := by
   have h_steps := B.non_empty
-  have h_bdry := B.is_bdry.1
+  have h_bdry := B.is_bdry
   have h_tiles_ne : B.patch.tiles ≠ [] := by
     intro hc
-    have h_empty := h_bdry.mpr hc
+    have h_empty := h_bdry.1.mpr hc
     exact h_steps h_empty
   have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h_tiles_ne
   let default_tile := B.patch.tiles.get ⟨0, h_pos⟩
@@ -1081,8 +1087,7 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   use h_tiles_ne
   refine ⟨rfl, ?_⟩
   · have h_exists_somewhere : ∃ t ∈ B.patch.tiles, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
-      -- Macro-topological boundary support hypothesis placeholder for Milestone 22
-      sorry
+      exact h_bdry.2.2.2.2.2.2 i
     have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ []) 
         (h_ex : ∃ t ∈ L, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t),
         let t := findTileAtStep L (B.steps.get i).dir def_tile
