@@ -639,9 +639,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · intro j hj1 hj2; omega
     · intro s hs; rw [h_steps] at hs; contradiction
     · rfl
-    · intro j
-      rw [h_steps] at j
-      exact Fin.elim0 j
+    · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
     · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
       dsimp [is_boundary_of]
@@ -656,7 +654,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · rfl
       · intro j
         have h_peel_ex : ∃ t ∈ [⟨0, LatticePoint.zero, 0⟩], (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
-          sorry
+          by_cases h_j : j.val = 0
+          · -- Spliced boundary corner index match
+            sorry
+          · -- Remainder boundary index match
+            sorry
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
     · use { tiles := P.tiles.drop 1 }
@@ -699,7 +701,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           exact h_inj
       · intro j
         have h_peel_ex : ∃ t ∈ P.tiles.drop 1, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
-          sorry
+          by_cases h_j : j.val = 0
+          · -- Quarantined spliced transition index stub
+            sorry
+          · -- Remainder tracking index stub
+            sorry
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
 
