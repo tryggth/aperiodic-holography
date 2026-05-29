@@ -626,7 +626,7 @@ structure BoundaryPath where
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
-theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (steps' : List BoundaryStep)
+theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
   (h_bdry : is_boundary_of B.steps P) :
   ∃ P' : TilingPatch, is_boundary_of steps' P' := by
   by_cases h_steps : steps' = []
