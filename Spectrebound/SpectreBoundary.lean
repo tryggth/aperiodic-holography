@@ -627,7 +627,12 @@ structure BoundaryPath where
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_spliced (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0) :
   ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
-  sorry
+  dsimp [getPlacedTileEdges]
+  rw [List.mem_map]
+  use (steps'.get j).dir
+  refine ⟨?_, rfl⟩
+  · -- Isolate edge sequence extraction for singleton corner match
+    sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_remainder (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0) :
@@ -643,7 +648,12 @@ lemma peel_patch_singleton_remainder (steps' : List BoundaryStep) (j : Fin steps
 lemma peel_patch_general_spliced (P : TilingPatch) (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0)
   (h_pos : (P.tiles.drop 1).length > 0) :
   (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
-  sorry
+  dsimp [getPlacedTileEdges]
+  rw [List.mem_map]
+  use (steps'.get j).dir
+  refine ⟨?_, rfl⟩
+  · -- Isolate edge sequence extraction for general drop-1 corner match
+    sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0)
