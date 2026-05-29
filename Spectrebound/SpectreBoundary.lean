@@ -631,7 +631,8 @@ lemma peel_patch_singleton_spliced (steps' : List BoundaryStep) (j : Fin steps'.
   rw [List.mem_map]
   use (steps'.get j).dir
   refine ⟨?_, rfl⟩
-  · -- Isolate edge sequence extraction for singleton corner match
+  · dsimp [getTileEdgeDirections, propagateTileDirs]
+    -- Isolate edge sequence extraction for singleton corner match
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -653,7 +654,8 @@ lemma peel_patch_general_spliced (P : TilingPatch) (steps' : List BoundaryStep) 
   rw [List.mem_map]
   use (steps'.get j).dir
   refine ⟨?_, rfl⟩
-  · -- Isolate edge sequence extraction for general drop-1 corner match
+  · dsimp [getTileEdgeDirections, propagateTileDirs]
+    -- Isolate edge sequence extraction for general drop-1 corner match
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
