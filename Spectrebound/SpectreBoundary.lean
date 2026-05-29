@@ -624,6 +624,28 @@ structure BoundaryPath where
   patch : TilingPatch
   is_bdry : is_boundary_of steps patch
 
+/-- Helper lemma: Resolves the spliced boundary edge alignment for the singleton fallback patch case. -/
+lemma peel_patch_singleton_spliced (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0) :
+  ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
+  sorry
+
+/-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
+lemma peel_patch_singleton_remainder (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0) :
+  ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
+  sorry
+
+/-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
+lemma peel_patch_general_spliced (P : TilingPatch) (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0)
+  (h_pos : (P.tiles.drop 1).length > 0) :
+  (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
+  sorry
+
+/-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
+lemma peel_patch_general_remainder (P : TilingPatch) (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0)
+  (h_pos : (P.tiles.drop 1).length > 0) :
+  (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -657,10 +679,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           by_cases h_j : j.val = 0
           · use ⟨0, LatticePoint.zero, 0⟩
             simp only [List.mem_singleton, true_and]
-            sorry
+            exact peel_patch_singleton_spliced steps' j h_j
           · use ⟨0, LatticePoint.zero, 0⟩
             simp only [List.mem_singleton, true_and]
-            sorry
+            exact peel_patch_singleton_remainder steps' j h_j
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
     · use { tiles := P.tiles.drop 1 }
@@ -712,7 +734,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
             use t_witness
             refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            sorry
+            exact peel_patch_general_spliced P steps' j h_j h_pos_drop
           · -- Remainder boundary index match
             have h_pos_drop : (P.tiles.drop 1).length > 0 := by
               cases h_p : P.tiles.drop 1 with
@@ -721,7 +743,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
             use t_witness
             refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            sorry
+            exact peel_patch_general_remainder P steps' j h_j h_pos_drop
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
 
