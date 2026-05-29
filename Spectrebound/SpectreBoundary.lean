@@ -655,9 +655,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · intro j
         have h_peel_ex : ∃ t ∈ [⟨0, LatticePoint.zero, 0⟩], (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
           by_cases h_j : j.val = 0
-          · -- Spliced boundary corner index match
+          · use ⟨0, LatticePoint.zero, 0⟩
+            simp only [List.mem_singleton, true_and]
             sorry
-          · -- Remainder boundary index match
+          · use ⟨0, LatticePoint.zero, 0⟩
+            simp only [List.mem_singleton, true_and]
             sorry
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
@@ -702,9 +704,23 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · intro j
         have h_peel_ex : ∃ t ∈ P.tiles.drop 1, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
           by_cases h_j : j.val = 0
-          · -- Quarantined spliced transition index stub
+          · -- Spliced boundary index match
+            have h_pos_drop : (P.tiles.drop 1).length > 0 := by
+              cases h_p : P.tiles.drop 1 with
+              | nil => contradiction
+              | cons hd tl => simp
+            let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
+            use t_witness
+            refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
             sorry
-          · -- Remainder tracking index stub
+          · -- Remainder boundary index match
+            have h_pos_drop : (P.tiles.drop 1).length > 0 := by
+              cases h_p : P.tiles.drop 1 with
+              | nil => contradiction
+              | cons hd tl => simp
+            let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
+            use t_witness
+            refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
             sorry
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
