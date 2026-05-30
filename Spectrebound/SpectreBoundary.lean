@@ -2934,7 +2934,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · -- Update corner pool inventory invariant
         sorry
       · -- Update edge witness containment loop
-        sorry
+        intro j
+        by_cases hj : j.val = 0
+        · exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
+        · exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
 
 
 
