@@ -2742,16 +2742,12 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
      steps_updated spliced_steps next_dir_opt ++ remaining)
   (j : Fin steps'.length) (h_j : j.val = 0)
-  (h_pos : (P.tiles.drop 1).length > 0) :
-  (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
-  dsimp [getPlacedTileEdges]
-  rw [List.mem_map]
-  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
-  rw [h_subst]
-  clear h_subst
-  revert h_pos h_j j
+  (t_peel : PlacedTile) (reduced_tiles : List PlacedTile)
+  (h_red : reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel)) :
+  ∃ t ∈ reduced_tiles, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
+  revert h_j j
   rw [h_steps_eq]
-  intro j h_j h_pos
+  intro j h_j
   have h_mem := findMaximalRule_mem h_match
   let rotated := rotateList B.steps i.val
   have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2768,8 +2764,7 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     exact rule_replacement_nonempty h_mem
   have h_j_lt : j.val < spliced_steps_updated.length := by omega
   have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_j_lt
-  have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := by
-    exact h_get_left
+  have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := h_get_left
   rw [h_get_elem]
   have h_j_zero : j.val = 0 := h_j
   have h_dir_eq : (spliced_steps_updated.get ⟨j.val, h_j_lt⟩).dir = anchor_step.dir := by
@@ -2784,45 +2779,27 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     rw [h_dir_up]
     exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
   rw [h_dir_eq]
-  -- Unroll getPlacedTileEdges to isolate the pure direction list containment
-  let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
-  use anchor_step.dir
-  refine ⟨?_, rfl⟩
-  · -- Extract the existential tile witness from the unpeeled boundary ledger
-    have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
-    rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
-    have h_rot : rotateList B.steps i.val = B.steps.drop i.val ++ B.steps.take i.val := by
-      dsimp [rotateList]
-      have h_neq : B.steps.length ≠ 0 := by
-        intro h_abs
-        have : i.val < 0 := h_abs ▸ i.isLt
-        exact Nat.not_lt_zero i.val this
-      rw [if_neg h_neq]
-      rw [Nat.mod_eq_of_lt i.isLt]
-    have h_anchor_eq : anchor_step.dir = (B.steps.get i).dir := by
-      have H : ∀ (L : List BoundaryStep) (hL : rotateList B.steps i.val = L) (hL_pos : 0 < L.length),
-        (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
-        intro L hL hL_pos
-        rw [h_rot] at hL
-        subst L
-        have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
-        rw [h_left]
-        have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
-        rw [h_drop]
-        exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
-      exact H (rotateList B.steps i.val) rfl h_pos'
-    rw [h_anchor_eq]
-    dsimp [getPlacedTileEdges] at ht_edge
-    rw [List.mem_map] at ht_edge
-    rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
-    injection hd_eq with h_pos_eq h_dir_eq_witness
-    have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
-    rw [← h_dir_eq_witness_alt]
-    have h_tile_unify : t_orig = (P.tiles.drop 1).get ⟨0, h_pos⟩ := by
-      -- Isolate the macroscopic tile embedding alignment condition
-      sorry
-    rw [h_tile_unify] at hd_mem
-    exact hd_mem
+  have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
+  rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
+  have h_rot : rotateList B.steps i.val = B.steps.drop i.val ++ B.steps.take i.val := by
+    dsimp [rotateList]
+    have h_neq : B.steps.length ≠ 0 := by
+      intro h_abs; have : i.val < 0 := h_abs ▸ i.isLt; exact Nat.not_lt_zero i.val this
+    rw [if_neg h_neq]
+    rw [Nat.mod_eq_of_lt i.isLt]
+  have h_anchor_eq : anchor_step.dir = (B.steps.get i).dir := by
+    have H : ∀ (L : List BoundaryStep) (hL : rotateList B.steps i.val = L) (hL_pos : 0 < L.length),
+      (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
+      intro L hL hL_pos
+      rw [h_rot] at hL; subst L
+      have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
+      rw [h_left]
+      have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
+      rw [h_drop]
+      exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
+    exact H (rotateList B.steps i.val) rfl h_pos'
+  rw [← h_anchor_eq] at ht_edge
+  sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2839,16 +2816,12 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
      steps_updated spliced_steps next_dir_opt ++ remaining)
   (j : Fin steps'.length) (h_j : j.val ≠ 0)
-  (h_pos : (P.tiles.drop 1).length > 0) :
-  (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
-  dsimp [getPlacedTileEdges]
-  rw [List.mem_map]
-  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
-  rw [h_subst]
-  clear h_subst
-  revert h_pos h_j j
+  (t_peel : PlacedTile) (reduced_tiles : List PlacedTile)
+  (h_red : reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel)) :
+  ∃ t ∈ reduced_tiles, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
+  revert h_j j
   rw [h_steps_eq]
-  intro j h_j h_pos
+  intro j h_j
   have h_mem := findMaximalRule_mem h_match
   let rotated := rotateList B.steps i.val
   have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2863,25 +2836,17 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
   · -- Subcase A: Index falls within the spliced updated sequence length
     have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
     rw [h_get_left]
-    let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
-    use (spliced_steps_updated.get ⟨j.val, h_split⟩).dir
-    refine ⟨?_, rfl⟩
-    · have h_spliced_len : j.val < spliced_steps.length := by
-        have h_len_eq := length_steps_updated spliced_steps next_dir_opt
-        have h_split_alt : j.val < (steps_updated spliced_steps next_dir_opt).length := h_split
-        rw [h_len_eq] at h_split_alt
-        exact h_split_alt
-      have h_dir_up := steps_updated_dir spliced_steps next_dir_opt j.val h_spliced_len h_split
-      rw [h_dir_up]
-      have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
-      have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
-      dsimp [spliced_steps] at h_spliced_consistent
-      -- Extract the existential tile witness from the unpeeled boundary ledger
-      have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
-      rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
-      have h_tile_unify : t_orig = t_target := by sorry
-      rw [h_tile_unify] at ht_mem
-      sorry
+    have h_spliced_len : j.val < spliced_steps.length := by
+      have h_len_eq := length_steps_updated spliced_steps next_dir_opt
+      have h_split_alt : j.val < (steps_updated spliced_steps next_dir_opt).length := h_split
+      rw [h_len_eq] at h_split_alt
+      exact h_split_alt
+    have h_dir_up := steps_updated_dir spliced_steps next_dir_opt j.val h_spliced_len h_split
+    rw [h_dir_up]
+    have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
+    have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
+    dsimp [spliced_steps] at h_spliced_consistent
+    sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
@@ -2891,20 +2856,13 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       omega
     have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
     rw [h_get_right]
-    let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
-    use (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir
-    refine ⟨?_, rfl⟩
-    · have h_drop_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < rotated.length := by
-        dsimp [remaining] at h_R_len
-        rw [List.length_drop] at h_R_len
-        omega
-      have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
-      have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
-        exact congrArg (fun s => s.dir) h_drop_reduction
-      rw [h_get_reduction]
-      -- Instantiate macro boundary witness for the unpeeled remainder segment
-      have h_rot_idx : Fin rotated.length := ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩
-      sorry
+    have h_drop_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < rotated.length := by
+      dsimp [remaining] at h_R_len; rw [List.length_drop] at h_R_len; omega
+    have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
+    have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
+      exact congrArg (fun s => s.dir) h_drop_reduction
+    rw [h_get_reduction]
+    sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
