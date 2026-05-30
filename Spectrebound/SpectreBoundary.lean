@@ -2619,6 +2619,12 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
   · -- Extract the existential tile witness from the unpeeled boundary ledger
     have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
     rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
+    -- Unroll getPlacedTileEdges mapping to extract direction vector
+    dsimp [getPlacedTileEdges] at ht_edge
+    rw [List.mem_map] at ht_edge
+    rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
+    injection hd_eq with h_pos_eq h_dir_eq_witness
+    have h_t_orig_eq : t_orig = t_orig := rfl
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -2735,6 +2741,12 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
   · -- Extract the existential tile witness from the unpeeled boundary ledger
     have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
     rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
+    -- Unroll getPlacedTileEdges mapping to extract direction vector
+    dsimp [getPlacedTileEdges] at ht_edge
+    rw [List.mem_map] at ht_edge
+    rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
+    injection hd_eq with h_pos_eq h_dir_eq_witness
+    have h_t_orig_eq : t_orig = t_orig := rfl
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
