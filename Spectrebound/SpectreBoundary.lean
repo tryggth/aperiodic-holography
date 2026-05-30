@@ -2581,7 +2581,27 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
   revert h_j j
   rw [h_steps_eq]
   intro j h_j
-  -- Isolate index lookup on the left side of the appended lists for j.val = 0
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with | some step => some step.dir | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  have h_len_left : 0 < spliced_steps_updated.length := by
+    dsimp [spliced_steps_updated]
+    rw [length_steps_updated, length_propagateSplicedSteps]
+    exact rule_replacement_nonempty h_mem
+  have h_j_lt : j.val < spliced_steps_updated.length := by omega
+  have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_j_lt
+  have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := by
+    exact h_get_left
+  rw [h_get_elem]
+  have h_j_zero : j.val = 0 := h_j
+  -- Isolated to index 0 of the steps_updated block
   sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -2636,7 +2656,27 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
   revert h_pos h_j j
   rw [h_steps_eq]
   intro j h_j h_pos
-  -- Isolate index lookup on the left side of the appended lists for j.val = 0
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
+  let anchor_step := rotated.get ⟨0, h_pos'⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with | some step => some step.dir | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  have h_len_left : 0 < spliced_steps_updated.length := by
+    dsimp [spliced_steps_updated]
+    rw [length_steps_updated, length_propagateSplicedSteps]
+    exact rule_replacement_nonempty h_mem
+  have h_j_lt : j.val < spliced_steps_updated.length := by omega
+  have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_j_lt
+  have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := by
+    exact h_get_left
+  rw [h_get_elem]
+  have h_j_zero : j.val = 0 := h_j
+  -- Isolated to index 0 of the steps_updated block
   sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
