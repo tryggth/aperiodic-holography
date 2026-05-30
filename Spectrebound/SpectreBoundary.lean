@@ -2612,8 +2612,12 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_dir_up := steps_updated_dir spliced_steps next_dir_opt 0 h0_spl_orig h_len_left
     rw [h_dir_up]
     exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
-  -- Direction attribute successfully extracted to anchor_step.dir
-  sorry
+  rw [h_dir_eq]
+  -- Unroll getPlacedTileEdges to isolate the pure direction list containment
+  use anchor_step.dir
+  refine ⟨?_, rfl⟩
+  · -- Goal reduced to: anchor_step.dir ∈ getTileEdgeDirections ⟨0, LatticePoint.zero, 0⟩
+    sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2721,8 +2725,13 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     have h_dir_up := steps_updated_dir spliced_steps next_dir_opt 0 h0_spl_orig h_len_left
     rw [h_dir_up]
     exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
-  -- Direction attribute successfully extracted to anchor_step.dir
-  sorry
+  rw [h_dir_eq]
+  -- Unroll getPlacedTileEdges to isolate the pure direction list containment
+  let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
+  use anchor_step.dir
+  refine ⟨?_, rfl⟩
+  · -- Goal reduced to: anchor_step.dir ∈ getTileEdgeDirections t_target
+    sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
