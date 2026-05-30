@@ -2619,12 +2619,33 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
   · -- Extract the existential tile witness from the unpeeled boundary ledger
     have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
     rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
-    -- Unroll getPlacedTileEdges mapping to extract direction vector
+    have h_rot : rotateList B.steps i.val = B.steps.drop i.val ++ B.steps.take i.val := by
+      dsimp [rotateList]
+      have h_neq : B.steps.length ≠ 0 := by
+        intro h_abs
+        have : i.val < 0 := h_abs ▸ i.isLt
+        exact Nat.not_lt_zero i.val this
+      rw [if_neg h_neq]
+      rw [Nat.mod_eq_of_lt i.isLt]
+    have h_anchor_eq : anchor_step.dir = (B.steps.get i).dir := by
+      have H : ∀ (L : List BoundaryStep) (hL : rotateList B.steps i.val = L) (hL_pos : 0 < L.length),
+        (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
+        intro L hL hL_pos
+        rw [h_rot] at hL
+        subst L
+        have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
+        rw [h_left]
+        have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
+        rw [h_drop]
+        exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
+      exact H (rotateList B.steps i.val) rfl h_pos
+    rw [h_anchor_eq]
     dsimp [getPlacedTileEdges] at ht_edge
     rw [List.mem_map] at ht_edge
     rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
     injection hd_eq with h_pos_eq h_dir_eq_witness
-    have h_t_orig_eq : t_orig = t_orig := rfl
+    have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
+    rw [← h_dir_eq_witness_alt]
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -2741,12 +2762,33 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
   · -- Extract the existential tile witness from the unpeeled boundary ledger
     have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
     rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
-    -- Unroll getPlacedTileEdges mapping to extract direction vector
+    have h_rot : rotateList B.steps i.val = B.steps.drop i.val ++ B.steps.take i.val := by
+      dsimp [rotateList]
+      have h_neq : B.steps.length ≠ 0 := by
+        intro h_abs
+        have : i.val < 0 := h_abs ▸ i.isLt
+        exact Nat.not_lt_zero i.val this
+      rw [if_neg h_neq]
+      rw [Nat.mod_eq_of_lt i.isLt]
+    have h_anchor_eq : anchor_step.dir = (B.steps.get i).dir := by
+      have H : ∀ (L : List BoundaryStep) (hL : rotateList B.steps i.val = L) (hL_pos : 0 < L.length),
+        (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
+        intro L hL hL_pos
+        rw [h_rot] at hL
+        subst L
+        have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
+        rw [h_left]
+        have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
+        rw [h_drop]
+        exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
+      exact H (rotateList B.steps i.val) rfl h_pos'
+    rw [h_anchor_eq]
     dsimp [getPlacedTileEdges] at ht_edge
     rw [List.mem_map] at ht_edge
     rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
     injection hd_eq with h_pos_eq h_dir_eq_witness
-    have h_t_orig_eq : t_orig = t_orig := rfl
+    have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
+    rw [← h_dir_eq_witness_alt]
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
