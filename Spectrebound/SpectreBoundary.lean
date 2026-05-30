@@ -2869,10 +2869,14 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         exact h_split_alt
       have h_dir_up := steps_updated_dir spliced_steps next_dir_opt j.val h_spliced_len h_split
       rw [h_dir_up]
-      -- Instantiate the direction consistency relation for index j.val > 0
       have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
       have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
       dsimp [spliced_steps] at h_spliced_consistent
+      -- Extract the existential tile witness from the unpeeled boundary ledger
+      have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
+      rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
+      have h_tile_unify : t_orig = t_target := by sorry
+      rw [h_tile_unify] at ht_mem
       sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
@@ -2891,7 +2895,12 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         rw [List.length_drop] at h_R_len
         omega
       have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
-      -- Extract the underlying rotated element index identity
+      -- Simplify the lookup term using our drop reduction lemma
+      have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
+        exact congrArg (fun s => s.dir) h_drop_reduction
+      rw [h_get_reduction]
+      -- Instantiate macro boundary witness for the unpeeled remainder segment
+      have h_rot_idx : Fin rotated.length := ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩
       sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
