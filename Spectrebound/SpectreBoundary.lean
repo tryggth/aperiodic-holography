@@ -2720,7 +2720,11 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
         rw [List.length_drop] at h_R_len
         omega
       have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
-      -- Extract the underlying rotated element index identity
+      have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
+        exact congrArg (fun s => s.dir) h_drop_reduction
+      rw [h_get_reduction]
+      -- Instantiate macro boundary witness for the unpeeled remainder segment
+      have h_rot_idx : Fin rotated.length := ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩
       sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
@@ -2895,7 +2899,6 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         rw [List.length_drop] at h_R_len
         omega
       have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
-      -- Simplify the lookup term using our drop reduction lemma
       have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
         exact congrArg (fun s => s.dir) h_drop_reduction
       rw [h_get_reduction]
