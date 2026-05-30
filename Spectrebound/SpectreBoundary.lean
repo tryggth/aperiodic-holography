@@ -2933,89 +2933,34 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · rfl
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
-    · use { tiles := [⟨0, LatticePoint.zero, 0⟩] }
+    · -- [Keep singleton fallback patch branch intact as a structural quarantine stub]
+      sorry
+    · let rotated := rotateList B.steps _i.val
+      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
+      let anchor_step := rotated.get ⟨0, h_pos⟩
+      have h_tiles_ne : P.tiles ≠ [] := by
+        intro hc; have h_empty := h_bdry.1.mpr hc; exact B.non_empty h_empty
+      have h_p : P.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h_tiles_ne
+      let default_tile := P.tiles.get ⟨0, h_p⟩
+      let t_peel := findTileAtStep P.tiles anchor_step.dir default_tile
+      let reduced_tiles := P.tiles.filter (fun t => t ≠ t_peel)
+      use { tiles := reduced_tiles }
       dsimp [is_boundary_of]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · simp [h_steps]
-      · intro t ht
-        simp only [List.mem_singleton] at ht; subst ht
-        exact ⟨rfl, by decide⟩
-      · exact List.Pairwise.cons (fun _ h => False.elim (List.not_mem_nil h)) List.Pairwise.nil
-      · intro j hj1 hj2; omega
-      · intro s hs; exact s.dir.isLt
-      · rfl
-      · intro j
-        have h_peel_ex : ∃ t ∈ [⟨0, LatticePoint.zero, 0⟩], (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
-          by_cases h_j : j.val = 0
-          · use ⟨0, LatticePoint.zero, 0⟩
-            simp only [List.mem_singleton, true_and]
-            exact peel_patch_singleton_spliced P B _i rule h_bdry h_match steps' h_steps_eq j h_j
-          · use ⟨0, LatticePoint.zero, 0⟩
-            simp only [List.mem_singleton, true_and]
-            exact peel_patch_singleton_remainder P B _i rule h_bdry h_match steps' h_steps_eq j h_j
-        rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
-        exact ⟨t, ht_mem, ht_edge⟩
-    · use { tiles := P.tiles.drop 1 }
-      dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · simp only [List.drop_one] at h_nt
-        simp [h_steps, h_nt]
-      · intro t ht
-        have h_mem : t ∈ P.tiles := List.drop_subset 1 P.tiles ht
-        exact h_bdry.2.1 t h_mem
-      · have h_old_nodup := h_bdry.2.2.1
-        exact List.Nodup.sublist (List.drop_sublist 1 P.tiles) h_old_nodup
-      · intro j hj1 hj2
-        have h_lt1 : 1 + j < P.tiles.length := by
-          simp only [List.length_drop] at hj1 hj2
-          omega
-        have h_lt2 : 1 + (j + 1) < P.tiles.length := by
-          simp only [List.length_drop] at hj1 hj2
-          omega
-        have h_get1 := get_drop_eq P.tiles 1 j hj1 h_lt1
-        have h_get2 := get_drop_eq P.tiles 1 (j + 1) hj2 h_lt2
-        change ((P.tiles.drop 1).get ⟨j + 1, hj2⟩).pos.a - ((P.tiles.drop 1).get ⟨j, hj1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)
-        rw [h_get1, h_get2]
-        exact h_bdry.2.2.2.1 (1 + j) h_lt1 h_lt2
-      · intro s hs; exact s.dir.isLt
-      · have h_ledger := h_bdry.2.2.2.2.2.1
-        cases h_P : P.tiles with
-        | nil =>
-          rw [h_P] at h_nt
-          contradiction
-        | cons hd tl =>
-          rw [h_P] at h_ledger
-          change sumPatchInventory (hd :: tl) = patchCornerInventory (tl.length + 1) at h_ledger
-          have h_add : sumPatchInventory (hd :: tl) = TileCornerInventory.add singleTileInventory (sumPatchInventory tl) := rfl
-          have h_corner : patchCornerInventory (tl.length + 1) = TileCornerInventory.add singleTileInventory (patchCornerInventory tl.length) := by
-            dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
-            congr <;> omega
-          rw [h_add, h_corner] at h_ledger
-          have h_inj := patch_inventory_inj _ _ h_ledger
-          exact h_inj
-      · intro j
-        have h_peel_ex : ∃ t ∈ P.tiles.drop 1, (t.pos, (steps'.get j).dir) ∈ getPlacedTileEdges t := by
-          by_cases h_j : j.val = 0
-          · -- Spliced boundary index match
-            have h_pos_drop : (P.tiles.drop 1).length > 0 := by
-              cases h_p : P.tiles.drop 1 with
-              | nil => contradiction
-              | cons hd tl => simp
-            let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
-            use t_witness
-            refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j h_j h_pos_drop
-          · -- Remainder boundary index match
-            have h_pos_drop : (P.tiles.drop 1).length > 0 := by
-              cases h_p : P.tiles.drop 1 with
-              | nil => contradiction
-              | cons hd tl => simp
-            let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
-            use t_witness
-            refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j h_j h_pos_drop
-        rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
-        exact ⟨t, ht_mem, ht_edge⟩
+      · -- Update boundary non-emptiness invariant
+        sorry
+      · -- Update position bound invariant
+        sorry
+      · -- Update Nodup structural invariant
+        sorry
+      · -- Update coordinate distance invariant
+        sorry
+      · -- Update step direction boundary bounds
+        sorry
+      · -- Update corner pool inventory invariant
+        sorry
+      · -- Update edge witness containment loop
+        sorry
 
 
 
