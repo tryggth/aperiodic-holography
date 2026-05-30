@@ -2799,7 +2799,15 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
       exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
     exact H (rotateList B.steps i.val) rfl h_pos'
   rw [← h_anchor_eq] at ht_edge
-  sorry
+  have h_neq : t_orig ≠ t_peel := by
+    -- Neighbor Separation: The casting tile along this splice path cannot be the peeled tile
+    sorry
+  have ht_mem_reduced : t_orig ∈ reduced_tiles := by
+    rw [h_red]
+    rw [List.mem_filter]
+    rw [decide_eq_true_iff]
+    exact ⟨ht_mem, h_neq⟩
+  exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2846,7 +2854,11 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
     have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
     dsimp [spliced_steps] at h_spliced_consistent
-    sorry
+    have h_witness : ∃ t ∈ reduced_tiles, (t.pos, (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir) ∈ getPlacedTileEdges t := by
+      -- Internal Neighbor Witness Assertion
+      sorry
+    rcases h_witness with ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
+    exact ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
@@ -2862,7 +2874,11 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
       exact congrArg (fun s => s.dir) h_drop_reduction
     rw [h_get_reduction]
-    sorry
+    have h_witness : ∃ t ∈ reduced_tiles, (t.pos, (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir) ∈ getPlacedTileEdges t := by
+      -- Untouched Perimeter Witness Assertion
+      sorry
+    rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
+    exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
