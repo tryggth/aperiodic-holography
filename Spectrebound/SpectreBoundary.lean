@@ -2715,7 +2715,13 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
     rw [h_get_right]
     use (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir
     refine ⟨?_, rfl⟩
-    · sorry
+    · have h_drop_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < rotated.length := by
+        dsimp [remaining] at h_R_len
+        rw [List.length_drop] at h_R_len
+        omega
+      have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
+      -- Extract the underlying rotated element index identity
+      sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2880,7 +2886,13 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
     use (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir
     refine ⟨?_, rfl⟩
-    · sorry
+    · have h_drop_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < rotated.length := by
+        dsimp [remaining] at h_R_len
+        rw [List.length_drop] at h_R_len
+        omega
+      have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
+      -- Extract the underlying rotated element index identity
+      sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
