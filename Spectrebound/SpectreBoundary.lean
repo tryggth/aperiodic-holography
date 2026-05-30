@@ -2560,7 +2560,7 @@ lemma peelBoundary_stitch_sum (B : BoundaryPath) (i : Fin B.steps.length) (rule 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0)
+  (steps' : List BoundaryStep)
   (h_steps_eq : steps' = 
      let rotated := rotateList B.steps i.val
      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2570,19 +2570,24 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
      let next_dir_opt := match remaining.head? with
        | some step => some step.dir
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining) :
+     steps_updated spliced_steps next_dir_opt ++ remaining)
+  (j : Fin steps'.length) (h_j : j.val = 0) :
   ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
   dsimp [getPlacedTileEdges]
   rw [List.mem_map]
-  use (steps'.get j).dir
-  refine ⟨?_, rfl⟩
-  · dsimp [getTileEdgeDirections, propagateTileDirs]
-    sorry
+  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
+  rw [h_subst]
+  clear h_subst
+  revert h_j j
+  rw [h_steps_eq]
+  intro j h_j
+  -- Isolate index lookup on the left side of the appended lists for j.val = 0
+  sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0)
+  (steps' : List BoundaryStep)
   (h_steps_eq : steps' = 
      let rotated := rotateList B.steps i.val
      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2592,20 +2597,24 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
      let next_dir_opt := match remaining.head? with
        | some step => some step.dir
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining) :
+     steps_updated spliced_steps next_dir_opt ++ remaining)
+  (j : Fin steps'.length) (h_j : j.val ≠ 0) :
   ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
   dsimp [getPlacedTileEdges]
   rw [List.mem_map]
-  use (steps'.get j).dir
-  refine ⟨?_, rfl⟩
-  · dsimp [getTileEdgeDirections, propagateTileDirs]
-    sorry
+  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
+  rw [h_subst]
+  clear h_subst
+  revert h_j j
+  rw [h_steps_eq]
+  intro j h_j
+  -- Isolate index lookup on the right side of the appended lists for j.val ≠ 0
+  sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val = 0)
-  (h_pos : (P.tiles.drop 1).length > 0)
+  (steps' : List BoundaryStep)
   (h_steps_eq : steps' = 
      let rotated := rotateList B.steps i.val
      have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2615,20 +2624,25 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
      let next_dir_opt := match remaining.head? with
        | some step => some step.dir
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining) :
+     steps_updated spliced_steps next_dir_opt ++ remaining)
+  (j : Fin steps'.length) (h_j : j.val = 0)
+  (h_pos : (P.tiles.drop 1).length > 0) :
   (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
   dsimp [getPlacedTileEdges]
   rw [List.mem_map]
-  use (steps'.get j).dir
-  refine ⟨?_, rfl⟩
-  · dsimp [getTileEdgeDirections, propagateTileDirs]
-    sorry
+  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
+  rw [h_subst]
+  clear h_subst
+  revert h_pos h_j j
+  rw [h_steps_eq]
+  intro j h_j h_pos
+  -- Isolate index lookup on the left side of the appended lists for j.val = 0
+  sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (steps' : List BoundaryStep) (j : Fin steps'.length) (h_j : j.val ≠ 0)
-  (h_pos : (P.tiles.drop 1).length > 0)
+  (steps' : List BoundaryStep)
   (h_steps_eq : steps' = 
      let rotated := rotateList B.steps i.val
      have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
@@ -2638,14 +2652,20 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
      let next_dir_opt := match remaining.head? with
        | some step => some step.dir
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining) :
+     steps_updated spliced_steps next_dir_opt ++ remaining)
+  (j : Fin steps'.length) (h_j : j.val ≠ 0)
+  (h_pos : (P.tiles.drop 1).length > 0) :
   (((P.tiles.drop 1).get ⟨0, h_pos⟩).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ((P.tiles.drop 1).get ⟨0, h_pos⟩) := by
   dsimp [getPlacedTileEdges]
   rw [List.mem_map]
-  use (steps'.get j).dir
-  refine ⟨?_, rfl⟩
-  · dsimp [getTileEdgeDirections, propagateTileDirs]
-    sorry
+  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
+  rw [h_subst]
+  clear h_subst
+  revert h_pos h_j j
+  rw [h_steps_eq]
+  intro j h_j h_pos
+  -- Isolate index lookup on the right side of the appended lists for j.val ≠ 0
+  sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
@@ -2690,10 +2710,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           by_cases h_j : j.val = 0
           · use ⟨0, LatticePoint.zero, 0⟩
             simp only [List.mem_singleton, true_and]
-            exact peel_patch_singleton_spliced P B _i rule h_bdry h_match steps' j h_j h_steps_eq
+            exact peel_patch_singleton_spliced P B _i rule h_bdry h_match steps' h_steps_eq j h_j
           · use ⟨0, LatticePoint.zero, 0⟩
             simp only [List.mem_singleton, true_and]
-            exact peel_patch_singleton_remainder P B _i rule h_bdry h_match steps' j h_j h_steps_eq
+            exact peel_patch_singleton_remainder P B _i rule h_bdry h_match steps' h_steps_eq j h_j
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
     · use { tiles := P.tiles.drop 1 }
@@ -2745,7 +2765,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
             use t_witness
             refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' j h_j h_pos_drop h_steps_eq
+            exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j h_j h_pos_drop
           · -- Remainder boundary index match
             have h_pos_drop : (P.tiles.drop 1).length > 0 := by
               cases h_p : P.tiles.drop 1 with
@@ -2754,7 +2774,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             let t_witness := (P.tiles.drop 1).get ⟨0, h_pos_drop⟩
             use t_witness
             refine ⟨List.get_mem _ ⟨0, h_pos_drop⟩, ?_⟩
-            exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' j h_j h_pos_drop h_steps_eq
+            exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j h_j h_pos_drop
         rcases h_peel_ex with ⟨t, ht_mem, ht_edge⟩
         exact ⟨t, ht_mem, ht_edge⟩
 
