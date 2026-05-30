@@ -2601,7 +2601,18 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
     exact h_get_left
   rw [h_get_elem]
   have h_j_zero : j.val = 0 := h_j
-  -- Isolated to index 0 of the steps_updated block
+  have h_dir_eq : (spliced_steps_updated.get ⟨j.val, h_j_lt⟩).dir = anchor_step.dir := by
+    have h_j_val_zero : j.val = 0 := h_j
+    have h_idx_zero : (⟨j.val, h_j_lt⟩ : Fin spliced_steps_updated.length) = ⟨0, h_len_left⟩ := Fin.ext h_j_val_zero
+    rw [h_idx_zero]
+    have h0_spl_orig : 0 < spliced_steps.length := by
+      dsimp [spliced_steps]
+      rw [length_propagateSplicedSteps]
+      exact rule_replacement_nonempty h_mem
+    have h_dir_up := steps_updated_dir spliced_steps next_dir_opt 0 h0_spl_orig h_len_left
+    rw [h_dir_up]
+    exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
+  -- Direction attribute successfully extracted to anchor_step.dir
   sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -2699,7 +2710,18 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     exact h_get_left
   rw [h_get_elem]
   have h_j_zero : j.val = 0 := h_j
-  -- Isolated to index 0 of the steps_updated block
+  have h_dir_eq : (spliced_steps_updated.get ⟨j.val, h_j_lt⟩).dir = anchor_step.dir := by
+    have h_j_val_zero : j.val = 0 := h_j
+    have h_idx_zero : (⟨j.val, h_j_lt⟩ : Fin spliced_steps_updated.length) = ⟨0, h_len_left⟩ := Fin.ext h_j_val_zero
+    rw [h_idx_zero]
+    have h0_spl_orig : 0 < spliced_steps.length := by
+      dsimp [spliced_steps]
+      rw [length_propagateSplicedSteps]
+      exact rule_replacement_nonempty h_mem
+    have h_dir_up := steps_updated_dir spliced_steps next_dir_opt 0 h0_spl_orig h_len_left
+    rw [h_dir_up]
+    exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
+  -- Direction attribute successfully extracted to anchor_step.dir
   sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
