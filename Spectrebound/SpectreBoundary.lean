@@ -2692,7 +2692,18 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
     rw [h_get_left]
     use (spliced_steps_updated.get ⟨j.val, h_split⟩).dir
     refine ⟨?_, rfl⟩
-    · sorry
+    · have h_spliced_len : j.val < spliced_steps.length := by
+        have h_len_eq := length_steps_updated spliced_steps next_dir_opt
+        have h_split_alt : j.val < (steps_updated spliced_steps next_dir_opt).length := h_split
+        rw [h_len_eq] at h_split_alt
+        exact h_split_alt
+      have h_dir_up := steps_updated_dir spliced_steps next_dir_opt j.val h_spliced_len h_split
+      rw [h_dir_up]
+      -- Instantiate the direction consistency relation for index j.val > 0
+      have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
+      have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
+      dsimp [spliced_steps] at h_spliced_consistent
+      sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
@@ -2845,7 +2856,18 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
     use (spliced_steps_updated.get ⟨j.val, h_split⟩).dir
     refine ⟨?_, rfl⟩
-    · sorry
+    · have h_spliced_len : j.val < spliced_steps.length := by
+        have h_len_eq := length_steps_updated spliced_steps next_dir_opt
+        have h_split_alt : j.val < (steps_updated spliced_steps next_dir_opt).length := h_split
+        rw [h_len_eq] at h_split_alt
+        exact h_split_alt
+      have h_dir_up := steps_updated_dir spliced_steps next_dir_opt j.val h_spliced_len h_split
+      rw [h_dir_up]
+      -- Instantiate the direction consistency relation for index j.val > 0
+      have h_j_pos : 0 < j.val := Nat.pos_of_ne_zero h_j
+      have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
+      dsimp [spliced_steps] at h_spliced_consistent
+      sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
