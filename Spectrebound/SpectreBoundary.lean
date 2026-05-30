@@ -2628,8 +2628,23 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
   revert h_j j
   rw [h_steps_eq]
   intro j h_j
-  -- Isolate index lookup on the right side of the appended lists for j.val ≠ 0
-  sorry
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
+  let anchor_step := rotated.get ⟨0, h_pos⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with | some step => some step.dir | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  by_cases h_split : j.val < spliced_steps_updated.length
+  · -- Subcase A: Index falls within the spliced updated sequence length
+    have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
+    rw [h_get_left]
+    sorry
+  · -- Subcase B: Index falls within the untouched remainder sequence length
+    sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2704,8 +2719,23 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
   revert h_pos h_j j
   rw [h_steps_eq]
   intro j h_j h_pos
-  -- Isolate index lookup on the right side of the appended lists for j.val ≠ 0
-  sorry
+  have h_mem := findMaximalRule_mem h_match
+  let rotated := rotateList B.steps i.val
+  have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
+  let anchor_step := rotated.get ⟨0, h_pos'⟩
+  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
+  let remaining := rotated.drop rule.pattern.length
+  let next_dir_opt := match remaining.head? with
+    | some step => some step.dir
+    | none => match spliced_steps.head? with | some step => some step.dir | none => none
+  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
+  by_cases h_split : j.val < spliced_steps_updated.length
+  · -- Subcase A: Index falls within the spliced updated sequence length
+    have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
+    rw [h_get_left]
+    sorry
+  · -- Subcase B: Index falls within the untouched remainder sequence length
+    sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
