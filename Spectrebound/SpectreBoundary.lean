@@ -2800,7 +2800,11 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     exact H (rotateList B.steps i.val) rfl h_pos'
   rw [← h_anchor_eq] at ht_edge
   have h_neq : t_orig ≠ t_peel := by
-    -- Neighbor Separation: The casting tile along this splice path cannot be the peeled tile
+    intro h_false_eq
+    subst h_false_eq
+    -- Unpack boundary simplicity to show that an interior edge cannot collide with an outer boundary edge
+    have h_simple_path := B.simple
+    dsimp [isSimple] at h_simple_path
     sorry
   have ht_mem_reduced : t_orig ∈ reduced_tiles := by
     rw [h_red]
