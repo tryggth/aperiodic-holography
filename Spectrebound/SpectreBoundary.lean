@@ -2616,7 +2616,9 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
   -- Unroll getPlacedTileEdges to isolate the pure direction list containment
   use anchor_step.dir
   refine ⟨?_, rfl⟩
-  · -- Goal reduced to: anchor_step.dir ∈ getTileEdgeDirections ⟨0, LatticePoint.zero, 0⟩
+  · -- Extract the existential tile witness from the unpeeled boundary ledger
+    have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
+    rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
@@ -2730,7 +2732,9 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
   let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
   use anchor_step.dir
   refine ⟨?_, rfl⟩
-  · -- Goal reduced to: anchor_step.dir ∈ getTileEdgeDirections t_target
+  · -- Extract the existential tile witness from the unpeeled boundary ledger
+    have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
+    rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
     sorry
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
