@@ -2690,7 +2690,9 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
   · -- Subcase A: Index falls within the spliced updated sequence length
     have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
     rw [h_get_left]
-    sorry
+    use (spliced_steps_updated.get ⟨j.val, h_split⟩).dir
+    refine ⟨?_, rfl⟩
+    · sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
@@ -2700,7 +2702,9 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
       omega
     have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
     rw [h_get_right]
-    sorry
+    use (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir
+    refine ⟨?_, rfl⟩
+    · sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2838,7 +2842,10 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
   · -- Subcase A: Index falls within the spliced updated sequence length
     have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
     rw [h_get_left]
-    sorry
+    let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
+    use (spliced_steps_updated.get ⟨j.val, h_split⟩).dir
+    refine ⟨?_, rfl⟩
+    · sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
     have h_ge : spliced_steps_updated.length ≤ j.val := by omega
     have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
@@ -2848,7 +2855,10 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       omega
     have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
     rw [h_get_right]
-    sorry
+    let t_target := (P.tiles.drop 1).get ⟨0, h_pos⟩
+    use (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir
+    refine ⟨?_, rfl⟩
+    · sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
