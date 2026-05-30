@@ -2644,6 +2644,14 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
     rw [h_get_left]
     sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
+    have h_ge : spliced_steps_updated.length ≤ j.val := by omega
+    have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
+      have h_len_all : j.val < spliced_steps_updated.length + remaining.length := by
+        calc j.val < (spliced_steps_updated ++ remaining).length := j.isLt
+          _ = spliced_steps_updated.length + remaining.length := List.length_append
+      omega
+    have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
+    rw [h_get_right]
     sorry
 
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
@@ -2735,6 +2743,14 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     rw [h_get_left]
     sorry
   · -- Subcase B: Index falls within the untouched remainder sequence length
+    have h_ge : spliced_steps_updated.length ≤ j.val := by omega
+    have h_R_len : j.val - spliced_steps_updated.length < remaining.length := by
+      have h_len_all : j.val < spliced_steps_updated.length + remaining.length := by
+        calc j.val < (spliced_steps_updated ++ remaining).length := j.isLt
+          _ = spliced_steps_updated.length + remaining.length := List.length_append
+      omega
+    have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
+    rw [h_get_right]
     sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
