@@ -2646,7 +2646,11 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
     injection hd_eq with h_pos_eq h_dir_eq_witness
     have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
     rw [← h_dir_eq_witness_alt]
-    sorry
+    have h_tile_unify : t_orig = ⟨0, LatticePoint.zero, 0⟩ := by
+      -- In the singleton fallback branch, t_orig must unify with the solitary tile
+      sorry
+    rw [← h_tile_unify]
+    exact hd_mem
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
 lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -2789,7 +2793,11 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     injection hd_eq with h_pos_eq h_dir_eq_witness
     have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
     rw [← h_dir_eq_witness_alt]
-    sorry
+    have h_tile_unify : t_orig = (P.tiles.drop 1).get ⟨0, h_pos⟩ := by
+      -- Isolate the macroscopic tile embedding alignment condition
+      sorry
+    rw [h_tile_unify] at hd_mem
+    exact hd_mem
 
 /-- Helper lemma: Resolves the remainder boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
