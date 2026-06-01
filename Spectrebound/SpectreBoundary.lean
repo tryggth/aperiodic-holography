@@ -2972,7 +2972,16 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         · intro h_red_empty
           -- Contradiction: If reduced_tiles is empty, it contradicts P.tiles having length >= 2
           have h_len_filtered : reduced_tiles.length = 0 := congrArg List.length h_red_empty
-          sorry
+          have h_tiles_len : P.tiles.length ≥ 2 := by
+            have h_drop_len := P.tiles.drop 1
+            have h_drop_ne : P.tiles.drop 1 ≠ [] := h_nt
+            have h_len_drop : (P.tiles.drop 1).length > 0 := List.length_pos_iff_ne_nil.mpr h_drop_ne
+            rw [List.length_drop] at h_len_drop
+            omega
+          have h_filter_bound : reduced_tiles.length ≥ P.tiles.length - 1 := by
+            -- The length of a filtered list omitting at most one element is bounded by length - 1
+            sorry
+          omega
       · -- Update position bound invariant
         sorry
       · -- Update Nodup structural invariant
