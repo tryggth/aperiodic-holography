@@ -2899,8 +2899,12 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       use t_orig
       refine ⟨ht_mem_reduced, ?_⟩
       have h_dir_match : (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir = (B.steps.get orig_idx).dir := by
-        -- Rotated Index Direction Alignment
-        sorry
+        dsimp [rotated]
+        -- Bridge the rotateList index projection to the parent boundary list
+        have h_rot_get : (rotateList B.steps i.val)[rule.pattern.length + (j.val - spliced_steps_updated.length)] =
+          B.steps[orig_idx.val] := by
+          sorry
+        rw [h_rot_get]
       rw [h_dir_match]
       exact ht_edge
     rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
