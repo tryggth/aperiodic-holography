@@ -3004,7 +3004,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           exact mem_of_mem_filter h_filt
         sorry
       · -- Update step direction boundary bounds
-        sorry
+        intro s hs
+        exact s.dir.isLt
       · -- Update corner pool inventory invariant
         sorry
       · -- Update edge witness containment loop
