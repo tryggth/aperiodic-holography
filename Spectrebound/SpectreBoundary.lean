@@ -2979,8 +2979,12 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             rw [List.length_drop] at h_len_drop
             omega
           have h_filter_bound : reduced_tiles.length ≥ P.tiles.length - 1 := by
-            -- The length of a filtered list omitting at most one element is bounded by length - 1
-            sorry
+            -- Unroll the length of the filtered list by counting complement elements
+            have h_sum_len : P.tiles.length = (P.tiles.filter (fun t => t = t_peel)).length + reduced_tiles.length := by
+              sorry
+            have h_single_peel : (P.tiles.filter (fun t => t = t_peel)).length ≤ 1 := by
+              sorry
+            omega
           omega
       · -- Update position bound invariant
         intro t ht
