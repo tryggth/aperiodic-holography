@@ -2983,7 +2983,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             sorry
           omega
       · -- Update position bound invariant
-        sorry
+        intro t ht
+        have ht_orig : t ∈ P.tiles := mem_of_mem_filter ht
+        exact h_bdry.2.1 t ht_orig
       · -- Update Nodup structural invariant
         have h_nodup_orig := h_bdry.2.2.1
         exact List.Nodup.filter (fun t => t ≠ t_peel) h_nodup_orig
