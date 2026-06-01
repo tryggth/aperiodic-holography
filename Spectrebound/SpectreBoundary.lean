@@ -2647,8 +2647,13 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
     rw [← h_dir_eq_witness_alt]
     have h_tile_unify : t_orig = ⟨0, LatticePoint.zero, 0⟩ := by
-      -- In the singleton fallback branch, t_orig must unify with the solitary tile
-      sorry
+      -- Unpack singleton patch membership to force definitional tile unification
+      have h_singleton : P.tiles = [⟨0, LatticePoint.zero, 0⟩] := by
+        -- Extract matching configuration from the ledger boundary conditions
+        sorry
+      rw [h_singleton] at ht_mem
+      simp only [List.mem_singleton] at ht_mem
+      exact ht_mem
     rw [← h_tile_unify]
     exact hd_mem
 
