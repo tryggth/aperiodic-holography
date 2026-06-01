@@ -2801,6 +2801,8 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
   rw [← h_anchor_eq] at ht_edge
   have h_neq : t_orig ≠ t_peel := by
     intro h_false_eq
+    -- Extract the edge-sharing identity under the contradiction state
+    have h_edge_collision : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig := ht_edge
     subst h_false_eq
     -- Unpack boundary simplicity to show that an interior edge cannot collide with an outer boundary edge
     have h_simple_path := B.simple
