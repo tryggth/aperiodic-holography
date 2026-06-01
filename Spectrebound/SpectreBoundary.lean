@@ -3010,7 +3010,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         intro s hs
         exact s.dir.isLt
       · -- Update corner pool inventory invariant
-        sorry
+        have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
+          -- Combinatorial corner pool summation under tile removal
+          sorry
+        exact h_inventory_sum
       · -- Update edge witness containment loop
         intro j
         by_cases hj : j.val = 0
