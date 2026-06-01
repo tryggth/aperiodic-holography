@@ -2880,7 +2880,25 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       exact congrArg (fun s => s.dir) h_drop_reduction
     rw [h_get_reduction]
     have h_witness : ∃ t ∈ reduced_tiles, (t.pos, (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir) ∈ getPlacedTileEdges t := by
-      -- Untouched Perimeter Witness Assertion
+      -- Map the active rotated index back to the unpeeled parent path context
+      have h_orig_pos : 0 < B.steps.length := by
+        have h_ge_two := B.length_ge_two; omega
+      let h_orig_idx_val := (rule.pattern.length + (j.val - spliced_steps_updated.length) + i.val) % B.steps.length
+      have h_orig_idx_lt : h_orig_idx_val < B.steps.length := Nat.mod_lt (rule.pattern.length + (j.val - spliced_steps_updated.length) + i.val) h_orig_pos
+      let orig_idx : Fin B.steps.length := ⟨h_orig_idx_val, h_orig_idx_lt⟩
+      have h_bdry_witness := h_bdry.2.2.2.2.2.2 orig_idx
+      rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
+      have h_neq : t_orig ≠ t_peel := by
+        -- Untouched Perimeter Disjointness: This edge belongs to the remainder shell, so its tile cannot be t_peel
+        sorry
+      have ht_mem_reduced : t_orig ∈ reduced_tiles := by
+        rw [h_red]
+        rw [List.mem_filter]
+        rw [decide_eq_true_iff]
+        exact ⟨ht_mem, h_neq⟩
+      use t_orig
+      refine ⟨ht_mem_reduced, ?_⟩
+      -- Align the rotated edge direction attribute with the verified parent path edge
       sorry
     rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
     exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
