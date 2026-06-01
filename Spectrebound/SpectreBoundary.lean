@@ -2966,7 +2966,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       dsimp [is_boundary_of]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · -- Update boundary non-emptiness invariant
-        sorry
+        constructor
+        · intro h_false
+          exact False.elim (h_steps h_false)
+        · intro h_red_empty
+          -- Contradiction: If reduced_tiles is empty, it contradicts P.tiles having length >= 2
+          have h_len_filtered : reduced_tiles.length = 0 := congrArg List.length h_red_empty
+          sorry
       · -- Update position bound invariant
         sorry
       · -- Update Nodup structural invariant
