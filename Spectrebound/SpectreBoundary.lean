@@ -2951,8 +2951,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · rfl
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
-    · -- [Keep singleton fallback patch branch intact as a structural quarantine stub]
-      sorry
+    · -- Singleton Fallback Contradiction Path
+      have h_singleton_empty : steps' = [] := by
+        -- A single tile patch peeling fully leaves an empty boundary, contradicting h_steps
+        sorry
+      exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
       let anchor_step := rotated.get ⟨0, h_pos⟩
