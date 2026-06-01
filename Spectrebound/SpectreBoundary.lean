@@ -2889,7 +2889,11 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       have h_bdry_witness := h_bdry.2.2.2.2.2.2 orig_idx
       rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
       have h_neq : t_orig ≠ t_peel := by
-        -- Untouched Perimeter Disjointness: This edge belongs to the remainder shell, so its tile cannot be t_peel
+        intro h_false_eq
+        subst h_false_eq
+        -- Unpack boundary simplicity to show a remainder path edge cannot collide with the peeled corner tile
+        have h_simple_path := B.simple
+        dsimp [isSimple] at h_simple_path
         sorry
       have ht_mem_reduced : t_orig ∈ reduced_tiles := by
         rw [h_red]
