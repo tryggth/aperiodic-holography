@@ -2991,6 +2991,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_sum_len : P.tiles.length = (P.tiles.filter (fun t => t = t_peel)).length + reduced_tiles.length := by
               sorry
             have h_single_peel : (P.tiles.filter (fun t => t = t_peel)).length ≤ 1 := by
+              have h_nodup_filter : (P.tiles.filter (fun t => t = t_peel)).Nodup := by
+                have h_nodup_orig := h_bdry.2.2.1
+                exact List.Nodup.filter (fun t => t = t_peel) h_nodup_orig
               sorry
             omega
           omega
