@@ -2859,7 +2859,8 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_spliced_consistent := propagateSplicedSteps_is_consistent rule.replacement anchor_step.dir anchor_step.parity j.val h_spliced_len h_j_pos
     dsimp [spliced_steps] at h_spliced_consistent
     have h_witness : ∃ t ∈ reduced_tiles, (t.pos, (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir) ∈ getPlacedTileEdges t := by
-      -- Internal Neighbor Witness Assertion
+      -- Evaluate the modulo recurrence relation to isolate neighbor edge coordinates
+      have h_step_trans : (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir.val = (((spliced_steps.get ⟨j.val - 1, by omega⟩).dir.val + (spliced_steps.get ⟨j.val - 1, by omega⟩).turn.toStep30) % 12) := h_spliced_consistent
       sorry
     rcases h_witness with ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
     exact ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
