@@ -1,4 +1,5 @@
 import Mathlib.Data.List.Basic
+import Mathlib.Data.List.Nodup
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Int.Basic
 import Spectrebound.SpectreGeometry
@@ -2969,7 +2970,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · -- Update position bound invariant
         sorry
       · -- Update Nodup structural invariant
-        sorry
+        have h_nodup_orig := h_bdry.2.2.1
+        exact List.Nodup.filter (fun t => t ≠ t_peel) h_nodup_orig
       · -- Update coordinate distance invariant
         sorry
       · -- Update step direction boundary bounds
