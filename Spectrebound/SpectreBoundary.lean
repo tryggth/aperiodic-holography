@@ -2953,7 +2953,12 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
   · by_cases h_nt : P.tiles.drop 1 = []
     · -- Singleton Fallback Contradiction Path
       have h_singleton_empty : steps' = [] := by
-        -- A single tile patch peeling fully leaves an empty boundary, contradicting h_steps
+        rw [h_steps_eq]
+        dsimp
+        -- A single-tile patch has a fixed pattern length matching the perimeter path length
+        have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
+          sorry
+        rw [h_len_match]
         sorry
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
