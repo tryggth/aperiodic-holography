@@ -2898,8 +2898,11 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         exact ⟨ht_mem, h_neq⟩
       use t_orig
       refine ⟨ht_mem_reduced, ?_⟩
-      -- Align the rotated edge direction attribute with the verified parent path edge
-      sorry
+      have h_dir_match : (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir = (B.steps.get orig_idx).dir := by
+        -- Rotated Index Direction Alignment
+        sorry
+      rw [h_dir_match]
+      exact ht_edge
     rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
     exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
 
