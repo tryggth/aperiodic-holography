@@ -2994,6 +2994,14 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         have h_nodup_orig := h_bdry.2.2.1
         exact List.Nodup.filter (fun t => t ≠ t_peel) h_nodup_orig
       · -- Update coordinate distance invariant
+        intro idx h1 h2
+        -- Map filtered sublist indices back to verified positions using mem_of_mem_filter
+        have h_curr_mem : (reduced_tiles.get ⟨idx + 1, h2⟩) ∈ P.tiles := by
+          have h_filt := List.get_mem reduced_tiles ⟨idx + 1, h2⟩
+          exact mem_of_mem_filter h_filt
+        have h_prev_mem : (reduced_tiles.get ⟨idx, h1⟩) ∈ P.tiles := by
+          have h_filt := List.get_mem reduced_tiles ⟨idx, h1⟩
+          exact mem_of_mem_filter h_filt
         sorry
       · -- Update step direction boundary bounds
         sorry
