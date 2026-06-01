@@ -3002,7 +3002,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         have h_prev_mem : (reduced_tiles.get ⟨idx, h1⟩) ∈ P.tiles := by
           have h_filt := List.get_mem reduced_tiles ⟨idx, h1⟩
           exact mem_of_mem_filter h_filt
-        sorry
+        have h_adjacent_delta : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+          -- Spatial distance delta constraint under list filtration
+          sorry
+        exact h_adjacent_delta
       · -- Update step direction boundary bounds
         intro s hs
         exact s.dir.isLt
