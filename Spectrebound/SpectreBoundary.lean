@@ -3014,7 +3014,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_filt := List.get_mem reduced_tiles ⟨idx, h1⟩
           exact mem_of_mem_filter h_filt
         have h_adjacent_delta : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-          -- Spatial distance delta constraint under list filtration
+          -- Extract neighbor proximity coordinates from the parent boundary path map
+          have h_parent_dist := h_bdry.2.2.2.1
           sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
@@ -3022,7 +3023,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         exact s.dir.isLt
       · -- Update corner pool inventory invariant
         have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
-          -- Combinatorial corner pool summation under tile removal
+          -- Extract global corner pool summation metrics from the parent boundary path ledger
+          have h_parent_inventory := h_bdry.2.2.2.2.2.1
           sorry
         exact h_inventory_sum
       · -- Update edge witness containment loop
