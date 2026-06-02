@@ -2989,7 +2989,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_filter_bound : reduced_tiles.length ≥ P.tiles.length - 1 := by
             -- Unroll the length of the filtered list by counting complement elements
             have h_sum_len : P.tiles.length = (P.tiles.filter (fun t => t = t_peel)).length + reduced_tiles.length := by
-              sorry
+              have h_red : reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel) := rfl
+              rw [h_red]
+              -- Expand list partition identity over complementary filter predicates
+              have h_partition_ext : P.tiles.length = (P.tiles.filter (fun t => t = t_peel)).length + (P.tiles.filter (fun t => ¬(t = t_peel))).length := by
+                sorry
+              have h_pred_equiv : (P.tiles.filter (fun t => t ≠ t_peel)).length = (P.tiles.filter (fun t => ¬(t = t_peel))).length := by
+                rfl
+              rw [h_pred_equiv]
+              exact h_partition_ext
             have h_single_peel : (P.tiles.filter (fun t => t = t_peel)).length ≤ 1 := by
               have h_nodup_filter : (P.tiles.filter (fun t => t = t_peel)).Nodup := by
                 have h_nodup_orig := h_bdry.2.2.1
