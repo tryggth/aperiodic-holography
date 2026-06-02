@@ -3002,7 +3002,14 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               have h_nodup_filter : (P.tiles.filter (fun t => t = t_peel)).Nodup := by
                 have h_nodup_orig := h_bdry.2.2.1
                 exact List.Nodup.filter (fun t => t = t_peel) h_nodup_orig
-              sorry
+              -- Unroll the length inequality for lists containing uniform equal elements
+              have h_uniform_bound : ∀ l : List PlacedTile, l.Nodup → (∀ x ∈ l, x = t_peel) → l.length ≤ 1 := by
+                sorry
+              have h_all_match : ∀ x ∈ P.tiles.filter (fun t => t = t_peel), x = t_peel := by
+                intro x hx
+                have h_mem_filter := List.mem_filter.mp hx
+                exact decide_eq_true_iff.mp h_mem_filter.2
+              exact h_uniform_bound (P.tiles.filter (fun t => t = t_peel)) h_nodup_filter h_all_match
             omega
           omega
       · -- Update position bound invariant
