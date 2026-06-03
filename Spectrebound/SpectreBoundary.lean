@@ -2980,9 +2980,18 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             · contradiction
             · rfl
           rw [h_none_reduce]
-          -- Substitution sequence reduces to checking empty replacement lengths
+          have h_repl_empty : rule.replacement = [] := by
+            -- A lone tile perimeter match forces a null rule replacement sequence
+            sorry
+          rw [h_repl_empty]
+          rfl
+        have h_repl_empty_goal : rule.replacement = [] := by
+          -- A lone tile perimeter match forces a null rule replacement sequence
           sorry
-        exact sorry
+        rw [h_repl_empty_goal]
+        change steps_updated (propagateSplicedSteps [] (rotateList B.steps _i.val)[0].dir (rotateList B.steps _i.val)[0].parity) none = []
+        rw [← h_repl_empty_goal]
+        exact h_empty_splice
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
