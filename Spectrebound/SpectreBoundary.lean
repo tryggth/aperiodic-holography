@@ -3113,6 +3113,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             subst h_adj
             exact h_parent_dist k2 h_k2 h_k1
           · -- Case 2: Elements separated by exactly one peeled tile position
+            subst h_gap
+            have h_k2_succ : k2 + 1 < P.tiles.length := by omega
+            have h_step1 := h_parent_dist k2 h_k2 h_k2_succ
+            have h_step2 := h_parent_dist (k2 + 1) h_k2_succ h_k1
+            -- Sum of two adjacent deltas surrounding the removed tile position
             sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
