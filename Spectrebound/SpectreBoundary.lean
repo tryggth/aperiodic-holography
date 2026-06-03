@@ -2993,7 +2993,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               rw [h_red]
               -- Expand list partition identity over complementary filter predicates
               have h_partition_ext : P.tiles.length = (P.tiles.filter (fun t => t = t_peel)).length + (P.tiles.filter (fun t => ¬(t = t_peel))).length := by
-                sorry
+                have h_list_partition : ∀ l : List PlacedTile, l.length = (l.filter (fun t => t = t_peel)).length + (l.filter (fun t => ¬(t = t_peel))).length := by
+                  -- Core list length partition under boolean predicate selection
+                  sorry
+                exact h_list_partition P.tiles
               have h_pred_equiv : (P.tiles.filter (fun t => t ≠ t_peel)).length = (P.tiles.filter (fun t => ¬(t = t_peel))).length := by
                 rfl
               rw [h_pred_equiv]
