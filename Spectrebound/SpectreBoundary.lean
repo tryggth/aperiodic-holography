@@ -3084,6 +3084,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             rw [List.mem_iff_get] at h_prev_mem
             rcases h_prev_mem with ⟨⟨k2, h_k2⟩, hk2_eq⟩
             exact ⟨k2, h_k2, hk2_eq⟩
+          rcases h_curr_orig with ⟨k1, h_k1, hk1_eq⟩
+          rcases h_prev_orig with ⟨k2, h_k2, hk2_eq⟩
+          -- Coordinate proximity bounds evaluation over master list index lookups
           sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
