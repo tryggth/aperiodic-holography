@@ -3059,6 +3059,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         have h_adjacent_delta : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
           -- Extract neighbor proximity coordinates from the parent boundary path map
           have h_parent_dist := h_bdry.2.2.2.1
+          -- Isolate proximity constraints over shifted filtered sublist indices
           sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
