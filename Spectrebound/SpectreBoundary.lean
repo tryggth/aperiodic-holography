@@ -2963,8 +2963,17 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rw [← h_single_len]
           exact List.drop_length
         rw [h_len_match]
-        dsimp [steps_updated]
-        sorry
+        have h_pos_rot : 0 < (rotateList B.steps _i.val).length := by
+          rw [length_rotateList]
+          have h_ge := B.length_ge_two
+          omega
+        have h_empty_splice : steps_updated (propagateSplicedSteps rule.replacement ((rotateList B.steps _i.val)[0]'h_pos_rot).dir ((rotateList B.steps _i.val)[0]'h_pos_rot).parity)
+          (match (propagateSplicedSteps rule.replacement ((rotateList B.steps _i.val)[0]'h_pos_rot).dir ((rotateList B.steps _i.val)[0]'h_pos_rot).parity).head? with
+           | some step => some step.dir
+           | none => none) = [] := by
+          sorry
+        simp only [List.head?, List.append_nil]
+        exact h_empty_splice
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
