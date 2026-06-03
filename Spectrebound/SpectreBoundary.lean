@@ -3106,10 +3106,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rw [h_subst]
           -- Isolate index distance step relation under sublist filtration
           have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
-            have h_filter_adj_bound : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i : Nat) (hi1 hi2 : i + 1 < (L.filter p).length),
+            have h_filter_adj_bound : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length),
               ∃ g1 g2 : Nat, g1 < L.length ∧ g2 < L.length := by
               -- Generalized index gap bound under duplicate-free filtration
               sorry
+            have h_spec_bound := h_filter_adj_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
             sorry
           rcases h_index_step with h_adj | h_gap
           · -- Case 1: Perfectly adjacent elements in original master list
