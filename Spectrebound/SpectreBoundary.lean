@@ -3113,6 +3113,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_spec_bound := h_filter_adj_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
             rcases h_spec_bound with ⟨g1, g2, hg1, hg2⟩
             have h_k_bounds : k1 < P.tiles.length ∧ k2 < P.tiles.length := ⟨h_k1, h_k2⟩
+            have h_index_unify : k1 = g2 ∧ k2 = g1 := by
+              -- Unify indices via element equality and list injectivity
+              sorry
             sorry
           rcases h_index_step with h_adj | h_gap
           · -- Case 1: Perfectly adjacent elements in original master list
