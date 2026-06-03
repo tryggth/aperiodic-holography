@@ -3023,7 +3023,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       | cons hd' tl' =>
                           have h_hd'_mem : hd' ∈ tl := by rw [h_tl]; exact List.mem_cons_self
                           have h_hd'_eq : hd' = t_peel := h_all hd' (List.mem_cons_of_mem hd h_hd'_mem)
-                          sorry
+                          have h_hd_hd' : hd = hd' := h_hd_eq.trans h_hd'_eq.symm
+                          rw [h_hd_hd'] at h_not_mem
+                          exact False.elim (h_not_mem h_hd'_mem)
                     rw [h_tl_empty]
                     dsimp [List.length]
                     omega
