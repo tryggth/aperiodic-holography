@@ -3117,7 +3117,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               -- Unify indices via element equality and list injectivity
               sorry
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
-              -- Bounded filter step sizes restrict neighbor distance gaps to 1 or 2
+              have h_gap_max : g2 ≤ g1 + 2 := by
+                -- Single-element filter constraint limits max index gap step to 2
+                sorry
               sorry
             rcases h_index_unify with ⟨rfl, rfl⟩
             rcases h_arith_step with ha1 | ha2
