@@ -3118,7 +3118,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 L.get ⟨n1, hn1⟩ = L.get ⟨n2, hn2⟩ → n1 = n2 := by
                 -- Uniqueness constraint over Nodup lists guarantees index injectivity
                 sorry
-              sorry
+              have h_k1_eq_g2 : k1 = g2 := by
+                -- Specialization of list injectivity for the primary index pair
+                sorry
+              have h_k2_eq_g1 : k2 = g1 := by
+                -- Specialization of list injectivity for the secondary index pair
+                sorry
+              exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
               have h_gap_max : g2 ≤ g1 + 2 := by
                 -- Single-element filter constraint limits max index gap step to 2
