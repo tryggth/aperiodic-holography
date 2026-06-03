@@ -3130,7 +3130,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 have h_equal_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ := by
                   -- Element lookups at matched prior filter positions coincide with original list lookups
                   sorry
-                sorry
+                have h_inj_apply_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ → k2 = g1 := by
+                  -- Apply generalized list injectivity over the secondary index bounds
+                  sorry
+                exact h_inj_apply_prev h_equal_prev
               exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
               have h_gap_max : g2 ≤ g1 + 2 := by
