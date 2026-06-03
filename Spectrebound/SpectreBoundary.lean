@@ -3086,6 +3086,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             exact ⟨k2, h_k2, hk2_eq⟩
           rcases h_curr_orig with ⟨k1, h_k1, hk1_eq⟩
           rcases h_prev_orig with ⟨k2, h_k2, hk2_eq⟩
+          have h_subst : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a =
+            (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a := by
+            rw [← hk1_eq, ← hk2_eq]
+          rw [h_subst]
           -- Coordinate proximity bounds evaluation over master list index lookups
           sorry
         exact h_adjacent_delta
