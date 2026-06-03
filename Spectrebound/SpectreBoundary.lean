@@ -3122,6 +3122,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
               ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) := by omega
             rw [h_sum_delta]
+            have h_d1_mem : (P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := h_step2
+            have h_d2_mem : (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := h_step1
             sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
