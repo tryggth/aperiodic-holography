@@ -3105,17 +3105,20 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_peel_mem : t_peel ∈ P.tiles := by
               dsimp [t_peel]
               have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
-              -- Abstract lookahead selection containment over elements with a valid fallback tile
-              have h_find_mem : ∀ (L : List PlacedTile) (def_t : PlacedTile) (h_in : def_t ∈ L), findTileAtStep L anchor_step.dir def_t ∈ L := by
-                intro L def_t h_in
+              have h_find_mem_or_eq : ∀ (L : List PlacedTile) (def_t : PlacedTile), findTileAtStep L anchor_step.dir def_t ∈ L ∨ findTileAtStep L anchor_step.dir def_t = def_t := by
+                intro L def_t
                 induction L with
-                | nil => exact h_in
+                | nil => exact Or.inr rfl
                 | cons hd tl ih =>
                     dsimp [findTileAtStep]
                     split
-                    · exact List.mem_cons_self
-                    · sorry
-              exact h_find_mem P.tiles default_tile h_def_in
+                    · exact Or.inl List.mem_cons_self
+                    · cases ih with
+                      | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
+                      | inr h => exact Or.inr h
+              cases h_find_mem_or_eq P.tiles default_tile with
+              | inl h => exact h
+              | inr h => rw [h]; exact h_def_in
             sorry
           sorry
         exact h_inventory_sum
