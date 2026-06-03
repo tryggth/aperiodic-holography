@@ -3103,8 +3103,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
             -- Isolate inventory behavior based on the membership of t_peel
             have h_peel_mem : t_peel ∈ P.tiles := by
-              -- t_peel is guaranteed to be in P.tiles by the findTileAtStep selection loop
-              sorry
+              dsimp [t_peel]
+              -- Abstract lookahead selection containment over non-empty lists
+              have h_find_mem : ∀ (L : List PlacedTile) (def_t : PlacedTile) (h_len : L.length > 0), findTileAtStep L anchor_step.dir def_t ∈ L := by
+                sorry
+              exact h_find_mem P.tiles default_tile h_p
             sorry
           sorry
         exact h_inventory_sum
