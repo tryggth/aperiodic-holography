@@ -2957,8 +2957,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         dsimp
         -- A single-tile patch has a fixed pattern length matching the perimeter path length
         have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
-          sorry
+          have h_single_len : (rotateList B.steps _i.val).length = rule.pattern.length := by
+            -- Lone tile perimeter match equality under maximal rule matching
+            sorry
+          rw [← h_single_len]
+          exact List.drop_length
         rw [h_len_match]
+        dsimp [steps_updated]
         sorry
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
