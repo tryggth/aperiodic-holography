@@ -2973,12 +2973,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           omega
         -- Empty sequence concatenation under null rule splicing
         have h_empty_splice : steps_updated (propagateSplicedSteps rule.replacement (rotateList B.steps _i.val)[0].dir (rotateList B.steps _i.val)[0].parity) none = [] := by
-          have h_none_reduce : ∀ l : List BoundaryStep, steps_updated l none = [] := by
+          have h_none_reduce : ∀ l : List BoundaryStep, steps_updated l none = l := by
             intro l
             dsimp [steps_updated]
-            -- Definitional reduction of steps_updated on non-existent tail paths
-            sorry
-          exact h_none_reduce (propagateSplicedSteps rule.replacement (rotateList B.steps _i.val)[0].dir (rotateList B.steps _i.val)[0].parity)
+            split
+            · contradiction
+            · rfl
+          rw [h_none_reduce]
+          -- Substitution sequence reduces to checking empty replacement lengths
+          sorry
         exact sorry
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
