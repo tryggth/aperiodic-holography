@@ -3120,7 +3120,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               have h_gap_max : g2 ≤ g1 + 2 := by
                 -- Single-element filter constraint limits max index gap step to 2
                 sorry
-              sorry
+              have h_gap_min : g1 < g2 := by
+                -- Consecutive filtered sublist index lookups preserve strict monotonicity
+                sorry
+              omega
             rcases h_index_unify with ⟨rfl, rfl⟩
             rcases h_arith_step with ha1 | ha2
             · left; omega
