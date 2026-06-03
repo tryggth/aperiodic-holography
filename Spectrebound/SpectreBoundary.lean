@@ -3127,7 +3127,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                   sorry
                 exact h_inj_apply h_equal_curr
               have h_k2_eq_g1 : k2 = g1 := by
-                -- Specialization of list injectivity for the secondary index pair
+                have h_equal_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ := by
+                  -- Element lookups at matched prior filter positions coincide with original list lookups
+                  sorry
                 sorry
               exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
