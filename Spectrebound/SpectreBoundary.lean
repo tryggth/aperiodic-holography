@@ -3104,7 +3104,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a := by
             rw [← hk1_eq, ← hk2_eq]
           rw [h_subst]
-          -- Coordinate proximity bounds evaluation over master list index lookups
+          -- Isolate index distance step relation under sublist filtration
+          have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
+            -- Elements adjacent in filtered sublist are separated by at most 2 in original list
+            sorry
           sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
