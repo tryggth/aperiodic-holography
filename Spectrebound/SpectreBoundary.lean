@@ -3116,7 +3116,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
               -- Unify indices via element equality and list injectivity
               sorry
-            sorry
+            have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
+              -- Bounded filter step sizes restrict neighbor distance gaps to 1 or 2
+              sorry
+            rcases h_index_unify with ⟨rfl, rfl⟩
+            rcases h_arith_step with ha1 | ha2
+            · left; omega
+            · right; omega
           rcases h_index_step with h_adj | h_gap
           · -- Case 1: Perfectly adjacent elements in original master list
             subst h_adj
