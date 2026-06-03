@@ -3017,7 +3017,16 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                     have h_hd_eq : hd = t_peel := h_all hd List.mem_cons_self
                     have h_nodup_tl : tl.Nodup := (List.nodup_cons.mp h_nodup).2
                     have h_not_mem : hd ∉ tl := (List.nodup_cons.mp h_nodup).1
-                    sorry
+                    have h_tl_empty : tl = [] := by
+                      cases h_tl : tl with
+                      | nil => rfl
+                      | cons hd' tl' =>
+                          have h_hd'_mem : hd' ∈ tl := by rw [h_tl]; exact List.mem_cons_self
+                          have h_hd'_eq : hd' = t_peel := h_all hd' (List.mem_cons_of_mem hd h_hd'_mem)
+                          sorry
+                    rw [h_tl_empty]
+                    dsimp [List.length]
+                    omega
               have h_all_match : ∀ x ∈ P.tiles.filter (fun t => t = t_peel), x = t_peel := by
                 intro x hx
                 have h_mem_filter := List.mem_filter.mp hx
