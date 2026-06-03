@@ -3077,9 +3077,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_parent_dist := h_bdry.2.2.2.1
           -- Bridge filtered list elements back to original positional entries via existential indices
           have h_curr_orig : ∃ k1 : Nat, ∃ h_k1 : k1 < P.tiles.length, P.tiles.get ⟨k1, h_k1⟩ = reduced_tiles.get ⟨idx + 1, h2⟩ := by
-            sorry
+            rw [List.mem_iff_get] at h_curr_mem
+            rcases h_curr_mem with ⟨⟨k1, h_k1⟩, hk1_eq⟩
+            exact ⟨k1, h_k1, hk1_eq⟩
           have h_prev_orig : ∃ k2 : Nat, ∃ h_k2 : k2 < P.tiles.length, P.tiles.get ⟨k2, h_k2⟩ = reduced_tiles.get ⟨idx, h1⟩ := by
-            sorry
+            rw [List.mem_iff_get] at h_prev_mem
+            rcases h_prev_mem with ⟨⟨k2, h_k2⟩, hk2_eq⟩
+            exact ⟨k2, h_k2, hk2_eq⟩
           sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
