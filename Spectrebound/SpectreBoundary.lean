@@ -2955,6 +2955,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       have h_singleton_empty : steps' = [] := by
         rw [h_steps_eq]
         dsimp
+        have h_repl_empty : rule.replacement = [] := by
+          -- A lone tile perimeter match forces a null rule replacement sequence
+          sorry
         -- A single-tile patch has a fixed pattern length matching the perimeter path length
         have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
           have h_single_len : (rotateList B.steps _i.val).length = rule.pattern.length := by
@@ -2980,17 +2983,12 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             · contradiction
             · rfl
           rw [h_none_reduce]
-          have h_repl_empty : rule.replacement = [] := by
-            -- A lone tile perimeter match forces a null rule replacement sequence
-            sorry
           rw [h_repl_empty]
           rfl
-        have h_repl_empty_goal : rule.replacement = [] := by
-          -- A lone tile perimeter match forces a null rule replacement sequence
-          sorry
-        rw [h_repl_empty_goal]
+        rw [h_repl_empty]
+        simp only [List.append_nil]
         change steps_updated (propagateSplicedSteps [] (rotateList B.steps _i.val)[0].dir (rotateList B.steps _i.val)[0].parity) none = []
-        rw [← h_repl_empty_goal]
+        rw [← h_repl_empty]
         exact h_empty_splice
       exact False.elim (h_steps h_singleton_empty)
     · let rotated := rotateList B.steps _i.val
