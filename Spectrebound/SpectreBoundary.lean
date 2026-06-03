@@ -3108,7 +3108,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
             -- Elements adjacent in filtered sublist are separated by at most 2 in original list
             sorry
-          sorry
+          rcases h_index_step with h_adj | h_gap
+          · -- Case 1: Perfectly adjacent elements in original master list
+            sorry
+          · -- Case 2: Elements separated by exactly one peeled tile position
+            sorry
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
         intro s hs
