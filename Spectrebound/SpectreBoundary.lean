@@ -3119,7 +3119,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 -- Uniqueness constraint over Nodup lists guarantees index injectivity
                 sorry
               have h_k1_eq_g2 : k1 = g2 := by
-                -- Specialization of list injectivity for the primary index pair
+                have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
+                  -- Element lookups at matched filter positions coincide with original list lookups
+                  sorry
                 sorry
               have h_k2_eq_g1 : k2 = g1 := by
                 -- Specialization of list injectivity for the secondary index pair
