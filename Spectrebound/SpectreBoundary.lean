@@ -2958,10 +2958,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         -- A single-tile patch has a fixed pattern length matching the perimeter path length
         have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
           have h_single_len : (rotateList B.steps _i.val).length = rule.pattern.length := by
-            -- Extract prefix match token from findMaximalRule mapping
             have h_pref := findMaximalRule_prefix h_match
-            -- For a single-tile patch, prefix match equality spans the full list length
-            sorry
+            -- Isolate the prefix matching equality over single-tile path boundaries
+            have h_prefix_len_eq : (rotateList B.steps _i.val).length = rule.pattern.length := by
+              sorry
+            exact h_prefix_len_eq
           rw [← h_single_len]
           exact List.drop_length
         rw [h_len_match]
