@@ -3101,7 +3101,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           -- Extract global corner pool summation metrics from the parent boundary path ledger
           have h_parent_inventory := h_bdry.2.2.2.2.2.1
           have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
-            -- Inventory additivity under single-element sublist filtration
+            -- Isolate inventory behavior based on the membership of t_peel
+            have h_peel_mem : t_peel ∈ P.tiles := by
+              -- t_peel is guaranteed to be in P.tiles by the findTileAtStep selection loop
+              sorry
             sorry
           sorry
         exact h_inventory_sum
