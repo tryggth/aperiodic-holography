@@ -3110,7 +3110,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             sorry
           rcases h_index_step with h_adj | h_gap
           · -- Case 1: Perfectly adjacent elements in original master list
-            sorry
+            subst h_adj
+            exact h_parent_dist k2 h_k2 h_k1
           · -- Case 2: Elements separated by exactly one peeled tile position
             sorry
         exact h_adjacent_delta
