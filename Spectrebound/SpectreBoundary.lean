@@ -3295,7 +3295,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               rw [h_sum_delta]
               have h_valuation : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
                 ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-                -- Finite combination evaluation of consecutive boundary tile deltas
+                -- Combine consecutive step memberships using the geometric boundary invariants
                 sorry
               exact h_valuation
             exact h_geom_delta_gap
