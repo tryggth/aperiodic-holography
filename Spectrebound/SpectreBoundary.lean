@@ -3184,8 +3184,18 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 have h_filter_counted_gap : ∀ k (hk1 : g1 < k) (hk2 : k < g2), (fun t => t ≠ t_peel) (P.tiles.get ⟨k, by omega⟩) = false := by
                   intro k hk1 hk2
                   have h_intermediate_is_peeled : P.tiles.get ⟨k, by omega⟩ = t_peel := by
-                    -- An element skipped between consecutive filter survivors must be the unique peeled tile
-                    sorry
+                    by_contra h_neq
+                    have h_pred_true : (fun t => t ≠ t_peel) (P.tiles.get ⟨k, by omega⟩) = true := by
+                      simp
+                      exact h_neq
+                    have h_mem_filter : P.tiles.get ⟨k, by omega⟩ ∈ reduced_tiles := by
+                      rw [List.mem_filter]
+                      exact ⟨List.get_mem P.tiles ⟨k, by omega⟩, by simp only [decide_eq_true_iff, h_pred_true]⟩
+                    rcases List.mem_iff_get.mp h_mem_filter with ⟨⟨idx_k, h_k_lt⟩, h_k_get⟩
+                    have h_sublist_bounds : idx < idx_k ∧ idx_k < idx + 1 := by
+                      -- Monotonicity of filter list index mappings forces a strict ordering squeeze
+                      sorry
+                    omega
                   simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
                   simp
                 have h_gap_indices_unique : ∀ k1 k2 (hk1_1 : g1 < k1) (hk1_2 : k1 < g2) (hk2_1 : g1 < k2) (hk2_2 : k2 < g2), k1 = k2 := by
