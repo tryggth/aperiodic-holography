@@ -3193,8 +3193,17 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       exact ⟨List.get_mem P.tiles ⟨k, by omega⟩, by simp only [decide_eq_true_iff, h_pred_true]⟩
                     rcases List.mem_iff_get.mp h_mem_filter with ⟨⟨idx_k, h_k_lt⟩, h_k_get⟩
                     have h_sublist_bounds : idx < idx_k ∧ idx_k < idx + 1 := by
-                      -- Monotonicity of filter list index mappings forces a strict ordering squeeze
-                      sorry
+                      have h_mono_sub : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
+                        (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
+                        -- Filter index mapping preserves bi-implication of strict monotonicity
+                        sorry
+                      have h_lt1 : idx < idx_k := by
+                        have h_spec := h_mono_sub P.tiles (fun t => decide (t ≠ t_peel)) idx idx_k h1 h_k_lt g1 k hg1 (by omega) h_get1 h_k_get
+                        omega
+                      have h_lt2 : idx_k < idx + 1 := by
+                        have h_spec := h_mono_sub P.tiles (fun t => decide (t ≠ t_peel)) idx_k (idx + 1) h_k_lt h2 k g2 (by omega) hg2 h_k_get h_get2
+                        omega
+                      exact ⟨h_lt1, h_lt2⟩
                     omega
                   simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
                   simp
