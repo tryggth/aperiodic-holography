@@ -3116,8 +3116,14 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
               have h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
                 L.get ⟨n1, hn1⟩ = L.get ⟨n2, hn2⟩ → n1 = n2 := by
-                -- Uniqueness constraint over Nodup lists guarantees index injectivity
-                sorry
+                intro L
+                induction L with
+                | nil =>
+                    intro h_nd n1 n2 hn1 hn2 h_eq
+                    contradiction
+                | cons hd tl ih =>
+                    -- Inductive step for duplicate-free coordinate list index lookups
+                    sorry
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
                   -- Element lookups at matched filter positions coincide with original list lookups
