@@ -3169,7 +3169,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                   sorry
                 have h_inj_apply : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ → k1 = g2 := by
                   -- Apply generalized list injectivity over the primary index bounds
-                  sorry
+                  exact h_list_injective P.tiles h_bdry.2.2.1 k1 g2 h_k1 hg2
                 exact h_inj_apply h_equal_curr
               have h_k2_eq_g1 : k2 = g1 := by
                 have h_equal_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ := by
@@ -3177,7 +3177,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                   sorry
                 have h_inj_apply_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ → k2 = g1 := by
                   -- Apply generalized list injectivity over the secondary index bounds
-                  sorry
+                  exact h_list_injective P.tiles h_bdry.2.2.1 k2 g1 h_k2 hg1
                 exact h_inj_apply_prev h_equal_prev
               exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
