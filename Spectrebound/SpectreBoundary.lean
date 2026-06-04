@@ -3189,8 +3189,30 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                   simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
                   simp
                 have h_gap_indices_unique : ∀ k1 k2 (hk1_1 : g1 < k1) (hk1_2 : k1 < g2) (hk2_1 : g1 < k2) (hk2_2 : k2 < g2), k1 = k2 := by
-                  -- Any two indices skipped between consecutive filter survivors must be identical
-                  sorry
+                  intro b1 b2 hb1_1 hb1_2 hb2_1 hb2_2
+                  have hb1_bounds : b1 < P.tiles.length := by omega
+                  have hb2_bounds : b2 < P.tiles.length := by omega
+                  have h_p1 := h_filter_counted_gap b1 hb1_1 hb1_2
+                  have h_p2 := h_filter_counted_gap b2 hb2_1 hb2_2
+                  have h_b1_eq : P.tiles.get ⟨b1, hb1_bounds⟩ = t_peel := by
+                    have h_bool : ((P.tiles.get ⟨b1, hb1_bounds⟩) ≠ t_peel) = false := h_p1
+                    by_contra h_neq
+                    have h_bool_true : ((P.tiles.get ⟨b1, hb1_bounds⟩) ≠ t_peel) = true := by
+                      simp
+                      exact h_neq
+                    rw [h_bool_true] at h_bool
+                    contradiction
+                  have h_b2_eq : P.tiles.get ⟨b2, hb2_bounds⟩ = t_peel := by
+                    have h_bool : ((P.tiles.get ⟨b2, hb2_bounds⟩) ≠ t_peel) = false := h_p2
+                    by_contra h_neq
+                    have h_bool_true : ((P.tiles.get ⟨b2, hb2_bounds⟩) ≠ t_peel) = true := by
+                      simp
+                      exact h_neq
+                    rw [h_bool_true] at h_bool
+                    contradiction
+                  have h_elements_eq : P.tiles.get ⟨b1, hb1_bounds⟩ = P.tiles.get ⟨b2, hb2_bounds⟩ := by
+                    rw [h_b1_eq, h_b2_eq]
+                  exact h_list_injective P.tiles h_bdry.2.2.1 b1 b2 hb1_bounds hb2_bounds h_elements_eq
                 by_cases h_case : g2 ≤ g1 + 2
                 · exact h_case
                 · have h_contra : g1 + 1 = g1 + 2 := by
