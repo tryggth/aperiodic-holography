@@ -3280,8 +3280,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rcases h_index_step with h_case_adj | h_case_gap
           · -- Case 4A: Indices are strictly sequential (k1 = k2 + 1)
             have h_geom_delta_adj : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-              -- Sequential index positioning matches adjacent patch criteria
-              sorry
+              subst h_case_adj
+              exact h_parent_dist k2 h_k2 h_k1
             exact h_geom_delta_adj
           · -- Case 4B: Indices are separated by the unique peeled tile (k1 = k2 + 2)
             have h_geom_delta_gap : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
