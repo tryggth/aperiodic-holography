@@ -3316,8 +3316,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_patch_uniform := P.orientation_uniform_invariant ⟨k1, h_k1⟩ ⟨k2, h_k2⟩
             exact h_patch_uniform
           have h_orientation_trans : (P.tiles.get ⟨k2, h_k2⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
-            -- Transitive propagation back to baseline tile position
-            sorry
+            have h_patch_uniform_trans := P.orientation_uniform_invariant ⟨k2, h_k2⟩ ⟨0, h_p⟩
+            exact h_patch_uniform_trans
           rw [h_orientation_step, h_orientation_trans]
         intro s hs
         exact s.dir.isLt
