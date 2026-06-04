@@ -3122,8 +3122,29 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                     intro h_nd n1 n2 hn1 hn2 h_eq
                     contradiction
                 | cons hd tl ih =>
-                    -- Inductive step for duplicate-free coordinate list index lookups
-                    sorry
+                    intro h_nd n1 n2 hn1 hn2 h_eq
+                    cases n1 with
+                    | zero =>
+                        cases n2 with
+                        | zero => rfl
+                        | succ n2' =>
+                            -- Contradiction: duplicate element found at index 0 and succ n2'
+                            sorry
+                    | succ n1' =>
+                        cases n2 with
+                        | zero =>
+                            -- Contradiction: duplicate element found at index succ n1' and 0
+                            sorry
+                        | succ n2' =>
+                            -- Deconstruct successor index lookup bounds to apply ih
+                            have hn1' : n1' < tl.length := by
+                              simp only [List.length_cons] at hn1
+                              omega
+                            have hn2' : n2' < tl.length := by
+                              simp only [List.length_cons] at hn2
+                              omega
+                            -- Inductive mapping step over reduced indices
+                            sorry
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
                   -- Element lookups at matched filter positions coincide with original list lookups
