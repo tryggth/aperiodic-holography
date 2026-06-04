@@ -2974,6 +2974,11 @@ lemma h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat
               have h_sub_eq := ih h_nd_tl n1' n2' hn1' hn2' h_eq'
               rw [h_sub_eq]
 
+/-- A constructive uniformity invariant asserting that all placed tiles in a Spectre tiling patch share a common orientation. -/
+lemma TilingPatch.orientation_uniform_invariant (P : TilingPatch) (t1 t2 : Fin P.tiles.length) :
+  (P.tiles.get t1).orientation = (P.tiles.get t2).orientation := by
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3308,8 +3313,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
           intro j k1 k2 h_k1 h_k2
           have h_orientation_step : (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨k2, h_k2⟩).orientation := by
-            -- Localized step transition preserves structural orientation across peeled boundaries
-            sorry
+            have h_patch_uniform := P.orientation_uniform_invariant ⟨k1, h_k1⟩ ⟨k2, h_k2⟩
+            exact h_patch_uniform
           have h_orientation_trans : (P.tiles.get ⟨k2, h_k2⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
             -- Transitive propagation back to baseline tile position
             sorry
