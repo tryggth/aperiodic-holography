@@ -3180,11 +3180,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
               have h_gap_max : g2 ≤ g1 + 2 := by
-                -- Single-element filter constraint limits max index gap step to 2
+                have h_filter_counted_gap : ∀ k (hk1 : g1 < k) (hk2 : k < g2), (fun t => t ≠ t_peel) (P.tiles.get ⟨k, by omega⟩) = false := by
+                  -- Elements strictly between consecutive filter indices must falsify the predicate
+                  sorry
                 sorry
               have h_gap_min : g1 < g2 := by
                 have h_g2_succ : g1 + 1 ≤ g2 := by
-                  -- Elements distinct and ordered in sublist filtration force strict successor bounds
+                  have h_distinct_indices : g1 ≠ g2 := by
+                    -- Filtered lookups at idx and idx + 1 yield distinct elements, forcing distinct indices
+                    sorry
                   sorry
                 omega
               omega
