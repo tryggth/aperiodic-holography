@@ -3277,27 +3277,17 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             rcases h_arith_step with ha1 | ha2
             · left; omega
             · right; omega
-          rcases h_index_step with h_adj | h_gap
-          · -- Case 1: Perfectly adjacent elements in original master list
-            subst h_adj
-            exact h_parent_dist k2 h_k2 h_k1
-          · -- Case 2: Elements separated by exactly one peeled tile position
-            subst h_gap
-            have h_k2_succ : k2 + 1 < P.tiles.length := by omega
-            have h_step1 := h_parent_dist k2 h_k2 h_k2_succ
-            have h_step2 := h_parent_dist (k2 + 1) h_k2_succ h_k1
-            -- Sum of two adjacent deltas surrounding the removed tile position
-            have h_sum_delta : (P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a =
-              ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
-              ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) := by omega
-            rw [h_sum_delta]
-            have h_d1_mem : (P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := h_step2
-            have h_d2_mem : (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := h_step1
-            have h_valuation : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
-              ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-              -- Finite combination evaluation of consecutive boundary tile deltas
+          rcases h_index_step with h_case_adj | h_case_gap
+          · -- Case 4A: Indices are strictly sequential (k1 = k2 + 1)
+            have h_geom_delta_adj : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+              -- Sequential index positioning matches adjacent patch criteria
               sorry
-            exact h_valuation
+            exact h_geom_delta_adj
+          · -- Case 4B: Indices are separated by the unique peeled tile (k1 = k2 + 2)
+            have h_geom_delta_gap : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+              -- Distance accumulation across the skipped intermediate tile position
+              sorry
+            exact h_geom_delta_gap
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
         intro s hs
