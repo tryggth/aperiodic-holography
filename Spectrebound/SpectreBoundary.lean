@@ -3197,7 +3197,14 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       exact Fin.ext_iff.mp h_fin_eq
                     omega
                   have h_filter_mono : g1 < g2 := by
-                    -- Strict ordering of elements is preserved under list filtration
+                    have h_mono_inj : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length),
+                      i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
+                      (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
+                      -- Sublist filtration strictly preserves position order indices
+                      sorry
+                    have h_mono_spec := h_mono_inj P.tiles (fun t => t ≠ t_peel) idx (idx + 1) h1 h2 (by omega)
+                    rcases h_mono_spec with ⟨m1, m2, hm1, hm2, h_mget1, h_mget2, h_mlt⟩
+                    -- Unify specialized order boundaries with active existential positions g1 and g2
                     sorry
                   omega
                 omega
