@@ -2924,6 +2924,56 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
     exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
 
+lemma h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
+  L.get ⟨n1, hn1⟩ = L.get ⟨n2, hn2⟩ → n1 = n2 := by
+  intro L
+  induction L with
+  | nil =>
+      intro h_nd n1 n2 hn1 hn2 h_eq
+      contradiction
+  | cons hd tl ih =>
+      intro h_nd n1 n2 hn1 hn2 h_eq
+      cases n1 with
+      | zero =>
+          cases n2 with
+          | zero => rfl
+          | succ n2' =>
+              -- Contradiction: hd is at index 0 and also inside tl
+              have hn2' : n2' < tl.length := by
+                simp only [List.length_cons] at hn2
+                omega
+              have h_not_mem := (List.nodup_cons.mp h_nd).1
+              have h_eq' : hd = tl.get ⟨n2', hn2'⟩ := h_eq
+              have h_mem : hd ∈ tl := by
+                rw [h_eq']
+                exact List.get_mem tl ⟨n2', hn2'⟩
+              contradiction
+      | succ n1' =>
+          cases n2 with
+          | zero =>
+              -- Symmetrical contradiction: hd is inside tl and also at index 0
+              have hn1' : n1' < tl.length := by
+                simp only [List.length_cons] at hn1
+                omega
+              have h_not_mem := (List.nodup_cons.mp h_nd).1
+              have h_eq' : tl.get ⟨n1', hn1'⟩ = hd := h_eq
+              have h_mem : hd ∈ tl := by
+                rw [← h_eq']
+                exact List.get_mem tl ⟨n1', hn1'⟩
+              contradiction
+          | succ n2' =>
+              -- Deconstruct successor index lookup bounds to apply ih
+              have hn1' : n1' < tl.length := by
+                simp only [List.length_cons] at hn1
+                omega
+              have hn2' : n2' < tl.length := by
+                simp only [List.length_cons] at hn2
+                omega
+              have h_nd_tl := (List.nodup_cons.mp h_nd).2
+              have h_eq' : tl.get ⟨n1', hn1'⟩ = tl.get ⟨n2', hn2'⟩ := h_eq
+              have h_sub_eq := ih h_nd_tl n1' n2' hn1' hn2' h_eq'
+              rw [h_sub_eq]
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3114,55 +3164,6 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             rcases h_spec_bound with ⟨g1, g2, hg1, hg2, h_get1, h_get2⟩
             have h_k_bounds : k1 < P.tiles.length ∧ k2 < P.tiles.length := ⟨h_k1, h_k2⟩
             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
-              have h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
-                L.get ⟨n1, hn1⟩ = L.get ⟨n2, hn2⟩ → n1 = n2 := by
-                intro L
-                induction L with
-                | nil =>
-                    intro h_nd n1 n2 hn1 hn2 h_eq
-                    contradiction
-                | cons hd tl ih =>
-                    intro h_nd n1 n2 hn1 hn2 h_eq
-                    cases n1 with
-                    | zero =>
-                        cases n2 with
-                        | zero => rfl
-                        | succ n2' =>
-                            -- Contradiction: hd is at index 0 and also inside tl
-                            have hn2' : n2' < tl.length := by
-                              simp only [List.length_cons] at hn2
-                              omega
-                            have h_not_mem := (List.nodup_cons.mp h_nd).1
-                            have h_eq' : hd = tl.get ⟨n2', hn2'⟩ := h_eq
-                            have h_mem : hd ∈ tl := by
-                              rw [h_eq']
-                              exact List.get_mem tl ⟨n2', hn2'⟩
-                            contradiction
-                    | succ n1' =>
-                        cases n2 with
-                        | zero =>
-                            -- Symmetrical contradiction: hd is inside tl and also at index 0
-                            have hn1' : n1' < tl.length := by
-                              simp only [List.length_cons] at hn1
-                              omega
-                            have h_not_mem := (List.nodup_cons.mp h_nd).1
-                            have h_eq' : tl.get ⟨n1', hn1'⟩ = hd := h_eq
-                            have h_mem : hd ∈ tl := by
-                              rw [← h_eq']
-                              exact List.get_mem tl ⟨n1', hn1'⟩
-                            contradiction
-                        | succ n2' =>
-                            -- Deconstruct successor index lookup bounds to apply ih
-                            have hn1' : n1' < tl.length := by
-                              simp only [List.length_cons] at hn1
-                              omega
-                            have hn2' : n2' < tl.length := by
-                              simp only [List.length_cons] at hn2
-                              omega
-                            have h_nd_tl := (List.nodup_cons.mp h_nd).2
-                            have h_eq' : tl.get ⟨n1', hn1'⟩ = tl.get ⟨n2', hn2'⟩ := h_eq
-                            have h_sub_eq := ih h_nd_tl n1' n2' hn1' hn2' h_eq'
-                            rw [h_sub_eq]
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
                   have h_filter_get_curr : reduced_tiles.get ⟨idx + 1, h2⟩ = P.tiles.get ⟨g2, hg2⟩ := h_get2
@@ -3204,8 +3205,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       sorry
                     have h_mono_spec := h_mono_inj P.tiles (fun t => t ≠ t_peel) idx (idx + 1) h1 h2 (by omega)
                     rcases h_mono_spec with ⟨m1, m2, hm1, hm2, h_mget1, h_mget2, h_mlt⟩
-                    -- Unify specialized order boundaries with active existential positions g1 and g2
-                    sorry
+                    have h_g1_eq_m1 : g1 = m1 := by
+                      have h_lookup_eq : P.tiles.get ⟨g1, hg1⟩ = P.tiles.get ⟨m1, hm1⟩ := by
+                        rw [← h_get1, h_mget1]
+                      exact h_list_injective P.tiles h_bdry.2.2.1 g1 m1 hg1 hm1 h_lookup_eq
+                    have h_g2_eq_m2 : g2 = m2 := by
+                      have h_lookup_eq : P.tiles.get ⟨g2, hg2⟩ = P.tiles.get ⟨m2, hm2⟩ := by
+                        rw [← h_get2, h_mget2]
+                      exact h_list_injective P.tiles h_bdry.2.2.1 g2 m2 hg2 hm2 h_lookup_eq
+                    omega
                   omega
                 omega
               omega
