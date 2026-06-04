@@ -3182,8 +3182,12 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
               have h_gap_max : g2 ≤ g1 + 2 := by
                 have h_filter_counted_gap : ∀ k (hk1 : g1 < k) (hk2 : k < g2), (fun t => t ≠ t_peel) (P.tiles.get ⟨k, by omega⟩) = false := by
-                  -- Elements strictly between consecutive filter indices must falsify the predicate
-                  sorry
+                  intro k hk1 hk2
+                  have h_intermediate_is_peeled : P.tiles.get ⟨k, by omega⟩ = t_peel := by
+                    -- An element skipped between consecutive filter survivors must be the unique peeled tile
+                    sorry
+                  simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
+                  simp
                 sorry
               have h_gap_min : g1 < g2 := by
                 have h_g2_succ : g1 + 1 ≤ g2 := by
