@@ -3188,7 +3188,18 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                     sorry
                   simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
                   simp
-                sorry
+                have h_gap_indices_unique : ∀ k1 k2 (hk1_1 : g1 < k1) (hk1_2 : k1 < g2) (hk2_1 : g1 < k2) (hk2_2 : k2 < g2), k1 = k2 := by
+                  -- Any two indices skipped between consecutive filter survivors must be identical
+                  sorry
+                by_cases h_case : g2 ≤ g1 + 2
+                · exact h_case
+                · have h_contra : g1 + 1 = g1 + 2 := by
+                    have h_g1_1 : g1 < g1 + 1 := by omega
+                    have h_g1_2 : g1 + 1 < g2 := by omega
+                    have h_g2_1 : g1 < g1 + 2 := by omega
+                    have h_g2_2 : g1 + 2 < g2 := by omega
+                    exact h_gap_indices_unique (g1 + 1) (g1 + 2) h_g1_1 h_g1_2 h_g2_1 h_g2_2
+                  omega
               have h_gap_min : g1 < g2 := by
                 have h_g2_succ : g1 + 1 ≤ g2 := by
                   have h_distinct_indices : g1 ≠ g2 := by
