@@ -3285,8 +3285,19 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             exact h_geom_delta_adj
           · -- Case 4B: Indices are separated by the unique peeled tile (k1 = k2 + 2)
             have h_geom_delta_gap : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-              -- Distance accumulation across the skipped intermediate tile position
-              sorry
+              subst h_case_gap
+              have h_k2_succ : k2 + 1 < P.tiles.length := by omega
+              have h_step1 := h_parent_dist k2 h_k2 h_k2_succ
+              have h_step2 := h_parent_dist (k2 + 1) h_k2_succ h_k1
+              have h_sum_delta : (P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a =
+                ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
+                ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) := by omega
+              rw [h_sum_delta]
+              have h_valuation : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
+                ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+                -- Finite combination evaluation of consecutive boundary tile deltas
+                sorry
+              exact h_valuation
             exact h_geom_delta_gap
         exact h_adjacent_delta
       · -- Update step direction boundary bounds
