@@ -3193,10 +3193,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       rw [h_get1, h_get2, h_elem_eq]
                     have h_nodup_reduced : reduced_tiles.Nodup := List.Nodup.filter (fun t => t ≠ t_peel) h_bdry.2.2.1
                     have h_idx_inj : idx = idx + 1 := by
-                      -- Uniqueness over duplicate-free sublists forces lookup index equality
-                      sorry
+                      have h_fin_eq := (List.Nodup.get_inj_iff h_nodup_reduced).mp h_filtered_eq
+                      exact Fin.ext_iff.mp h_fin_eq
                     omega
-                  sorry
+                  have h_filter_mono : g1 < g2 := by
+                    -- Strict ordering of elements is preserved under list filtration
+                    sorry
+                  omega
                 omega
               omega
             rcases h_index_unify with ⟨rfl, rfl⟩
