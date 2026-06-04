@@ -3107,11 +3107,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           -- Isolate index distance step relation under sublist filtration
           have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
             have h_filter_adj_bound : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length),
-              ∃ g1 g2 : Nat, g1 < L.length ∧ g2 < L.length := by
-              -- Generalized index gap bound under duplicate-free filtration
+              ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length), (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
+              -- Enhanced index gap and lookup identity bound under sublist filtration
               sorry
             have h_spec_bound := h_filter_adj_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
-            rcases h_spec_bound with ⟨g1, g2, hg1, hg2⟩
+            rcases h_spec_bound with ⟨g1, g2, hg1, hg2, h_get1, h_get2⟩
             have h_k_bounds : k1 < P.tiles.length ∧ k2 < P.tiles.length := ⟨h_k1, h_k2⟩
             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
               have h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
@@ -3165,18 +3165,14 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                             rw [h_sub_eq]
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
-                  have h_filter_get_curr : reduced_tiles.get ⟨idx + 1, h2⟩ = P.tiles.get ⟨g2, hg2⟩ := by
-                    -- Filtered sublist lookup identity at the current index position
-                    sorry
+                  have h_filter_get_curr : reduced_tiles.get ⟨idx + 1, h2⟩ = P.tiles.get ⟨g2, hg2⟩ := h_get2
                   rw [hk1_eq, h_filter_get_curr]
                 have h_inj_apply : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ → k1 = g2 :=
                   h_list_injective P.tiles h_bdry.2.2.1 k1 g2 h_k1 hg2
                 exact h_inj_apply h_equal_curr
               have h_k2_eq_g1 : k2 = g1 := by
                 have h_equal_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ := by
-                  have h_filter_get_prev : reduced_tiles.get ⟨idx, h1⟩ = P.tiles.get ⟨g1, hg1⟩ := by
-                    -- Filtered sublist lookup identity at the prior index position
-                    sorry
+                  have h_filter_get_prev : reduced_tiles.get ⟨idx, h1⟩ = P.tiles.get ⟨g1, hg1⟩ := h_get1
                   rw [hk2_eq, h_filter_get_prev]
                 have h_inj_apply_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ → k2 = g1 :=
                   h_list_injective P.tiles h_bdry.2.2.1 k2 g1 h_k2 hg1
