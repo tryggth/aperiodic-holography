@@ -3165,19 +3165,21 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                             rw [h_sub_eq]
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
-                  -- Element lookups at matched filter positions coincide with original list lookups
-                  sorry
-                have h_inj_apply : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ → k1 = g2 := by
-                  -- Apply generalized list injectivity over the primary index bounds
-                  exact h_list_injective P.tiles h_bdry.2.2.1 k1 g2 h_k1 hg2
+                  have h_filter_get_curr : reduced_tiles.get ⟨idx + 1, h2⟩ = P.tiles.get ⟨g2, hg2⟩ := by
+                    -- Filtered sublist lookup identity at the current index position
+                    sorry
+                  rw [hk1_eq, h_filter_get_curr]
+                have h_inj_apply : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ → k1 = g2 :=
+                  h_list_injective P.tiles h_bdry.2.2.1 k1 g2 h_k1 hg2
                 exact h_inj_apply h_equal_curr
               have h_k2_eq_g1 : k2 = g1 := by
                 have h_equal_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ := by
-                  -- Element lookups at matched prior filter positions coincide with original list lookups
-                  sorry
-                have h_inj_apply_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ → k2 = g1 := by
-                  -- Apply generalized list injectivity over the secondary index bounds
-                  exact h_list_injective P.tiles h_bdry.2.2.1 k2 g1 h_k2 hg1
+                  have h_filter_get_prev : reduced_tiles.get ⟨idx, h1⟩ = P.tiles.get ⟨g1, hg1⟩ := by
+                    -- Filtered sublist lookup identity at the prior index position
+                    sorry
+                  rw [hk2_eq, h_filter_get_prev]
+                have h_inj_apply_prev : P.tiles.get ⟨k2, h_k2⟩ = P.tiles.get ⟨g1, hg1⟩ → k2 = g1 :=
+                  h_list_injective P.tiles h_bdry.2.2.1 k2 g1 h_k2 hg1
                 exact h_inj_apply_prev h_equal_prev
               exact ⟨h_k1_eq_g2, h_k2_eq_g1⟩
             have h_arith_step : g2 = g1 + 1 ∨ g2 = g1 + 2 := by
