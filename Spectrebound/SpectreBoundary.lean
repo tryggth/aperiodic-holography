@@ -3128,13 +3128,29 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                         cases n2 with
                         | zero => rfl
                         | succ n2' =>
-                            -- Contradiction: duplicate element found at index 0 and succ n2'
-                            sorry
+                            -- Contradiction: hd is at index 0 and also inside tl
+                            have hn2' : n2' < tl.length := by
+                              simp only [List.length_cons] at hn2
+                              omega
+                            have h_not_mem := (List.nodup_cons.mp h_nd).1
+                            have h_eq' : hd = tl.get ⟨n2', hn2'⟩ := h_eq
+                            have h_mem : hd ∈ tl := by
+                              rw [h_eq']
+                              exact List.get_mem tl ⟨n2', hn2'⟩
+                            contradiction
                     | succ n1' =>
                         cases n2 with
                         | zero =>
-                            -- Contradiction: duplicate element found at index succ n1' and 0
-                            sorry
+                            -- Symmetrical contradiction: hd is inside tl and also at index 0
+                            have hn1' : n1' < tl.length := by
+                              simp only [List.length_cons] at hn1
+                              omega
+                            have h_not_mem := (List.nodup_cons.mp h_nd).1
+                            have h_eq' : tl.get ⟨n1', hn1'⟩ = hd := h_eq
+                            have h_mem : hd ∈ tl := by
+                              rw [← h_eq']
+                              exact List.get_mem tl ⟨n1', hn1'⟩
+                            contradiction
                         | succ n2' =>
                             -- Deconstruct successor index lookup bounds to apply ih
                             have hn1' : n1' < tl.length := by
@@ -3143,8 +3159,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                             have hn2' : n2' < tl.length := by
                               simp only [List.length_cons] at hn2
                               omega
-                            -- Inductive mapping step over reduced indices
-                            sorry
+                            have h_nd_tl := (List.nodup_cons.mp h_nd).2
+                            have h_eq' : tl.get ⟨n1', hn1'⟩ = tl.get ⟨n2', hn2'⟩ := h_eq
+                            have h_sub_eq := ih h_nd_tl n1' n2' hn1' hn2' h_eq'
+                            rw [h_sub_eq]
               have h_k1_eq_g2 : k1 = g2 := by
                 have h_equal_curr : P.tiles.get ⟨k1, h_k1⟩ = P.tiles.get ⟨g2, hg2⟩ := by
                   -- Element lookups at matched filter positions coincide with original list lookups
