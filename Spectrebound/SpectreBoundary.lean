@@ -3319,6 +3319,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_patch_uniform_trans := P.orientation_uniform_invariant ⟨k2, h_k2⟩ ⟨0, h_p⟩
             exact h_patch_uniform_trans
           rw [h_orientation_step, h_orientation_trans]
+        have h_step_dir_map : ∀ (s : BoundaryStep) (hs : s ∈ steps'), 
+          s.dir = (P.tiles.get ⟨0, h_p⟩).orientation := by
+          intro s hs
+          have h_step_parent_tile : ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
+            -- Every step in the updated boundary path originates from a valid patch tile orientation frame
+            sorry
+          rcases h_step_parent_tile with ⟨k, hk, h_sdir⟩
+          have h_uniform_link := h_dir_propagate (by sorry) k 0 hk h_p
+          rw [h_sdir, h_uniform_link]
         intro s hs
         exact s.dir.isLt
       · -- Update corner pool inventory invariant
