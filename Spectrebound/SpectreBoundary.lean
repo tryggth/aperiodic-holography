@@ -3187,8 +3187,15 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               have h_gap_min : g1 < g2 := by
                 have h_g2_succ : g1 + 1 ≤ g2 := by
                   have h_distinct_indices : g1 ≠ g2 := by
-                    -- Filtered lookups at idx and idx + 1 yield distinct elements, forcing distinct indices
-                    sorry
+                    intro hc
+                    have h_elem_eq : P.tiles.get ⟨g1, hg1⟩ = P.tiles.get ⟨g2, hg2⟩ := by subst hc; rfl
+                    have h_filtered_eq : reduced_tiles.get ⟨idx, h1⟩ = reduced_tiles.get ⟨idx + 1, h2⟩ := by
+                      rw [h_get1, h_get2, h_elem_eq]
+                    have h_nodup_reduced : reduced_tiles.Nodup := List.Nodup.filter (fun t => t ≠ t_peel) h_bdry.2.2.1
+                    have h_idx_inj : idx = idx + 1 := by
+                      -- Uniqueness over duplicate-free sublists forces lookup index equality
+                      sorry
+                    omega
                   sorry
                 omega
               omega
