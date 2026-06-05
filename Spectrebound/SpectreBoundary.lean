@@ -2955,7 +2955,23 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
               by_cases h_split : offset < L.length - rot_idx % L.length
               · -- Case 161A: Index lands in the dropped prefix sublist segment
                 have h_drop_case : (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length))[offset]'h_len_rot = L[(offset + rot_idx) % L.length]'h_mod := by
-                  sorry
+                  have h_left_len : offset < (L.drop (rot_idx % L.length)).length := by
+                    rw [List.length_drop]; omega
+                  change (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length)).get ⟨offset, h_len_rot⟩ =
+                    L.get ⟨(offset + rot_idx) % L.length, h_mod⟩
+                  rw [get_append_left_eq (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_left_len]
+                  have h_lt : rot_idx % L.length + offset < L.length := by omega
+                  have h_drop_get := get_drop_eq L (rot_idx % L.length) offset h_left_len h_lt
+                  rw [h_drop_get]
+                  have h_index_calc : rot_idx % L.length + offset = (offset + rot_idx) % L.length := by
+                    rw [Nat.add_comm (rot_idx % L.length) offset]
+                    have h_lt : offset + rot_idx % L.length < L.length := by omega
+                    have h1 : offset + rot_idx % L.length = (offset + rot_idx % L.length) % L.length := by
+                      rw [Nat.mod_eq_of_lt h_lt]
+                    rw [h1]
+                    rw [Nat.add_mod, Nat.add_mod offset rot_idx L.length, Nat.mod_mod]
+                  have h_fin_eq : (⟨rot_idx % L.length + offset, h_lt⟩ : Fin L.length) = ⟨(offset + rot_idx) % L.length, h_mod⟩ := Fin.ext h_index_calc
+                  rw [h_fin_eq]
                 exact h_drop_case
               · -- Case 161B: Index lands in the taken suffix sublist segment
                 have h_take_case : (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length))[offset]'h_len_rot = L[(offset + rot_idx) % L.length]'h_mod := by
