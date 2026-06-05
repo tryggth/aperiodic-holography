@@ -3201,10 +3201,24 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
   · by_cases h_nt : P.tiles.drop 1 = []
     · -- True Singleton Fallback Integration Path
       have h_tiles_eq : P.tiles = [⟨0, LatticePoint.zero, 0⟩] := by
-        have h_inv := h_bdry.2.1
-        have h_len := P.tiles.length
-        -- Length 1 matching forces list equality under default coordinates
-        sorry
+        have h_ne : P.tiles ≠ [] := by
+          intro hc
+          have h_empty := h_bdry.1.mpr hc
+          exact B.non_empty h_empty
+        cases h_tiles_repr : P.tiles with
+        | nil => contradiction
+        | cons hd tl =>
+          have h_drop : tl = [] := by
+            have h_drop_eq : P.tiles.drop 1 = tl := by rw [h_tiles_repr]; rfl
+            rw [← h_drop_eq]
+            exact h_nt
+          subst h_drop
+          have h_inv := h_bdry.2.1 hd (by rw [h_tiles_repr]; exact List.mem_singleton_self hd)
+          have h_sum := h_bdry.2.2.2.2.2.1
+          rw [h_tiles_repr] at h_sum
+          dsimp [sumPatchInventory, TileCornerInventory.add, singleTileInventory] at h_sum
+          -- The spatial ledger invariant forces default placement at the zero origin point
+          sorry
       have h_singleton_empty : steps' = [] := by
         rw [h_steps_eq]
         have h_mem := findMaximalRule_mem h_match
