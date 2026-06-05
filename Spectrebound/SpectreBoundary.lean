@@ -2878,9 +2878,18 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       -- Evaluate the modulo recurrence relation to isolate neighbor edge coordinates
       have h_step_trans : (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir.val = (((spliced_steps.get ⟨j.val - 1, by omega⟩).dir.val + (spliced_steps.get ⟨j.val - 1, by omega⟩).turn.toStep30) % 12) := h_spliced_consistent
       have h_neighbor_edge_alignment : (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir.val = (((spliced_steps.get ⟨j.val - 1, by omega⟩).dir.val + (spliced_steps.get ⟨j.val - 1, by omega⟩).turn.toStep30) % 12) → ∃ t ∈ reduced_tiles, (t.pos, (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir) ∈ getPlacedTileEdges t := by
-        -- Internal spliced edge transitions align with the adjacent neighbor tile shell
-        intro _
-        sorry
+        intro h_recurrence
+        have h_adjacent_neighbor_lookup : ∃ t_neigh ∈ P.tiles, (t_neigh.pos, (spliced_steps.get ⟨j.val, h_spliced_len⟩).dir) ∈ getPlacedTileEdges t_neigh ∧ t_neigh ≠ t_peel := by
+          -- Spliced boundary edge transitions lock onto adjacent tiles in the master neighborhood shell
+          sorry
+        rcases h_adjacent_neighbor_lookup with ⟨t_neigh, h_mem_tiles, h_edge_match, h_not_peel⟩
+        use t_neigh
+        constructor
+        · rw [h_red]
+          rw [List.mem_filter]
+          rw [decide_eq_true_iff]
+          exact ⟨h_mem_tiles, h_not_peel⟩
+        · exact h_edge_match
       exact h_neighbor_edge_alignment h_step_trans
     rcases h_witness with ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
     exact ⟨t_neighbor, ht_mem_reduced, ht_edge_neighbor⟩
