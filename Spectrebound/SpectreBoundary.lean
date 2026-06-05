@@ -2818,18 +2818,15 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     intro h_false_eq
     -- Extract the edge-sharing identity under the contradiction state
     have h_edge_collision : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig := ht_edge
-    subst h_false_eq
+    have h_false_eq_symm : t_peel = t_orig := h_false_eq.symm
+    subst h_false_eq_symm
+    -- Unpack boundary simplicity to show that an interior edge cannot collide with an outer boundary edge
     have h_simple_path := B.simple
-    have h_collision_invariant := B.is_bdry.2.2.2.2.2.2
-    -- A boundary tile edge cannot intersect an exposed exterior boundary path step interior
-    have h_intersection_contradiction : False := by
-      dsimp [isSimple] at h_simple_path
-      have h_boundary_edge_disjoint : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig → ¬ isSimple B.steps := by
-        intro h_edge
-        exact tile_edge_collision_implies_not_simple B t_orig anchor_step h_edge
-      have h_not_simple := h_boundary_edge_disjoint h_edge_collision
-      exact h_not_simple h_simple_path
-    exact h_intersection_contradiction
+    have h_boundary_edge_disjoint : (t_peel.pos, anchor_step.dir) ∈ getPlacedTileEdges t_peel → ¬ isSimple B.steps := by
+      intro h_edge
+      exact tile_edge_collision_implies_not_simple B t_peel anchor_step h_edge
+    have h_not_simple := h_boundary_edge_disjoint h_edge_collision
+    exact h_not_simple h_simple_path
   have ht_mem_reduced : t_orig ∈ reduced_tiles := by
     rw [h_red]
     rw [List.mem_filter]
