@@ -3190,6 +3190,14 @@ lemma singleton_patch_replacement_empty (P : TilingPatch) (B : BoundaryPath) (i 
   -- Perimeter match of an isolated single tile leaves zero remaining replacement steps
   sorry
 
+/-- Standalone list lemma: filtering a list preserves element containment and provides 
+    existential indices in the original list for consecutive filtered elements. -/
+lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length) :
+  ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length),
+    (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
+  -- Filter index projections map directly to valid positions in the parent list structure
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3358,11 +3366,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rw [h_subst]
           -- Isolate index distance step relation under sublist filtration
           have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
-            have h_filter_adj_bound : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length),
-              ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length), (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
-              -- Enhanced index gap and lookup identity bound under sublist filtration
-              sorry
-            have h_spec_bound := h_filter_adj_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
+            have h_spec_bound := list_filter_adjacent_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
             rcases h_spec_bound with ⟨g1, g2, hg1, hg2, h_get1, h_get2⟩
             have h_k_bounds : k1 < P.tiles.length ∧ k2 < P.tiles.length := ⟨h_k1, h_k2⟩
             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
