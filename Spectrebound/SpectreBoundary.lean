@@ -3181,6 +3181,15 @@ lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : F
   -- Lone tile matching perimeters structurally equalize path and pattern lengths
   sorry
 
+/-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
+    aperiodic rewrite rule forces the rewrite replacement sequence to be empty. -/
+lemma singleton_patch_replacement_empty (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
+  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
+  (h_nt : P.tiles.drop 1 = []) :
+  rule.replacement = [] := by
+  -- Perimeter match of an isolated single tile leaves zero remaining replacement steps
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3218,7 +3227,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           rw [← h_single_len]
           exact List.drop_length
         have h_repl_empty : rule.replacement = [] := by
-          sorry
+          exact singleton_patch_replacement_empty P B _i rule h_bdry h_match h_nt
         dsimp only
         rw [h_len_match, h_repl_empty]
         rfl
