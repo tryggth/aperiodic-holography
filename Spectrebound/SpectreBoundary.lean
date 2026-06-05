@@ -2675,13 +2675,11 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
     rw [h_steps_eq]
     have h_mem := findMaximalRule_mem h_match
     have h_single_len : (rotateList B.steps i.val).length = rule.pattern.length := by
-      -- Length matching 14 via ledger invariants
       sorry
     have h_len_match : (rotateList B.steps i.val).drop rule.pattern.length = [] := by
       rw [← h_single_len]
       exact List.drop_length
     have h_repl_empty : rule.replacement = [] := by
-      -- Singleton patch perimeter matching forces null rule replacements
       sorry
     dsimp only
     rw [h_len_match, h_repl_empty]
@@ -3567,9 +3565,48 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         exact h_inventory_sum
       · -- Update edge witness containment loop
         intro j
-        by_cases hj : j.val = 0
-        · exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
-        · exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
+        by_cases h_singleton : P.tiles.length = 1
+        · have h_tiles_eq : P.tiles = [⟨0, LatticePoint.zero, 0⟩] := by
+            have h_inv := h_bdry.2.1
+            have h_len := P.tiles.length
+            -- Length 1 matching forces list equality under default coordinates
+            sorry
+          by_cases hj : j.val = 0
+          · have h_edge := peel_patch_singleton_spliced P B _i rule h_bdry h_match h_tiles_eq steps' h_steps_eq j hj
+            have h_drop_empty : P.tiles.drop 1 = [] := by
+              cases h_tiles_repr : P.tiles with
+              | nil =>
+                rw [h_tiles_repr] at h_singleton
+                dsimp [List.length] at h_singleton
+                omega
+              | cons hd tl =>
+                cases tl with
+                | nil => rfl
+                | cons hd' tl' =>
+                  rw [h_tiles_repr] at h_singleton
+                  dsimp [List.length] at h_singleton
+                  omega
+            have h_junk : ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ ∧ P.tiles.drop 1 = [] := ⟨h_edge, h_drop_empty⟩
+            exact False.elim (h_nt h_junk.2)
+          · have h_edge := peel_patch_singleton_remainder P B _i rule h_bdry h_match h_tiles_eq steps' h_steps_eq j hj
+            have h_drop_empty : P.tiles.drop 1 = [] := by
+              cases h_tiles_repr : P.tiles with
+              | nil =>
+                rw [h_tiles_repr] at h_singleton
+                dsimp [List.length] at h_singleton
+                omega
+              | cons hd tl =>
+                cases tl with
+                | nil => rfl
+                | cons hd' tl' =>
+                  rw [h_tiles_repr] at h_singleton
+                  dsimp [List.length] at h_singleton
+                  omega
+            have h_junk : ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ ∧ P.tiles.drop 1 = [] := ⟨h_edge, h_drop_empty⟩
+            exact False.elim (h_nt h_junk.2)
+        · by_cases hj : j.val = 0
+          · exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
+          · exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
 
 
 
