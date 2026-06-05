@@ -3178,8 +3178,14 @@ lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : F
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (h_nt : P.tiles.drop 1 = []) :
   (rotateList B.steps i.val).length = rule.pattern.length := by
-  -- Lone tile matching perimeters structurally equalize path and pattern lengths
-  sorry
+  -- Isolated single-tile geometries enforce static boundary and perimeter length equivalence
+  have h_path_len : (rotateList B.steps i.val).length = 14 := by
+    -- Single-tile corner pool mass restrictions force the path perimeter to equal 14
+    sorry
+  have h_rule_len : rule.pattern.length = 14 := by
+    -- Maximal aperiodic rule searches over complete isolated tiles match a pattern length of 14
+    sorry
+  omega
 
 /-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
     aperiodic rewrite rule forces the rewrite replacement sequence to be empty. -/
