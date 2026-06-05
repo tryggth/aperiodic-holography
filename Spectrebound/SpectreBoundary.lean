@@ -2930,7 +2930,19 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         -- Bridge the rotateList index projection to the parent boundary list
         have h_rot_get : (rotateList B.steps i.val)[rule.pattern.length + (j.val - spliced_steps_updated.length)] =
           B.steps[orig_idx.val] := by
-          sorry
+          have h_steps_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < B.steps.length := by
+            have h_eq : rotated.length = (rotateList B.steps i.val).length := rfl
+            have h_len := length_rotateList B.steps i.val
+            omega
+          have h_rotate_list_index_map : ∀ (L : List BoundaryStep) (rot_idx offset : Nat) (h_bound : offset < L.length),
+            have h_len : offset < (rotateList L rot_idx).length := by rw [length_rotateList]; exact h_bound
+            have h_mod : (offset + rot_idx) % L.length < L.length := by
+              have : 0 < L.length := by omega
+              exact Nat.mod_lt _ this
+            (rotateList L rot_idx)[offset]'h_len = L[(offset + rot_idx) % L.length]'h_mod := by
+            intro L rot_idx offset h_bound
+            sorry
+          exact h_rotate_list_index_map B.steps i.val (rule.pattern.length + (j.val - spliced_steps_updated.length)) h_steps_bound
         rw [h_rot_get]
       rw [h_dir_match]
       exact ht_edge
