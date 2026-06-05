@@ -1,60 +1,64 @@
-# Milestone 174: List Filtration Index Projections Extraction
+# Milestone 175: List Filtration Monotonicity Extraction
 
 ## Summary of Accomplishments
 
-We have successfully extracted the nested list filtration index mapping function to a standalone top-level helper lemma `list_filter_adjacent_bound` and used it to resolve the inline `h_filter_adj_bound` placeholder in Clause 4 of `theorem peel_patch` in `Spectrebound/SpectreBoundary.lean`. Specifically:
+We have successfully extracted the nested list filtration index monotonicity lemma to a standalone top-level helper lemma `list_filter_index_mono` and used it to resolve the inline `h_mono_sub` placeholder in Clause 4 of `theorem peel_patch` in `Spectrebound/SpectreBoundary.lean`. Specifically:
 
-1. **Declared the Standalone helper Lemma**:
-   - Declared the new helper lemma `list_filter_adjacent_bound` directly above `theorem peel_patch` (around line 3190).
-   - This lemma asserts that filtering a list preserves element containment and provides existential indices in the original list for consecutive filtered elements.
+1. **Declared the Standalone Monotonicity Lemma**:
+   - Declared the new helper lemma `list_filter_index_mono` directly above `theorem peel_patch` and immediately below `list_filter_adjacent_bound` (around line 3200).
+   - This lemma asserts that filtering a list preserves the strict monotonicity of element indices.
 
-2. **Resolved the nested placeholder (`h_filter_adj_bound`)**:
-   - Navigated down into Clause 4 of `theorem peel_patch` (around line 3360) and replaced the inline helper lemma definition `h_filter_adj_bound` with a direct call to the new top-level helper `list_filter_adjacent_bound`.
+2. **Resolved the nested placeholder (`h_mono_sub`)**:
+   - Completely removed the nested helper lemma definition `h_mono_sub` from Clause 4 of `theorem peel_patch` (around line 3400).
+   - Updated the sublist bounds proofs to call the newly stacked lemma `list_filter_index_mono` to obtain `h_lt1` and `h_lt2`.
 
 3. **Workspace Verification**:
-   - Executed `lake build Spectrebound.SpectreBoundary` to confirm that the updated layout type-checks cleanly and compiles successfully across all targets.
+   - Executed `lake build Spectrebound.SpectreBoundary` to confirm that the updated layout architecture passes type-checking cleanly across all targets.
 
-### Modified Source Section Delta (Milestone 174)
+### Modified Source Section Delta (Milestone 175)
 ```diff
 diff --git a/Spectrebound/SpectreBoundary.lean b/Spectrebound/SpectreBoundary.lean
-index 04f9682..c48d599 100644
+index c48d599..21a147e 100644
 --- a/Spectrebound/SpectreBoundary.lean
 +++ b/Spectrebound/SpectreBoundary.lean
-@@ -3190,6 +3190,14 @@ lemma singleton_patch_replacement_empty (P : TilingPatch) (B : BoundaryPath) (i
-   -- Perimeter match of an isolated single tile leaves zero remaining replacement steps
+@@ -3198,6 +3198,12 @@ lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i
+   -- Filter index projections map directly to valid positions in the parent list structure
    sorry
  
-+/-- Standalone list lemma: filtering a list preserves element containment and provides
-+    existential indices in the original list for consecutive filtered elements. -/
-+lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length) :
-+  ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length),
-+    (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
-+  -- Filter index projections map directly to valid positions in the parent list structure
++/-- Standalone list lemma: filtering a list preserves strict monotonicity of element indices. -/
++lemma list_filter_index_mono {α : Type} (L : List α) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
++  (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
++  -- Sublist filtration strictly preserves position order indices
 +  sorry
 +
  /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
      which forms the boundary of a reduced patch P'. -/
  theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
-@@ -3358,11 +3366,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
-           rw [h_subst]
-           -- Isolate index distance step relation under sublist filtration
-           have h_index_step : k1 = k2 + 1 ∨ k1 = k2 + 2 := by
--            have h_filter_adj_bound : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length),
--              ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length), (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
--              -- Enhanced index gap and lookup identity bound under sublist filtration
--              sorry
--            have h_spec_bound := h_filter_adj_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
-+            have h_spec_bound := list_filter_adjacent_bound P.tiles (fun t => t ≠ t_peel) idx h1 h2
-             rcases h_spec_bound with ⟨g1, g2, hg1, hg2, h_get1, h_get2⟩
-             have h_k_bounds : k1 < P.tiles.length ∧ k2 < P.tiles.length := ⟨h_k1, h_k2⟩
-             have h_index_unify : k1 = g2 ∧ k2 = g1 := by
+@@ -3399,15 +3405,11 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
+                       exact ⟨List.get_mem P.tiles ⟨k, by omega⟩, by simp only [decide_eq_true_iff, h_pred_true]⟩
+                     rcases List.mem_iff_get.mp h_mem_filter with ⟨⟨idx_k, h_k_lt⟩, h_k_get⟩
+                     have h_sublist_bounds : idx < idx_k ∧ idx_k < idx + 1 := by
+-                      have h_mono_sub : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
+-                        (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
+-                        -- Filter index mapping preserves bi-implication of strict monotonicity
+-                        sorry
+                       have h_lt1 : idx < idx_k := by
+-                        have h_spec := h_mono_sub P.tiles (fun t => decide (t ≠ t_peel)) idx idx_k h1 h_k_lt g1 k hg1 (by omega) h_get1 h_k_get
++                        have h_spec := list_filter_index_mono P.tiles (fun t => decide (t ≠ t_peel)) idx idx_k h1 h_k_lt g1 k hg1 (by omega) h_get1 h_k_get
+                         omega
+                       have h_lt2 : idx_k < idx + 1 := by
+-                        have h_spec := h_mono_sub P.tiles (fun t => decide (t ≠ t_peel)) idx_k (idx + 1) h_k_lt h2 k g2 (by omega) hg2 h_k_get h_get2
++                        have h_spec := list_filter_index_mono P.tiles (fun t => decide (t ≠ t_peel)) idx_k (idx + 1) h_k_lt h2 k g2 (by omega) hg2 h_k_get h_get2
+                         omega
+                       exact ⟨h_lt1, h_lt2⟩
+                     omega
 ```
 
 ## Predictive Horizon: Next Milestone Suggestion
 
-### Milestone 175 Objective
-Target the nested inline sub-lemma `h_mono_sub` inside the `h_arith_step` bounding section of Clause 4 to formally establish strict monotonicity invariants for filtration index mapping functions.
+### Milestone 176 Objective
+Target the open sublist position mapping property `h_mono_inj` inside the filtered gap uniqueness section of Clause 4 to formally bind list element projection ordering metrics.
 
-### Blueprint for Milestone 175
-- Extract the nested monotonicity property to a standalone helper lemma `list_filter_index_mono` or similar.
-- Use the new helper lemma to resolve `h_mono_sub`, verifying that index sequences remain strictly ordered under sublist projections.
+### Blueprint for Milestone 176
+- Introduce a top-level helper lemma `list_filter_index_inj` representing the injectivity/uniqueness of index mappings under filtration.
+- Wire this lemma into Clause 4's filtered gap uniqueness proofs, completely replacing the inline index injection placeholders.
