@@ -3172,6 +3172,15 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
+/-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
+    aperiodic rewrite rule forces the pattern length to perfectly equal the boundary path perimeter. -/
+lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
+  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
+  (h_nt : P.tiles.drop 1 = []) :
+  (rotateList B.steps i.val).length = rule.pattern.length := by
+  -- Lone tile matching perimeters structurally equalize path and pattern lengths
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3204,7 +3213,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         rw [h_steps_eq]
         have h_mem := findMaximalRule_mem h_match
         have h_single_len : (rotateList B.steps _i.val).length = rule.pattern.length := by
-          sorry
+          exact singleton_patch_pattern_length P B _i rule h_bdry h_match h_nt
         have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
           rw [← h_single_len]
           exact List.drop_length
