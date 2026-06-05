@@ -3344,28 +3344,31 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         exact s.dir.isLt
       · -- Update corner pool inventory invariant
         have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
-          -- Extract global corner pool summation metrics from the parent boundary path ledger
           have h_parent_inventory := h_bdry.2.2.2.2.2.1
+          have h_peel_mem : t_peel ∈ P.tiles := by
+            dsimp [t_peel]
+            have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
+            have h_find_mem_or_eq : ∀ (L : List PlacedTile) (def_t : PlacedTile), findTileAtStep L anchor_step.dir def_t ∈ L ∨ findTileAtStep L anchor_step.dir def_t = def_t := by
+              intro L def_t
+              induction L with
+              | nil => exact Or.inr rfl
+              | cons hd tl ih =>
+                  dsimp [findTileAtStep]
+                  split
+                  · exact Or.inl List.mem_cons_self
+                  · cases ih with
+                    | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
+                    | inr h => exact Or.inr h
+            cases h_find_mem_or_eq P.tiles default_tile with
+            | inl h => exact h
+            | inr h => rw [h]; exact h_def_in
           have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
-            have h_peel_mem : t_peel ∈ P.tiles := by
-              dsimp [t_peel]
-              have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
-              have h_find_mem_or_eq : ∀ (L : List PlacedTile) (def_t : PlacedTile), findTileAtStep L anchor_step.dir def_t ∈ L ∨ findTileAtStep L anchor_step.dir def_t = def_t := by
-                intro L def_t
-                induction L with
-                | nil => exact Or.inr rfl
-                | cons hd tl ih =>
-                    dsimp [findTileAtStep]
-                    split
-                    · exact Or.inl List.mem_cons_self
-                    · cases ih with
-                      | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
-                      | inr h => exact Or.inr h
-              cases h_find_mem_or_eq P.tiles default_tile with
-              | inl h => exact h
-              | inr h => rw [h]; exact h_def_in
             exact sumPatchInventory_filter_peel P.tiles t_peel h_bdry.2.2.1 h_peel_mem
-          sorry
+          have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
+            -- The expected corner footprint scales incrementally upon single tile filtration
+            sorry
+          rw [h_inventory_peel, h_patch_inventory_step] at h_parent_inventory
+          exact patch_inventory_inj (sumPatchInventory reduced_tiles) (patchCornerInventory reduced_tiles.length) h_parent_inventory
         exact h_inventory_sum
       · -- Update edge witness containment loop
         intro j
