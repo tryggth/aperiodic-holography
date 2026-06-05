@@ -2985,12 +2985,32 @@ lemma TilingPatch.boundary_step_origin_invariant (P : TilingPatch) (steps' : Lis
   ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
   sorry
 
+/-- Lemma: The total corner inventory sum of a tile list depends strictly on its length. -/
+lemma sumPatchInventory_eq_length (L : List PlacedTile) :
+  sumPatchInventory L = patchCornerInventory L.length := by
+  induction L with
+  | nil => rfl
+  | cons hd tl ih =>
+      dsimp [sumPatchInventory, patchCornerInventory, TileCornerInventory.add, singleTileInventory] at *
+      rw [ih]
+      dsimp [patchCornerInventory]
+      ext <;> (push_cast; omega)
+
 /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
 lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile) 
   (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
   sumPatchInventory L = TileCornerInventory.add singleTileInventory (sumPatchInventory (L.filter (fun t => t ≠ t_peel))) := by
-  -- Invariance of element summing loops under duplicate-free sublist partitions
-  sorry
+  rw [sumPatchInventory_eq_length, sumPatchInventory_eq_length]
+  have h_sub_len : (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
+    sorry
+  have h_L_pos : 0 < L.length := by
+    cases L with
+    | nil => contradiction
+    | cons hd tl => dsimp; omega
+  dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
+  rw [h_sub_len]
+  ext <;> (push_cast; omega)
+
 
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
