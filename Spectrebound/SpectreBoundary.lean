@@ -2942,7 +2942,8 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     have h_witness : ∃ t ∈ reduced_tiles, (t.pos, (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir) ∈ getPlacedTileEdges t := by
       -- Map the active rotated index back to the unpeeled parent path context
       have h_orig_pos : 0 < B.steps.length := by
-        have h_ge_two := B.length_ge_two; omega
+        have h_ge_two := B.length_ge_two
+        omega
       let h_orig_idx_val := (rule.pattern.length + (j.val - spliced_steps_updated.length) + i.val) % B.steps.length
       have h_orig_idx_lt : h_orig_idx_val < B.steps.length := Nat.mod_lt (rule.pattern.length + (j.val - spliced_steps_updated.length) + i.val) h_orig_pos
       let orig_idx : Fin B.steps.length := ⟨h_orig_idx_val, h_orig_idx_lt⟩
@@ -2990,8 +2991,7 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
             · rename_i h_ne
               have h_lt_drop : rot_idx % L.length < L.length := Nat.mod_lt _ (by omega)
               have h_len_rot : offset < (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length)).length := by
-                rw [List.length_append, List.length_drop, List.length_take]
-                omega
+                rw [List.length_append, List.length_drop, List.length_take]; omega
               have h_mod : (offset + rot_idx) % L.length < L.length := by
                 have : 0 < L.length := by omega
                 exact Nat.mod_lt _ this
