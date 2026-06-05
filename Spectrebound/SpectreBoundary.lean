@@ -2734,6 +2734,14 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
       have h_rot_idx : Fin rotated.length := ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩
       sorry
 
+/-- Standalone topological invariant: an interior tile edge overlapping an exposed
+    exterior boundary path step implies a direct violation of path simplicity. -/
+lemma tile_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : PlacedTile) (anchor_step : BoundaryStep) :
+  (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig → ¬ isSimple B.steps := by
+  -- Exposed interior tile edge overlaps violate simple non-self-intersection invariants
+  intro _
+  sorry
+
 /-- Helper lemma: Resolves the spliced boundary edge alignment for the general drop-1 patch case. -/
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
@@ -2817,8 +2825,8 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     have h_intersection_contradiction : False := by
       dsimp [isSimple] at h_simple_path
       have h_boundary_edge_disjoint : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig → ¬ isSimple B.steps := by
-        -- Exposed interior tile edge overlaps violate simple non-self-intersection invariants
-        sorry
+        intro h_edge
+        exact tile_edge_collision_implies_not_simple B t_orig anchor_step h_edge
       have h_not_simple := h_boundary_edge_disjoint h_edge_collision
       exact h_not_simple h_simple_path
     exact h_intersection_contradiction
