@@ -2975,7 +2975,30 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
                 exact h_drop_case
               · -- Case 161B: Index lands in the taken suffix sublist segment
                 have h_take_case : (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length))[offset]'h_len_rot = L[(offset + rot_idx) % L.length]'h_mod := by
-                  sorry
+                  have h_right_ge : offset ≥ (L.drop (rot_idx % L.length)).length := by
+                    rw [List.length_drop]; omega
+                  change (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length)).get ⟨offset, h_len_rot⟩ =
+                    L.get ⟨(offset + rot_idx) % L.length, h_mod⟩
+                  have h_take_len : offset - (L.drop (rot_idx % L.length)).length < (L.take (rot_idx % L.length)).length := by
+                    rw [List.length_drop, List.length_take] at *; omega
+                  rw [get_append_right_eq (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_right_ge h_take_len]
+                  have h_take_get : (L.take (rot_idx % L.length)).get ⟨offset - (L.drop (rot_idx % L.length)).length, h_take_len⟩ =
+                    L.get ⟨offset - (L.drop (rot_idx % L.length)).length, by rw [List.length_drop, List.length_take] at *; omega⟩ := by
+                    simp
+                  rw [h_take_get]
+                  have h_index_calc_suffix : offset - (L.drop (rot_idx % L.length)).length = (offset + rot_idx) % L.length := by
+                    rw [List.length_drop]
+                    have h_lt_drop : rot_idx % L.length < L.length := Nat.mod_lt _ (by omega)
+                    have h_tier : offset + rot_idx % L.length = L.length + (offset - (L.length - rot_idx % L.length)) := by omega
+                    have h_mod_tier : (offset + rot_idx % L.length) % L.length = offset - (L.length - rot_idx % L.length) := by
+                      rw [h_tier, Nat.add_comm L.length, Nat.add_mod_right]
+                      exact Nat.mod_eq_of_lt (by omega)
+                    rw [← h_mod_tier]
+                    rw [Nat.add_mod, Nat.add_mod offset rot_idx L.length, Nat.mod_mod]
+                  have h_bound_suffix : offset - (L.drop (rot_idx % L.length)).length < L.length := by
+                    rw [List.length_drop]; omega
+                  have h_fin_eq_suffix : (⟨offset - (L.drop (rot_idx % L.length)).length, h_bound_suffix⟩ : Fin L.length) = ⟨(offset + rot_idx) % L.length, h_mod⟩ := Fin.ext h_index_calc_suffix
+                  rw [h_fin_eq_suffix]
                 exact h_take_case
           exact h_rotate_list_index_map B.steps i.val (rule.pattern.length + (j.val - spliced_steps_updated.length)) h_steps_bound
         rw [h_rot_get]
