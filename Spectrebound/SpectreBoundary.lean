@@ -2985,17 +2985,6 @@ lemma TilingPatch.boundary_step_origin_invariant (P : TilingPatch) (steps' : Lis
   ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
   sorry
 
-/-- Lemma: The total corner inventory sum of a tile list depends strictly on its length. -/
-lemma sumPatchInventory_eq_length (L : List PlacedTile) :
-  sumPatchInventory L = patchCornerInventory L.length := by
-  induction L with
-  | nil => rfl
-  | cons hd tl ih =>
-      dsimp [sumPatchInventory, patchCornerInventory, TileCornerInventory.add, singleTileInventory] at *
-      rw [ih]
-      dsimp [patchCornerInventory]
-      ext <;> (push_cast; omega)
-
 /-- Helper lemma: filtering out an element not in the list is identity. -/
 lemma filter_not_mem (L : List PlacedTile) (x : PlacedTile) (h : x ∉ L) :
   L.filter (fun t => t ≠ x) = L := by
@@ -3010,6 +2999,56 @@ lemma filter_not_mem (L : List PlacedTile) (x : PlacedTile) (h : x ∉ L) :
       dsimp
       congr 1
       exact ih h_not
+
+/-- Lemma: The total corner inventory sum of a tile list depends strictly on its length. -/
+lemma sumPatchInventory_eq_length (L : List PlacedTile) :
+  sumPatchInventory L = patchCornerInventory L.length := by
+  induction L with
+  | nil => rfl
+  | cons hd tl ih =>
+      dsimp [sumPatchInventory, patchCornerInventory, TileCornerInventory.add, singleTileInventory] at *
+      rw [ih]
+      dsimp [patchCornerInventory]
+      ext <;> (push_cast; omega)
+
+/-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
+lemma sumPatchInventory_filter_peel.h_sub_len (L : List PlacedTile) (t_peel : PlacedTile) 
+  (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
+  (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
+  revert t_peel h_mem h_nd
+  induction L with
+  | nil =>
+      intro t_peel h_nd h_mem
+      contradiction
+  | cons hd tl ih =>
+      intro t_peel h_nd h_mem
+      by_cases h_eq : hd = t_peel
+      · subst h_eq
+        have h_not_mem : hd ∉ tl := (List.nodup_cons.mp h_nd).1
+        have h_filter_id := filter_not_mem tl hd h_not_mem
+        dsimp [List.filter]
+        have : (decide (hd ≠ hd)) = false := by simp
+        rw [this]
+        dsimp
+        rw [h_filter_id]
+      · have : (decide (hd ≠ t_peel)) = true := by
+            simp [h_eq]
+        dsimp [List.filter]
+        rw [this]
+        dsimp
+        have h_mem_tl : t_peel ∈ tl := by
+          have h_mem_cons := h_mem
+          rw [List.mem_cons] at h_mem_cons
+          cases h_mem_cons with
+          | inl h => exact False.elim (h_eq h.symm)
+          | inr h => exact h
+        have h_nd_tl := (List.nodup_cons.mp h_nd).2
+        have ih_val := ih t_peel h_nd_tl h_mem_tl
+        cases tl with
+        | nil => contradiction
+        | cons hd'' tl'' =>
+            dsimp [List.length] at *
+            omega
 
 /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
 lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile) 
@@ -3054,7 +3093,7 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
   have h_L_pos : 0 < L.length := by
     cases L with
     | nil => contradiction
-    | cons hd tl => dsimp; omega
+    | cons hd tl => simp [List.length]
   dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
   rw [h_sub_len]
   ext <;> (push_cast; omega)
@@ -3436,7 +3475,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
             have h_len_eq : P.tiles.length = reduced_tiles.length + 1 := by
               have h_sub_len : reduced_tiles.length = P.tiles.length - 1 := by
-                sorry
+                rw [show reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel) from rfl]
+                rw [sumPatchInventory_filter_peel.h_sub_len P.tiles t_peel h_bdry.2.2.1 h_peel_mem]
               omega
             dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
             rw [h_len_eq]

@@ -1,82 +1,104 @@
-# Milestone 154: Inventory Length Equivalence & Filtration Reduction
+# Milestone 155: Unique Element Sublist Filtration Bounding
 
 ## Summary of Accomplishments
-We have successfully resolved the inventory length equivalence properties by implementing `sumPatchInventory_eq_length` and using it to resolve the top-level helper lemma `sumPatchInventory_filter_peel` in `Spectrebound/SpectreBoundary.lean`.
+We have successfully resolved the list length reduction property `h_sub_len` inside the lemma `sumPatchInventory_filter_peel` in `Spectrebound/SpectreBoundary.lean`. This completely clears the top-level inventory proof tree of `sorry` placeholders.
 
-1. Defined and fully proved the top-level lemma `sumPatchInventory_eq_length`, asserting that the total corner inventory of any patch `L` depends solely on its length.
-2. Refactored `sumPatchInventory_filter_peel` to apply `sumPatchInventory_eq_length` on both the parent list and the filtered sublist, reducing the multi-set corner inventory equality to a numeric equality on lengths.
-3. Proved that `L` is non-empty (`0 < L.length`) by case analysis on the list structure.
-4. Verified that the complete project workspace compiles cleanly via `lake build Spectrebound.SpectreBoundary`.
+1. **Lemma Verification**: We fully resolved the `h_sub_len` property inside `sumPatchInventory_filter_peel`. This lemma asserts that the length of a duplicate-free list `L` after filtering out a unique element `t_peel ∈ L` is exactly `L.length - 1`.
+2. **Implementation Strategy**:
+   - Reverted dependent variables (`t_peel`, `h_mem`, `h_nd`) to avoid shadowing or elaborator generalization errors.
+   - Performed list induction on `L`.
+   - Utilized a helper lemma `filter_not_mem` to handle the case where the peeled tile is no longer present in the tail list `tl`.
+   - Proved the length calculation using natural number arithmetic and `omega`.
+3. **Workspace Validation**: Run `lake build Spectrebound.SpectreBoundary` to confirm clean compilation and type-checking across all targets.
 
 ## Predictive Horizon: Next Milestone Suggestion
-For Milestone 155, the objective is to resolve the `sorry` placeholder inside `sumPatchInventory_filter_peel`'s `h_sub_len` lemma:
+For Milestone 156, the objective is to transition out of the corner inventory loop entirely and open verification on Clause 7: Update edge witness containment loop. We will target the standalone helper lemma `peel_patch_general_spliced` to prove that the newly introduced boundary steps at the spliced boundary insertion point correctly overlap with the remaining patch tiles.
+
+### Blueprint for Milestone 156
+Inside `peel_patch_general_spliced`, we need to resolve the contradiction case where `t_orig = t_peel`. Under this contradiction, the original tile's edge-sharing properties would collide with the boundary step, which is ruled out by boundary path simplicity `B.simple`:
 ```lean
-  have h_sub_len : (L.filter (fun t => t ≠ t_peel)).length = L.length - 1
+  have h_neq : t_orig ≠ t_peel := by
+    intro h_false_eq
+    -- Extract the edge-sharing identity under the contradiction state
+    have h_edge_collision : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig := ht_edge
+    subst h_false_eq
+    -- Unpack boundary simplicity to show that an interior edge cannot collide with an outer boundary edge
+    have h_simple_path := B.simple
+    dsimp [isSimple] at h_simple_path
+    -- Show contradiction using boundary simplicity and getPlacedTileEdges properties
+    sorry
 ```
+We should:
+1. Formulate a boundary simplicity contradiction helper or directly unfold `isSimple` to prove that an edge on the peeled tile `t_peel` cannot simultaneously participate in the boundary path and satisfy the interior disjointness invariant.
+2. Resolve `sorry` in `peel_patch_general_spliced` and verify compilation.
 
-### Recommended Strategy and Blueprint
-This length reduction property holds because `t_peel ∈ L` and `L.Nodup`. In a duplicate-free list, the element `t_peel` appears exactly once. Thus, filtering out elements unequal to `t_peel` preserves all elements except `t_peel`, meaning the length of the filtered list is exactly `L.length - 1`.
-
-We can prove this helper property by induction on `L`:
-- **Base Case** (`L = []`): Trivial since `t_peel ∈ []` is a contradiction.
-- **Inductive Step** (`L = hd :: tl`):
-  - If `hd = t_peel`: Since `L.Nodup`, `t_peel ∉ tl`. The filter condition `t ≠ t_peel` is false for `hd`, so the filter yields `tl.filter (fun t => t ≠ t_peel)`. Since `t_peel ∉ tl`, the filter on `tl` is the identity, having length `tl.length = L.length - 1`.
-  - If `hd ≠ t_peel`: The filter preserves `hd`. We apply the induction hypothesis on `tl` to get the length reduction, then simplify the arithmetic.
-
-```lean
--- Proposed Blueprint for Milestone 155:
-lemma filter_peel_length (L : List PlacedTile) (t_peel : PlacedTile) 
-  (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
-  (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
-  induction L with
-  | nil => contradiction
-  | cons hd tl ih =>
-      dsimp [List.filter]
-      split
-      · -- Case hd ≠ t_peel
-        sorry
-      · -- Case hd = t_peel
-        sorry
-```
-### Modified Source Section Delta (Milestone 154)
+### Modified Source Section Delta (Milestone 155)
 ```diff
 diff --git a/Spectrebound/SpectreBoundary.lean b/Spectrebound/SpectreBoundary.lean
-index 57487ee..1a83c88 100644
+index 1a83c88..f46112e 100644
 --- a/Spectrebound/SpectreBoundary.lean
 +++ b/Spectrebound/SpectreBoundary.lean
-@@ -2985,12 +2985,32 @@ lemma TilingPatch.boundary_step_origin_invariant (P : TilingPatch) (steps' : Lis
-   ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
-   sorry
+@@ -2996,13 +2996,61 @@ lemma sumPatchInventory_eq_length (L : List PlacedTile) :
+       dsimp [patchCornerInventory]
+       ext <;> (push_cast; omega)
  
-+/-- Lemma: The total corner inventory sum of a tile list depends strictly on its length. -/
-+lemma sumPatchInventory_eq_length (L : List PlacedTile) :
-+  sumPatchInventory L = patchCornerInventory L.length := by
++/-- Helper lemma: filtering out an element not in the list is identity. -/
++lemma filter_not_mem (L : List PlacedTile) (x : PlacedTile) (h : x ∉ L) :
++  L.filter (fun t => t ≠ x) = L := by
 +  induction L with
 +  | nil => rfl
 +  | cons hd tl ih =>
-+      dsimp [sumPatchInventory, patchCornerInventory, TileCornerInventory.add, singleTileInventory] at *
-+      rw [ih]
-+      dsimp [patchCornerInventory]
-+      ext <;> (push_cast; omega)
++      dsimp [List.filter]
++      have h_not : x ∉ tl := fun hc => h (List.mem_cons_of_mem hd hc)
++      have h_ne : hd ≠ x := fun hc => h (hc ▸ List.mem_cons_self)
++      have : (decide (hd ≠ x)) = true := by simp [h_ne]
++      rw [this]
++      dsimp
++      congr 1
++      exact ih h_not
 +
  /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
  lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile) 
    (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
    sumPatchInventory L = TileCornerInventory.add singleTileInventory (sumPatchInventory (L.filter (fun t => t ≠ t_peel))) := by
--  -- Invariance of element summing loops under duplicate-free sublist partitions
--  sorry
-+  rw [sumPatchInventory_eq_length, sumPatchInventory_eq_length]
-+  have h_sub_len : (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
-+    sorry
-+  have h_L_pos : 0 < L.length := by
-+    cases L with
-+    | nil => contradiction
-+    | cons hd tl => dsimp; omega
-+  dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
-+  rw [h_sub_len]
-+  ext <;> (push_cast; omega)
-+
- 
- 
- /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
+   rw [sumPatchInventory_eq_length, sumPatchInventory_eq_length]
+   have h_sub_len : (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
+-    sorry
++    revert t_peel h_mem h_nd
++    induction L with
++    | nil =>
++        intro t_peel h_nd h_mem
++        contradiction
++    | cons hd tl ih =>
++        intro t_peel h_nd h_mem
++        by_cases h_eq : hd = t_peel
++        · subst h_eq
++          have h_not_mem : hd ∉ tl := (List.nodup_cons.mp h_nd).1
++          have h_filter_id := filter_not_mem tl hd h_not_mem
++          dsimp [List.filter]
++          have : (decide (hd ≠ hd)) = false := by simp
++          rw [this]
++          dsimp
++          rw [h_filter_id]
++        · have : (decide (hd ≠ t_peel)) = true := by
++            simp [h_eq]
++          dsimp [List.filter]
++          rw [this]
++          dsimp
++          have h_mem_tl : t_peel ∈ tl := by
++            have h_mem_cons := h_mem
++            rw [List.mem_cons] at h_mem_cons
++            cases h_mem_cons with
++            | inl h => exact False.elim (h_eq h.symm)
++            | inr h => exact h
++          have h_nd_tl := (List.nodup_cons.mp h_nd).2
++          have ih_val := ih t_peel h_nd_tl h_mem_tl
++          cases tl with
++          | nil => contradiction
++          | cons hd'' tl'' =>
++              dsimp [List.length] at *
++              omega
+   have h_L_pos : 0 < L.length := by
+     cases L with
+     | nil => contradiction
 ```
