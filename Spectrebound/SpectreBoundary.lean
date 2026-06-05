@@ -3330,7 +3330,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_step_parent_tile : ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
             exact P.boundary_step_origin_invariant steps' s hs
           rcases h_step_parent_tile with ⟨k, hk, h_sdir⟩
-          have h_uniform_link := h_dir_propagate (by sorry) k 0 hk h_p
+          have h_uniform_link := h_dir_propagate _i k 0 hk h_p
           rw [h_sdir, h_uniform_link]
         intro s hs
         exact s.dir.isLt
