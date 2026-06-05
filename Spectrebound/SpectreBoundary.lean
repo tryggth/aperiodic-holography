@@ -3200,25 +3200,6 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
     · -- True Singleton Fallback Integration Path
-      have h_tiles_eq : P.tiles = [⟨0, LatticePoint.zero, 0⟩] := by
-        have h_ne : P.tiles ≠ [] := by
-          intro hc
-          have h_empty := h_bdry.1.mpr hc
-          exact B.non_empty h_empty
-        cases h_tiles_repr : P.tiles with
-        | nil => contradiction
-        | cons hd tl =>
-          have h_drop : tl = [] := by
-            have h_drop_eq : P.tiles.drop 1 = tl := by rw [h_tiles_repr]; rfl
-            rw [← h_drop_eq]
-            exact h_nt
-          subst h_drop
-          have h_inv := h_bdry.2.1 hd (by rw [h_tiles_repr]; exact List.mem_singleton_self hd)
-          have h_sum := h_bdry.2.2.2.2.2.1
-          rw [h_tiles_repr] at h_sum
-          dsimp [sumPatchInventory, TileCornerInventory.add, singleTileInventory] at h_sum
-          -- The spatial ledger invariant forces default placement at the zero origin point
-          sorry
       have h_singleton_empty : steps' = [] := by
         rw [h_steps_eq]
         have h_mem := findMaximalRule_mem h_match
@@ -3242,19 +3223,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · intro s hs; contradiction
       · rfl
       · intro j
-        by_cases hj : j.val = 0
-        · have h_edge := peel_patch_singleton_spliced P B _i rule h_bdry h_match h_tiles_eq steps' h_steps_eq j hj
-          use ⟨0, LatticePoint.zero, 0⟩
-          dsimp [List.filter]
-          have h_contra : steps' = [] := h_singleton_empty
-          rw [h_contra] at j
-          exact ⟨by contradiction, h_edge⟩
-        · have h_edge := peel_patch_singleton_remainder P B _i rule h_bdry h_match h_tiles_eq steps' h_steps_eq j hj
-          use ⟨0, LatticePoint.zero, 0⟩
-          dsimp [List.filter]
-          have h_contra : steps' = [] := h_singleton_empty
-          rw [h_contra] at j
-          exact ⟨by contradiction, h_edge⟩
+        rw [h_singleton_empty] at j
+        exact Fin.elim0 j
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
       let anchor_step := rotated.get ⟨0, h_pos⟩
