@@ -2911,10 +2911,13 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
       have h_neq : t_orig ≠ t_peel := by
         intro h_false_eq
         subst h_false_eq
-        -- Unpack boundary simplicity to show a remainder path edge cannot collide with the peeled corner tile
         have h_simple_path := B.simple
-        dsimp [isSimple] at h_simple_path
-        sorry
+        have h_remainder_edge_disjoint : (t_orig.pos, (B.steps.get orig_idx).dir) ∈ getPlacedTileEdges t_orig → ¬ isSimple B.steps := by
+          -- Remainder path segments overlapping the peeled core tile violate boundary simplicity
+          intro _
+          sorry
+        have h_not_simple := h_remainder_edge_disjoint ht_edge
+        exact False.elim (h_not_simple h_simple_path)
       have ht_mem_reduced : t_orig ∈ reduced_tiles := by
         rw [h_red]
         rw [List.mem_filter]
