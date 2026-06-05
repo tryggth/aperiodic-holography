@@ -3204,6 +3204,13 @@ lemma list_filter_index_mono {α : Type} (L : List α) (p : α → Bool) (i j : 
   -- Sublist filtration strictly preserves position order indices
   sorry
 
+/-- Standalone list lemma: filtering a list strictly preserves index injection order properties. -/
+lemma list_filter_index_inj {α : Type} (L : List α) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) :
+  i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
+    (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
+  -- Sublist filtration strictly preserves position order indices
+  sorry
+
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
@@ -3462,12 +3469,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       exact Fin.ext_iff.mp h_fin_eq
                     omega
                   have h_filter_mono : g1 < g2 := by
-                    have h_mono_inj : ∀ (L : List PlacedTile) (p : PlacedTile → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length),
-                      i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
-                      (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
-                      -- Sublist filtration strictly preserves position order indices
-                      sorry
-                    have h_mono_spec := h_mono_inj P.tiles (fun t => t ≠ t_peel) idx (idx + 1) h1 h2 (by omega)
+                    have h_mono_spec := list_filter_index_inj P.tiles (fun t => t ≠ t_peel) idx (idx + 1) h1 h2 (by omega)
                     rcases h_mono_spec with ⟨m1, m2, hm1, hm2, h_mget1, h_mget2, h_mlt⟩
                     have h_g1_eq_m1 : g1 = m1 := by
                       have h_lookup_eq : P.tiles.get ⟨g1, hg1⟩ = P.tiles.get ⟨m1, hm1⟩ := by
