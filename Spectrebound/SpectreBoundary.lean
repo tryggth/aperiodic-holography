@@ -540,6 +540,7 @@ structure TilingPatch where
   deriving Repr, DecidableEq
 
 /-- Tracks the inventory of corners of different interior angles for a given patch -/
+@[ext]
 structure TileCornerInventory where
   c90 : Nat
   c120 : Nat
@@ -3365,8 +3366,13 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
           have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
             exact sumPatchInventory_filter_peel P.tiles t_peel h_bdry.2.2.1 h_peel_mem
           have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
-            -- The expected corner footprint scales incrementally upon single tile filtration
-            sorry
+            have h_len_eq : P.tiles.length = reduced_tiles.length + 1 := by
+              have h_sub_len : reduced_tiles.length = P.tiles.length - 1 := by
+                sorry
+              omega
+            dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
+            rw [h_len_eq]
+            ext <;> (push_cast; omega)
           rw [h_inventory_peel, h_patch_inventory_step] at h_parent_inventory
           exact patch_inventory_inj (sumPatchInventory reduced_tiles) (patchCornerInventory reduced_tiles.length) h_parent_inventory
         exact h_inventory_sum
