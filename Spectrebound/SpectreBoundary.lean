@@ -2996,13 +2996,61 @@ lemma sumPatchInventory_eq_length (L : List PlacedTile) :
       dsimp [patchCornerInventory]
       ext <;> (push_cast; omega)
 
+/-- Helper lemma: filtering out an element not in the list is identity. -/
+lemma filter_not_mem (L : List PlacedTile) (x : PlacedTile) (h : x ∉ L) :
+  L.filter (fun t => t ≠ x) = L := by
+  induction L with
+  | nil => rfl
+  | cons hd tl ih =>
+      dsimp [List.filter]
+      have h_not : x ∉ tl := fun hc => h (List.mem_cons_of_mem hd hc)
+      have h_ne : hd ≠ x := fun hc => h (hc ▸ List.mem_cons_self)
+      have : (decide (hd ≠ x)) = true := by simp [h_ne]
+      rw [this]
+      dsimp
+      congr 1
+      exact ih h_not
+
 /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
 lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile) 
   (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
   sumPatchInventory L = TileCornerInventory.add singleTileInventory (sumPatchInventory (L.filter (fun t => t ≠ t_peel))) := by
   rw [sumPatchInventory_eq_length, sumPatchInventory_eq_length]
   have h_sub_len : (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
-    sorry
+    revert t_peel h_mem h_nd
+    induction L with
+    | nil =>
+        intro t_peel h_nd h_mem
+        contradiction
+    | cons hd tl ih =>
+        intro t_peel h_nd h_mem
+        by_cases h_eq : hd = t_peel
+        · subst h_eq
+          have h_not_mem : hd ∉ tl := (List.nodup_cons.mp h_nd).1
+          have h_filter_id := filter_not_mem tl hd h_not_mem
+          dsimp [List.filter]
+          have : (decide (hd ≠ hd)) = false := by simp
+          rw [this]
+          dsimp
+          rw [h_filter_id]
+        · have : (decide (hd ≠ t_peel)) = true := by
+            simp [h_eq]
+          dsimp [List.filter]
+          rw [this]
+          dsimp
+          have h_mem_tl : t_peel ∈ tl := by
+            have h_mem_cons := h_mem
+            rw [List.mem_cons] at h_mem_cons
+            cases h_mem_cons with
+            | inl h => exact False.elim (h_eq h.symm)
+            | inr h => exact h
+          have h_nd_tl := (List.nodup_cons.mp h_nd).2
+          have ih_val := ih t_peel h_nd_tl h_mem_tl
+          cases tl with
+          | nil => contradiction
+          | cons hd'' tl'' =>
+              dsimp [List.length] at *
+              omega
   have h_L_pos : 0 < L.length := by
     cases L with
     | nil => contradiction
