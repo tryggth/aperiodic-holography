@@ -2941,7 +2941,26 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
               exact Nat.mod_lt _ this
             (rotateList L rot_idx)[offset]'h_len = L[(offset + rot_idx) % L.length]'h_mod := by
             intro L rot_idx offset h_bound
-            sorry
+            dsimp [rotateList]
+            split
+            · omega
+            · rename_i h_ne
+              have h_lt_drop : rot_idx % L.length < L.length := Nat.mod_lt _ (by omega)
+              have h_len_rot : offset < (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length)).length := by
+                rw [List.length_append, List.length_drop, List.length_take]
+                omega
+              have h_mod : (offset + rot_idx) % L.length < L.length := by
+                have : 0 < L.length := by omega
+                exact Nat.mod_lt _ this
+              by_cases h_split : offset < L.length - rot_idx % L.length
+              · -- Case 161A: Index lands in the dropped prefix sublist segment
+                have h_drop_case : (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length))[offset]'h_len_rot = L[(offset + rot_idx) % L.length]'h_mod := by
+                  sorry
+                exact h_drop_case
+              · -- Case 161B: Index lands in the taken suffix sublist segment
+                have h_take_case : (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length))[offset]'h_len_rot = L[(offset + rot_idx) % L.length]'h_mod := by
+                  sorry
+                exact h_take_case
           exact h_rotate_list_index_map B.steps i.val (rule.pattern.length + (j.val - spliced_steps_updated.length)) h_steps_bound
         rw [h_rot_get]
       rw [h_dir_match]
