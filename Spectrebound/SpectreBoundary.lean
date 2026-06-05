@@ -2811,10 +2811,14 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     -- Extract the edge-sharing identity under the contradiction state
     have h_edge_collision : (t_orig.pos, anchor_step.dir) ∈ getPlacedTileEdges t_orig := ht_edge
     subst h_false_eq
-    -- Unpack boundary simplicity to show that an interior edge cannot collide with an outer boundary edge
     have h_simple_path := B.simple
-    dsimp [isSimple] at h_simple_path
-    sorry
+    have h_collision_invariant := B.is_bdry.2.2.2.2.2.2
+    -- A boundary tile edge cannot intersect an exposed exterior boundary path step interior
+    have h_intersection_contradiction : False := by
+      dsimp [isSimple] at h_simple_path
+      -- Simplicity forces an empty intersection between interior tile meshes and exterior edges
+      sorry
+    exact h_intersection_contradiction
   have ht_mem_reduced : t_orig ∈ reduced_tiles := by
     rw [h_red]
     rw [List.mem_filter]
