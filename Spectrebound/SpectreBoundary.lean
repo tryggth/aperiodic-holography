@@ -3172,6 +3172,13 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
+/-- Helper lemma: A boundary path entirely contained within a single tile's edge perible has its length bounded by the edge list cardinality. -/
+lemma singleton_boundary_edge_list_bounded (B : BoundaryPath) (hd : PlacedTile)
+  (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  B.steps.length ≤ (getPlacedTileEdges hd).length := by
+  -- Global pigeonhole or injectivity maps bound the boundary step list size by the finite tile footprint list length
+  sorry
+
 /-- Helper lemma: A single tile boundary path has exactly 14 edges based on edge containment fields. -/
 lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
@@ -3186,8 +3193,11 @@ lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
         omega
     exact boundary_path_length_ge B.steps h_pos
   have h_upper_bound : B.steps.length ≤ 14 := by
-    -- Mapping all cyclic boundary steps into a single tile's finite 14-edge perible bounds the length
-    sorry
+    have h_bound := singleton_boundary_edge_list_bounded B hd h_witness
+    have h_tile_edges_len : (getPlacedTileEdges hd).length = 14 := by
+      -- The underlying layout definition of a Spectre tile maps to exactly 14 directed perimeter edges
+      sorry
+    omega
   omega
 
 /-- Helper lemma: linking single-tile boundary perimeters to list step counts. -/
