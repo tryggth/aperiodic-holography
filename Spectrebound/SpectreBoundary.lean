@@ -3176,8 +3176,19 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
   B.steps.length = 14 := by
-  -- Mapping cyclic steps into the 14-element perimeter edge set determines length cardinality
-  sorry
+  have h_lower_bound : 14 ≤ B.steps.length := by
+    have h_pos : 0 < B.steps.length := by
+      have h_ne := B.non_empty
+      cases h_eq : B.steps with
+      | nil => exact False.elim (h_ne h_eq)
+      | cons x xs =>
+        dsimp
+        omega
+    exact boundary_path_length_ge B.steps h_pos
+  have h_upper_bound : B.steps.length ≤ 14 := by
+    -- Mapping all cyclic boundary steps into a single tile's finite 14-edge perible bounds the length
+    sorry
+  omega
 
 /-- Helper lemma: linking single-tile boundary perimeters to list step counts. -/
 lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
