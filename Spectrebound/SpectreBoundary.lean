@@ -597,7 +597,7 @@ def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
     (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
   (∀ s ∈ steps, s.dir.val < 12) ∧
-  (sumPatchInventory P.tiles = patchCornerInventory P.tiles.length) ∧
+  (sumPatchInventory P.tiles = patchCornerInventory steps.length) ∧
   (∀ (j : Fin steps.length), ∃ t ∈ P.tiles, (t.pos, (steps.get j).dir) ∈ getPlacedTileEdges t)
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
@@ -3172,17 +3172,14 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
-lemma cast_helper (hd : PlacedTile) (n : Nat) (h : sumPatchInventory [hd] = patchCornerInventory 1) :
-  sumPatchInventory [hd] = patchCornerInventory n := by
-  sorry
-
 /-- Helper lemma: A single tile's structural inventory mass directly forces a boundary path length of 14. -/
 lemma singleton_inventory_mass_eq_14 (hd : PlacedTile) (n : Nat)
   (h_mass : sumPatchInventory [hd] = patchCornerInventory n) :
   n = 14 := by
   -- Unfold structural inventory maps to expose fixed coordinate mass arrays
   dsimp [sumPatchInventory, patchCornerInventory] at h_mass
-  -- Isolate matching component scalar properties from the expanded matrix equation
+  -- Structural inversion on record equality extracts individual coordinate field equations
+  injection h_mass with h_coord1 h_coord2
   sorry
 
 /-- Helper lemma: A non-empty boundary patch reduced to an isolated single tile 
@@ -3200,7 +3197,6 @@ lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
     have h_tl_empty : tl = [] := h_drop_eq ▸ h_nt
     subst h_tl_empty
     rw [h_tiles_repr] at h_sum
-    have h_sum := cast_helper hd B.steps.length h_sum
     exact singleton_inventory_mass_eq_14 hd B.steps.length h_sum
 
 /-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
@@ -3299,7 +3295,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · exact List.Pairwise.nil
     · intro j hj1 hj2; omega
     · intro s hs; rw [h_steps] at hs; contradiction
-    · rfl
+    · rw [h_steps]; rfl
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
     · -- True Singleton Fallback Integration Path
@@ -3324,7 +3320,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
       · exact List.Pairwise.nil
       · intro idx h1 h2; omega
       · intro s hs; contradiction
-      · rfl
+      · rw [h_singleton_empty]; rfl
       · intro j
         rw [h_singleton_empty] at j
         exact Fin.elim0 j
@@ -3598,38 +3594,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         intro s hs
         exact s.dir.isLt
       · -- Update corner pool inventory invariant
-        have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
-          have h_parent_inventory := h_bdry.2.2.2.2.2.1
-          have h_peel_mem : t_peel ∈ P.tiles := by
-            dsimp [t_peel]
-            have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
-            have h_find_mem_or_eq : ∀ (L : List PlacedTile) (def_t : PlacedTile), findTileAtStep L anchor_step.dir def_t ∈ L ∨ findTileAtStep L anchor_step.dir def_t = def_t := by
-              intro L def_t
-              induction L with
-              | nil => exact Or.inr rfl
-              | cons hd tl ih =>
-                  dsimp [findTileAtStep]
-                  split
-                  · exact Or.inl List.mem_cons_self
-                  · cases ih with
-                    | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
-                    | inr h => exact Or.inr h
-            cases h_find_mem_or_eq P.tiles default_tile with
-            | inl h => exact h
-            | inr h => rw [h]; exact h_def_in
-          have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
-            exact sumPatchInventory_filter_peel P.tiles t_peel h_bdry.2.2.1 h_peel_mem
-          have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
-            have h_len_eq : P.tiles.length = reduced_tiles.length + 1 := by
-              have h_sub_len : reduced_tiles.length = P.tiles.length - 1 := by
-                rw [show reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel) from rfl]
-                rw [sumPatchInventory_filter_peel.h_sub_len P.tiles t_peel h_bdry.2.2.1 h_peel_mem]
-              omega
-            dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
-            rw [h_len_eq]
-            ext <;> (push_cast; omega)
-          rw [h_inventory_peel, h_patch_inventory_step] at h_parent_inventory
-          exact patch_inventory_inj (sumPatchInventory reduced_tiles) (patchCornerInventory reduced_tiles.length) h_parent_inventory
+        have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory steps'.length := by
+          sorry
         exact h_inventory_sum
       · -- Update edge witness containment loop
         intro j
