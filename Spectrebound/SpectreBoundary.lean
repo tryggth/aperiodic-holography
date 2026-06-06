@@ -3185,8 +3185,14 @@ lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (h_nt : P.tiles.drop 1 = []) :
   rule.pattern.length = 14 := by
-  -- Maximal aperiodic rule searches over complete isolated tiles match a pattern length of 14
-  sorry
+  -- Decompose pattern bound into path size resolution and maximal rule lookup traits
+  have h_path_len : (rotateList B.steps i.val).length = 14 := by
+    rw [length_rotateList]
+    exact singleton_path_perimeter_bound P B h_bdry h_nt
+  have h_maximal_match : rule.pattern.length = (rotateList B.steps i.val).length := by
+    -- A maximal rule match over a complete 14-sided single tile perimeter covers the entire loop length
+    sorry
+  omega
 
 /-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
     aperiodic rewrite rule forces the pattern length to perfectly equal the boundary path perimeter. -/
