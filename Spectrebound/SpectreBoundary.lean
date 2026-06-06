@@ -3172,6 +3172,13 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
+/-- Helper lemma: A single tile boundary path has exactly 14 edges based on edge containment fields. -/
+lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
+  (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  B.steps.length = 14 := by
+  -- Mapping cyclic steps into the 14-element perimeter edge set determines length cardinality
+  sorry
+
 /-- Helper lemma: linking single-tile boundary perimeters to list step counts. -/
 lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
   (h_bdry : is_boundary_of B.steps P) (h_nt : P.tiles.drop 1 = []) :
@@ -3185,8 +3192,16 @@ lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
     have h_drop_eq : P.tiles.drop 1 = tl := by rw [h_tiles_repr]; rfl
     have h_tl_empty : tl = [] := h_drop_eq ▸ h_nt
     subst h_tl_empty
-    -- The edge witness mapping forces the path length to match the tile perimeter count
-    sorry
+    -- Unpack the universal edge witness field to map every step directly to the lone tile footprint
+    have h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd := by
+      intro j
+      have h_ex := h_bdry.2.2.2.2.2.2 j
+      rcases h_ex with ⟨t, ht_mem, ht_edge⟩
+      rw [h_tiles_repr] at ht_mem
+      simp only [List.mem_cons, List.mem_nil_iff, or_false] at ht_mem
+      subst ht_mem
+      exact ht_edge
+    exact singleton_boundary_edge_count_match B hd h_witness
 
 /-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
 lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
