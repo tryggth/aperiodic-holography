@@ -3220,14 +3220,23 @@ lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : F
     exact singleton_patch_rule_pattern_bound P B i rule h_bdry h_match h_nt
   omega
 
-/-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
-    aperiodic rewrite rule forces the rewrite replacement sequence to be empty. -/
+/-- Helper lemma: A maximal prefix rule match over a complete 14-element perimeter yields an empty replacement array. -/
+lemma singleton_replacement_lookup_empty (turns : List ExteriorTurn) (rule : RewriteRule)
+  (h_len : turns.length = 14) (h_match : findMaximalRule turns = some rule) :
+  rule.replacement = [] := by
+  -- Static rule lookup expansion over maximum lengths sets replacement to nil
+  sorry
+
+/-- Standalone combinatorial invariant: 
+    A singleton patch configuration matching a maximal aperiodic rewrite rule forces the rewrite replacement sequence to be empty. -/
 lemma singleton_patch_replacement_empty (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (h_nt : P.tiles.drop 1 = []) :
   rule.replacement = [] := by
-  -- Perimeter match of an isolated single tile leaves zero remaining replacement steps
-  sorry
+  have h_len : ((rotateList B.steps i.val).map (fun s => s.turn)).length = 14 := by
+    rw [List.length_map, length_rotateList]
+    exact singleton_path_perimeter_bound P B h_bdry h_nt
+  exact singleton_replacement_lookup_empty ((rotateList B.steps i.val).map (fun s => s.turn)) rule h_len h_match
 
 /-- Standalone list lemma: filtering a list preserves element containment and provides 
     existential indices in the original list for consecutive filtered elements. -/
