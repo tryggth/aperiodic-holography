@@ -3187,17 +3187,24 @@ lemma list_length_le_of_injective_map {α β : Type} (L1 : List α) (L2 : List �
   -- Injective element allocations into finite lists bound structural cardinality
   sorry
 
+/-- Helper lemma: Equality of step directions along an isolated single-tile boundary path implies index equality. -/
+lemma singleton_boundary_dir_to_index_inj (B : BoundaryPath) (hd : PlacedTile)
+  (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd)
+  (i j : Fin B.steps.length) (h_dir_eq : (B.steps.get i).dir = (B.steps.get j).dir) :
+  i = j := by
+  -- Simple boundary step direction matches map injectively back to distinct indices
+  sorry
+
 /-- Helper lemma: A boundary path entirely contained within a single tile's edge perible has its length bounded by the edge list cardinality. -/
 lemma singleton_boundary_edge_list_bounded (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
   B.steps.length ≤ (getPlacedTileEdges hd).length := by
-  have h_inj := singleton_boundary_step_injectivity B hd h_witness
   have h_le := list_length_le_of_injective_map B.steps (getPlacedTileEdges hd) (fun j => (hd.pos, (B.steps.get j).dir))
     (by intro j; exact h_witness j)
     (by
       intro i j h_eq
-      -- Injective transition from coordinate pair identity back to index injectivity
-      sorry)
+      injection h_eq with h_pos_discard h_dir_eq
+      exact singleton_boundary_dir_to_index_inj B hd h_witness i j h_dir_eq)
   exact h_le
 
 /-- Helper lemma: The physical perimeter footprint list of any PlacedTile has a fixed length of 14. -/
