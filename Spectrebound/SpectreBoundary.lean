@@ -3178,6 +3178,14 @@ lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
   B.steps.length = 14 := by
   sorry
 
+/-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
+lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
+  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
+  (h_nt : P.tiles.drop 1 = []) :
+  rule.pattern.length = 14 := by
+  -- Maximal aperiodic rule searches over complete isolated tiles match a pattern length of 14
+  sorry
+
 /-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
     aperiodic rewrite rule forces the pattern length to perfectly equal the boundary path perimeter. -/
 lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
@@ -3201,8 +3209,7 @@ lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : F
       -- The corner mass of a single-tile inventory matches a perimeter path length of exactly 14
       exact singleton_path_perimeter_bound P B h_bdry h_nt
   have h_rule_len : rule.pattern.length = 14 := by
-    -- Maximal aperiodic rule searches over complete isolated tiles match a pattern length of 14
-    sorry
+    exact singleton_patch_rule_pattern_bound P B i rule h_bdry h_match h_nt
   omega
 
 /-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
