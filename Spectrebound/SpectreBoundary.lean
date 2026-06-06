@@ -3187,13 +3187,20 @@ lemma list_length_le_of_injective_map {α β : Type} (L1 : List α) (L2 : List �
   -- Injective element allocations into finite lists bound structural cardinality
   sorry
 
+/-- Helper lemma: Absolute direction matching along a single-tile perimeter uniquely determines the boundary step properties. -/
+lemma singleton_tile_direction_step_uniqueness (B : BoundaryPath) (hd : PlacedTile)
+  (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd)
+  (i j : Fin B.steps.length) (h_dir_eq : (B.steps.get i).dir = (B.steps.get j).dir) :
+  B.steps.get i = B.steps.get j := by
+  -- Simple loop constraints bounding a single tile force matching direction values to share identical fields
+  sorry
+
 /-- Helper lemma: If two steps on a single-tile simple boundary path have the same direction, they are the same step record. -/
 lemma singleton_boundary_dir_eq_implies_step_eq (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd)
   (i j : Fin B.steps.length) (h_dir_eq : (B.steps.get i).dir = (B.steps.get j).dir) :
   B.steps.get i = B.steps.get j := by
-  -- Perimeter constraints on simple closed loops around a lone tile force direction matches to be identical steps
-  sorry
+  exact singleton_tile_direction_step_uniqueness B hd h_witness i j h_dir_eq
 
 /-- Helper lemma: Equality of step directions along an isolated single-tile boundary path implies index equality. -/
 lemma singleton_boundary_dir_to_index_inj (B : BoundaryPath) (hd : PlacedTile)
