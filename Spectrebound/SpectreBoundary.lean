@@ -3179,13 +3179,26 @@ lemma singleton_boundary_step_injectivity (B : BoundaryPath) (hd : PlacedTile)
   -- Simple non-self-intersecting path constraints force index lookups to be injective
   sorry
 
+/-- Helper lemma: An injective mapping from a finite collection of indices into a target list bounds the length of the source list. -/
+lemma list_length_le_of_injective_map {α β : Type} (L1 : List α) (L2 : List β) (f : Fin L1.length → β)
+  (hf_mem : ∀ (i : Fin L1.length), f i ∈ L2)
+  (hf_inj : ∀ (i j : Fin L1.length), f i = f j → i = j) :
+  L1.length ≤ L2.length := by
+  -- Injective element allocations into finite lists bound structural cardinality
+  sorry
+
 /-- Helper lemma: A boundary path entirely contained within a single tile's edge perible has its length bounded by the edge list cardinality. -/
 lemma singleton_boundary_edge_list_bounded (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
   B.steps.length ≤ (getPlacedTileEdges hd).length := by
   have h_inj := singleton_boundary_step_injectivity B hd h_witness
-  -- An injective mapping from a finite boundary path into a finite list bounds the source list length
-  sorry
+  have h_le := list_length_le_of_injective_map B.steps (getPlacedTileEdges hd) (fun j => (hd.pos, (B.steps.get j).dir))
+    (by intro j; exact h_witness j)
+    (by
+      intro i j h_eq
+      -- Injective transition from coordinate pair identity back to index injectivity
+      sorry)
+  exact h_le
 
 /-- Helper lemma: The physical perimeter footprint list of any PlacedTile has a fixed length of 14. -/
 lemma placed_tile_edges_length_eq_14 (hd : PlacedTile) :
