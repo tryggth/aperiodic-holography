@@ -3179,6 +3179,12 @@ lemma singleton_boundary_edge_list_bounded (B : BoundaryPath) (hd : PlacedTile)
   -- Global pigeonhole or injectivity maps bound the boundary step list size by the finite tile footprint list length
   sorry
 
+/-- Helper lemma: The physical perimeter footprint list of any PlacedTile has a fixed length of 14. -/
+lemma placed_tile_edges_length_eq_14 (hd : PlacedTile) :
+  (getPlacedTileEdges hd).length = 14 := by
+  -- Unfolding the static structure of tile edge lists yields a collection of exactly 14 segments
+  sorry
+
 /-- Helper lemma: A single tile boundary path has exactly 14 edges based on edge containment fields. -/
 lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
@@ -3195,8 +3201,7 @@ lemma singleton_boundary_edge_count_match (B : BoundaryPath) (hd : PlacedTile)
   have h_upper_bound : B.steps.length ≤ 14 := by
     have h_bound := singleton_boundary_edge_list_bounded B hd h_witness
     have h_tile_edges_len : (getPlacedTileEdges hd).length = 14 := by
-      -- The underlying layout definition of a Spectre tile maps to exactly 14 directed perimeter edges
-      sorry
+      exact placed_tile_edges_length_eq_14 hd
     omega
   omega
 
