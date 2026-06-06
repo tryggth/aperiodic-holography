@@ -3176,7 +3176,17 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
   (h_bdry : is_boundary_of B.steps P) (h_nt : P.tiles.drop 1 = []) :
   B.steps.length = 14 := by
-  sorry
+  have h_sum := h_bdry.2.2.2.2.2.1
+  cases h_tiles_repr : P.tiles with
+  | nil =>
+    have h_empty := h_bdry.1.mpr h_tiles_repr
+    exact False.elim (B.non_empty h_empty)
+  | cons hd tl =>
+    have h_drop_eq : P.tiles.drop 1 = tl := by rw [h_tiles_repr]; rfl
+    have h_tl_empty : tl = [] := h_drop_eq ▸ h_nt
+    subst h_tl_empty
+    -- The edge witness mapping forces the path length to match the tile perimeter count
+    sorry
 
 /-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
 lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
