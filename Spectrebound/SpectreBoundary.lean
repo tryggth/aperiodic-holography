@@ -3172,11 +3172,19 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
+/-- Helper lemma: Distinct indices along a simple boundary path correspond to distinct boundary steps. -/
+lemma singleton_boundary_step_injectivity (B : BoundaryPath) (hd : PlacedTile)
+  (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  ∀ (i j : Fin B.steps.length), B.steps.get i = B.steps.get j → i = j := by
+  -- Simple non-self-intersecting path constraints force index lookups to be injective
+  sorry
+
 /-- Helper lemma: A boundary path entirely contained within a single tile's edge perible has its length bounded by the edge list cardinality. -/
 lemma singleton_boundary_edge_list_bounded (B : BoundaryPath) (hd : PlacedTile)
   (h_witness : ∀ (j : Fin B.steps.length), (hd.pos, (B.steps.get j).dir) ∈ getPlacedTileEdges hd) :
   B.steps.length ≤ (getPlacedTileEdges hd).length := by
-  -- Global pigeonhole or injectivity maps bound the boundary step list size by the finite tile footprint list length
+  have h_inj := singleton_boundary_step_injectivity B hd h_witness
+  -- An injective mapping from a finite boundary path into a finite list bounds the source list length
   sorry
 
 /-- Helper lemma: The physical perimeter footprint list of any PlacedTile has a fixed length of 14. -/
