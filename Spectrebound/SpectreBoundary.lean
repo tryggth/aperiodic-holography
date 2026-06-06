@@ -3172,6 +3172,13 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
+/-- Helper lemma: A single tile's structural inventory mass directly forces a boundary path length of 14. -/
+lemma singleton_inventory_mass_eq_14 (hd : PlacedTile) (n : Nat)
+  (h_mass : sumPatchInventory [hd] = patchCornerInventory n) :
+  n = 14 := by
+  -- Evaluating the static constructors of a singular tile's inventory solves for n = 14
+  sorry
+
 /-- Helper lemma: A non-empty boundary patch reduced to an isolated single tile 
     mathematically forces the length of the external boundary path to equal 14. -/
 lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
@@ -3187,9 +3194,9 @@ lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
     have h_tl_empty : tl = [] := h_drop_eq ▸ h_nt
     subst h_tl_empty
     rw [h_tiles_repr] at h_sum
-    dsimp [sumPatchInventory, patchCornerInventory] at h_sum
-    -- The structural corner inventory mass of a single tile directly forces the length to be 14
-    sorry
+    have h_sum_cast : sumPatchInventory [hd] = patchCornerInventory B.steps.length := sorry
+    have h_len_eval := singleton_inventory_mass_eq_14 hd B.steps.length h_sum_cast
+    exact h_len_eval
 
 /-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
 lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
