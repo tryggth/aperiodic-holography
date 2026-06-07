@@ -2165,7 +2165,8 @@ lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
   exact h_b
 
 /-- Helper lemma: The discrete combinatorial layout of a simple closed boundary loop in the Spectre grid requires a minimum perimeter length of 14. -/
-lemma boundary_path_girth_constraint (rotated : List BoundaryStep) (h_pos : 0 < rotated.length) :
+lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
+  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   14 ≤ rotated.length := by
   -- Topologically embedded simple loops on the discrete Spectre grid have a minimum geometric girth of 14
   sorry
@@ -2178,14 +2179,17 @@ lemma boundary_path_girth_constraint (rotated : List BoundaryStep) (h_pos : 0 < 
     spliced substitution patterns.
     Note that 1D algebraic turning-sum loops, local forcing uniqueness, and structural induction
     termination are fully closed and verified conditional on this and other 2D planar embedding placeholders. -/
-theorem boundary_path_length_ge (rotated : List BoundaryStep) (h_pos : 0 < rotated.length) :
+theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
+  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   14 ≤ rotated.length := by
-  exact boundary_path_girth_constraint rotated h_pos
+  exact boundary_path_girth_constraint B idx rotated h_rot h_pos
 
-theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRules) (rotated : List BoundaryStep) (h_pos : 0 < rotated.length) :
+theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRules)
+  (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
+  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   rule.pattern.length < rotated.length := by
   have h_pat := rule_pattern_bounds h_mem
-  have h_len := boundary_path_length_ge rotated h_pos
+  have h_len := boundary_path_length_ge B idx rotated h_rot h_pos
   omega
 
 theorem next_dir_opt_some_imp_next_step (rotated : List BoundaryStep) (rule : RewriteRule) (spliced_steps : List BoundaryStep) (next : EdgeDirection)
@@ -2323,7 +2327,7 @@ theorem peelBoundary_dir_consistent (B : BoundaryPath) (i : Fin B.steps.length) 
     have h_len : remaining.length = 0 := by rw [hc, List.length_nil]
     dsimp [remaining] at h_len
     rw [List.length_drop] at h_len
-    have h_lt := rule_pattern_length_lt rule h_mem rotated h_pos
+    have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl h_pos
     omega
   have h_spliced_ne : spliced_steps ≠ [] := by
     intro hc
@@ -2487,7 +2491,7 @@ lemma peelBoundary_stitch_sum (B : BoundaryPath) (i : Fin B.steps.length) (rule 
         intro hc
         have h_len_rem : (rotated.drop rule.pattern.length).length = 0 := by rw [hc, List.length_nil]
         rw [List.length_drop] at h_len_rem
-        have h_rule_len := rule_pattern_length_lt rule h_mem rotated h_pos
+        have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl h_pos
         omega
       have h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩ :=
         next_dir_opt_some_imp_next_step rotated rule spliced_steps next h_ndo h_rem_ne
