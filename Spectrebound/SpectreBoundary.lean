@@ -2164,12 +2164,20 @@ lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
   simp only [Bool.and_eq_true, decide_eq_true_iff] at h_b
   exact h_b
 
+/-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has an exact length of 14. -/
+lemma singleton_boundary_length_eq_14 (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  steps.length = 14 := by
+  -- Ledger edge matching maps simple non-self-intersecting loops over isolated tiles to an exact length of 14
+  sorry
+
 /-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
 lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
   14 ≤ steps.length := by
-  -- Single tile geometry bounds perimeter length definitionally
-  sorry
+  have h_len : steps.length = 14 := by
+    exact singleton_boundary_length_eq_14 P steps hd h_bdry h_tiles
+  omega
 
 /-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14. -/
 lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
