@@ -2223,12 +2223,27 @@ lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : Pla
   have h_edge_len : (getPlacedTileEdges hd).length = 14 := length_getPlacedTileEdges hd
   omega
 
+/-- Helper lemma: A step index duplication collision on an isolated tile footprint directly violates path simplicity invariants. -/
+lemma singleton_boundary_collision_contradiction (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (i j : Fin (steps.map (fun s => (hd.pos, s.dir))).length) (h_ne : i ≠ j)
+  (h_eq : (steps.map (fun s => (hd.pos, s.dir))).get i = (steps.map (fun s => (hd.pos, s.dir))).get j) :
+  ¬ isSimple steps := by
+  -- Duplicate index lookups mapping to identical coordinate edge segments contradict topological simplicity
+  sorry
+
 /-- Helper lemma: A simple non-self-intersecting outer boundary loop tracking a single tile generates duplicate-free absolute edge segment lookups. -/
 lemma singleton_boundary_simplicity_to_nodup (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
   (steps.map (fun s => (hd.pos, s.dir))).Nodup := by
-  -- Simple non-self-intersecting loops imply distinct edge element lookups
-  sorry
+  rw [List.nodup_iff_injective_get]
+  intro i j h_eq
+  by_contra h_ne
+  have h_not_simple := singleton_boundary_collision_contradiction P steps hd h_bdry h_tiles i j h_ne h_eq
+  have h_simple := (by
+    -- Extract the ambient path simplicity context from the structural boundary path ledger
+    sorry : isSimple steps)
+  exact h_not_simple h_simple
 
 /-- Helper lemma: A simple closed boundary path mapped entirely into a single tile's edge array has an upper length bound of 14. -/
 lemma singleton_boundary_length_le_14 (P : TilingPatch) (steps : List BoundaryStep)
