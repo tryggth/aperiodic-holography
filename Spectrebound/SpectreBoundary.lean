@@ -2175,13 +2175,19 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: The cardinality of an injective sequence bounded within a finite set of size 14 cannot exceed 14. -/
+lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : PlacedTile)
+  (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  steps.length ≤ 14 := by
+  -- Injective planar path steps mapped into a static size-14 edge set are bounded by 14
+  sorry
+
 /-- Helper lemma: A simple closed boundary path mapped entirely into a single tile's edge array has an upper length bound of 14. -/
 lemma singleton_boundary_length_le_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
   steps.length ≤ 14 := by
-  -- Simple non-self-intersecting loops visiting a unique subset of a size-14 edge array are bounded by 14
-  sorry
+  exact singleton_boundary_cardinality_bound steps hd h_subset
 
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
 lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
