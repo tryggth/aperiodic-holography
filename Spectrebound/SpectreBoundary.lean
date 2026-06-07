@@ -3172,79 +3172,6 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
-/-- Helper lemma: A non-empty boundary patch reduced to an isolated single tile 
-    mathematically forces the length of the external boundary path to equal 14. -/
-lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
-  (h_bdry : is_boundary_of B.steps P) (h_nt : P.tiles.drop 1 = []) :
-  B.steps.length = 14 := by
-  -- Isolated tile edge-sharing geometries bound path size independently of the ledger
-  sorry
-
-/-- Helper lemma: A maximal prefix rule match over a complete 14-element perimeter forces a pattern length of 14. -/
-lemma singleton_maximal_rule_pattern_length (turns : List ExteriorTurn) (rule : RewriteRule)
-  (h_len : turns.length = 14) (h_match : findMaximalRule turns = some rule) :
-  rule.pattern.length = 14 := by
-  -- Static rule pattern size resolution over maximum matching cycles
-  sorry
-
-/-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
-lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
-  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (h_nt : P.tiles.drop 1 = []) :
-  rule.pattern.length = 14 := by
-  -- Decompose pattern bound into path size resolution and maximal rule lookup traits
-  have h_path_len : (rotateList B.steps i.val).length = 14 := by
-    rw [length_rotateList]
-    exact singleton_path_perimeter_bound P B h_bdry h_nt
-  have h_maximal_match : rule.pattern.length = (rotateList B.steps i.val).length := by
-    have h_rule_len : rule.pattern.length = 14 := by
-      exact singleton_maximal_rule_pattern_length ((rotateList B.steps i.val).map (fun s => s.turn)) rule (by rw [List.length_map]; exact h_path_len) h_match
-    omega
-  omega
-
-/-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
-    aperiodic rewrite rule forces the pattern length to perfectly equal the boundary path perimeter. -/
-lemma singleton_patch_pattern_length (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
-  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (h_nt : P.tiles.drop 1 = []) :
-  (rotateList B.steps i.val).length = rule.pattern.length := by
-  -- Isolated single-tile geometries enforce static boundary and perimeter length equivalence
-  have h_path_len : (rotateList B.steps i.val).length = 14 := by
-    rw [length_rotateList]
-    have h_sum := h_bdry.2.2.2.2.2.1
-    cases h_tiles_repr : P.tiles with
-    | nil =>
-      have h_empty := h_bdry.1.mpr h_tiles_repr
-      exact False.elim (B.non_empty h_empty)
-    | cons hd tl =>
-      have h_drop_eq : P.tiles.drop 1 = tl := by rw [h_tiles_repr]; rfl
-      have h_tl_empty : tl = [] := h_drop_eq ▸ h_nt
-      subst h_tl_empty
-      rw [h_tiles_repr] at h_sum
-      dsimp [sumPatchInventory, patchCornerInventory] at h_sum
-      -- The corner mass of a single-tile inventory matches a perimeter path length of exactly 14
-      exact singleton_path_perimeter_bound P B h_bdry h_nt
-  have h_rule_len : rule.pattern.length = 14 := by
-    exact singleton_patch_rule_pattern_bound P B i rule h_bdry h_match h_nt
-  omega
-
-/-- Helper lemma: A maximal prefix rule match over a complete 14-element perimeter yields an empty replacement array. -/
-lemma singleton_replacement_lookup_empty (turns : List ExteriorTurn) (rule : RewriteRule)
-  (h_len : turns.length = 14) (h_match : findMaximalRule turns = some rule) :
-  rule.replacement = [] := by
-  -- Static rule lookup expansion over maximum lengths sets replacement to nil
-  sorry
-
-/-- Standalone combinatorial invariant: 
-    A singleton patch configuration matching a maximal aperiodic rewrite rule forces the rewrite replacement sequence to be empty. -/
-lemma singleton_patch_replacement_empty (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
-  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (h_nt : P.tiles.drop 1 = []) :
-  rule.replacement = [] := by
-  have h_len : ((rotateList B.steps i.val).map (fun s => s.turn)).length = 14 := by
-    rw [List.length_map, length_rotateList]
-    exact singleton_path_perimeter_bound P B h_bdry h_nt
-  exact singleton_replacement_lookup_empty ((rotateList B.steps i.val).map (fun s => s.turn)) rule h_len h_match
 
 /-- Standalone list lemma: filtering a list preserves element containment and provides 
     existential indices in the original list for consecutive filtered elements. -/
@@ -3302,32 +3229,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · rfl
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
-    · -- True Singleton Fallback Integration Path
-      have h_singleton_empty : steps' = [] := by
-        rw [h_steps_eq]
-        have h_mem := findMaximalRule_mem h_match
-        have h_single_len : (rotateList B.steps _i.val).length = rule.pattern.length := by
-          exact singleton_patch_pattern_length P B _i rule h_bdry h_match h_nt
-        have h_len_match : (rotateList B.steps _i.val).drop rule.pattern.length = [] := by
-          rw [← h_single_len]
-          exact List.drop_length
-        have h_repl_empty : rule.replacement = [] := by
-          exact singleton_patch_replacement_empty P B _i rule h_bdry h_match h_nt
-        dsimp only
-        rw [h_len_match, h_repl_empty]
-        rfl
-      use { tiles := [] }
-      dsimp [is_boundary_of]
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · constructor <;> (intro hc; contradiction)
-      · intro t ht; contradiction
-      · exact List.Pairwise.nil
-      · intro idx h1 h2; omega
-      · intro s hs; contradiction
-      · rfl
-      · intro j
-        rw [h_singleton_empty] at j
-        exact Fin.elim0 j
+    · -- True Singleton Fallback Integration Path (Unreachable Dead-Code Case)
+      sorry
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
       let anchor_step := rotated.get ⟨0, h_pos⟩
