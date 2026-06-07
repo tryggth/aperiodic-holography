@@ -2164,11 +2164,21 @@ lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
   simp only [Bool.and_eq_true, decide_eq_true_iff] at h_b
   exact h_b
 
+/-- Helper lemma: In a singleton patch configuration, the absolute position and direction of every boundary step belongs to the edge array of the single tile. -/
+lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (j : Fin steps.length) :
+  (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd := by
+  -- Ledger step constraints force edge ownership to the single tile occupant
+  sorry
+
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has an exact length of 14. -/
 lemma singleton_boundary_length_eq_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
   steps.length = 14 := by
-  -- Ledger edge matching maps simple non-self-intersecting loops over isolated tiles to an exact length of 14
+  have h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd := by
+    intro j
+    exact singleton_boundary_steps_dir_mem P steps hd h_bdry h_tiles j
+  -- Simple non-self-intersecting loops mapping injectively over 14 distinct edges match the list size exactly
   sorry
 
 /-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
