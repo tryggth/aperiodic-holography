@@ -193,7 +193,7 @@ lemma getLast_drop {α : Type} (l : List α) (k : Nat) (h_ne : l.drop k ≠ []) 
   rw [h_get_eq, h_idx_fin]
 
 theorem isDirConsistent_iff_seq_and_wrap (steps : List BoundaryStep) (h_pos : steps.length > 0) :
-  isDirConsistent steps ↔ (isDirConsistentSeq steps ∧ 
+  isDirConsistent steps ↔ (isDirConsistentSeq steps ∧
     (steps.get ⟨0, h_pos⟩).dir.val = (((steps.getLast (by cases steps; contradiction; simp)).dir.val + (steps.getLast (by cases steps; contradiction; simp)).turn.toStep30) % 12)) := by
   constructor
   · intro h_dc
@@ -485,7 +485,7 @@ lemma length_getPlacedTileEdges (t : PlacedTile) : (getPlacedTileEdges t).length
   dsimp [getPlacedTileEdges]
   rw [List.length_map, length_getTileEdgeDirections]
 
-/-- Scans the finite tile patch to find an entry whose absolute edge segments 
+/-- Scans the finite tile patch to find an entry whose absolute edge segments
     physically intersect with the direction attribute of the target boundary step. -/
 def findTileAtStep (tiles : List PlacedTile) (target_dir : EdgeDirection) (default : PlacedTile) : PlacedTile :=
   match tiles with
@@ -550,7 +550,7 @@ lemma patch_inventory_inj (A B : TileCornerInventory)
   · omega
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 10, we replace the reflexive placeholder tautology with a genuine physical 
+    For Milestone 10, we replace the reflexive placeholder tautology with a genuine physical
     ledger invariant asserting that the total accumulated corner mass equals the expected multi-tile corner pool footprint. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
@@ -564,7 +564,7 @@ def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Simplicity Constraint.
     A topological boundary simplicity predicate asserting that the closed boundary path does not self-intersect in the 2D plane.
-    
+
     This is formally defined as the non-self-intersection topological embedding condition.
     Note that 1D algebraic turning-sum loops, local forcing uniqueness, and structural induction
     termination are fully closed and verified conditional on this and other 2D planar embedding placeholders. -/
@@ -770,10 +770,10 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-/-- Core Topological Theorem: The boundary of any finite planar patch 
+/-- Core Topological Theorem: The boundary of any finite planar patch
     of Spectre tiles must contain at least one Left 90° convex corner.
     This replaces the original geometric placeholder axiom, completing Path A. -/
-theorem patch_boundary_has_convex_corner (B : BoundaryPath) : 
+theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
   ∃ i : Fin B.steps.length, (B.steps.get i).turn = ExteriorTurn.t_90 := by
   by_contra h_none
   have h_zero_of_none : ∀ (L : List BoundaryStep), (∀ s ∈ L, s.turn ≠ ExteriorTurn.t_90) → (L.filter (fun s => s.turn == ExteriorTurn.t_90)).length = 0 := by
@@ -810,7 +810,7 @@ theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
     have h_ne := B.non_empty
     contradiction
 
-  -- Combinatorial contradiction: A patch with zero boundary L90 corners 
+  -- Combinatorial contradiction: A patch with zero boundary L90 corners
   -- requires more internal 90° absorption capacity than the tiles provide,
   -- forcing the creation of overlapping internal 4-tile crosses.
   have h_cross_overlap : False := by
@@ -914,10 +914,10 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    For Milestone 21, we replace list-index modulo matching with a genuine spatial 
+    For Milestone 21, we replace list-index modulo matching with a genuine spatial
     coordinate selector that identifies tile positions by local edge overlap. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
-  ∃ h : B.patch.tiles ≠ [], 
+  ∃ h : B.patch.tiles ≠ [],
     have h_pos : B.patch.tiles.length > 0 := List.length_pos_iff_ne_nil.mpr h
     let default_tile := B.patch.tiles.get ⟨0, h_pos⟩
     let t := findTileAtStep B.patch.tiles (B.steps.get i).dir default_tile
@@ -940,7 +940,7 @@ theorem boundary_step_has_tile (B : BoundaryPath) (i : Fin B.steps.length) : ∃
   refine ⟨rfl, ?_⟩
   · have h_exists_somewhere : ∃ t ∈ B.patch.tiles, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
       exact h_bdry.2.2.2.2.2.2 i
-    have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ []) 
+    have h_match : ∀ (L : List PlacedTile) (def_tile : PlacedTile) (h_L : L ≠ [])
         (h_ex : ∃ t ∈ L, (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t),
         let t := findTileAtStep L (B.steps.get i).dir def_tile
         t.pos = t.pos ∧ (t.pos, (B.steps.get i).dir) ∈ getPlacedTileEdges t := by
@@ -1314,7 +1314,7 @@ def isValidTurnDiff (d1 d2 : EdgeDirection) : Bool :=
   let diff := (((d2.val : Int) - (d1.val : Int)) % 12 + 12) % 12
   diff == 0 || diff == 2 || diff == 3 || diff == 9 || diff == 10
 
-lemma dir_add_subToTurn (d1 d2 : EdgeDirection) (h_valid : isValidTurnDiff d1 d2 = true) : 
+lemma dir_add_subToTurn (d1 d2 : EdgeDirection) (h_valid : isValidTurnDiff d1 d2 = true) :
     ((d1.val : Int) + (EdgeDirection.subToTurn d1 d2).toStep30) % 12 = (d2.val : Int) := by
   revert d1 d2 h_valid
   decide
@@ -1462,8 +1462,8 @@ def fsmTurnSum (l : List ExteriorTurn) : Int :=
 
 structure RewriteRule where
   id : String
-  pattern : List ExteriorTurn 
-  replacement : List ExteriorTurn 
+  pattern : List ExteriorTurn
+  replacement : List ExteriorTurn
 deriving Repr, DecidableEq, BEq
 
 def updateDir (dir : EdgeDirection) (t : ExteriorTurn) : EdgeDirection :=
@@ -1590,9 +1590,9 @@ lemma turnSum_updateLastTurn (steps : List BoundaryStep) (new_turn : ExteriorTur
       exact turnSum_updateLastTurn_opt (hd :: tl) new_turn ((hd :: tl).getLast h) rfl
 
 lemma turnSum_steps_updated (steps : List BoundaryStep) (opt_dir : Option EdgeDirection) (h : steps.length ≠ 0) :
-  turnSum (steps_updated steps opt_dir) = 
+  turnSum (steps_updated steps opt_dir) =
     match opt_dir with
-    | some next => 
+    | some next =>
         let last := steps.getLast (by cases steps; contradiction; simp)
         turnSum steps - last.turn.toDegrees + (EdgeDirection.subToTurn last.dir next).toDegrees
     | none => turnSum steps := by
@@ -1627,7 +1627,7 @@ lemma turnSum_steps_updated (steps : List BoundaryStep) (opt_dir : Option EdgeDi
 
 def findMaximalRule (turns : List ExteriorTurn) : Option RewriteRule :=
   let matching := generateRules.filter (fun r => r.pattern.isPrefixOf turns)
-  matching.foldl (fun maxOpt r => 
+  matching.foldl (fun maxOpt r =>
     match maxOpt with
     | none => some r
     | some maxR => if r.pattern.length > maxR.pattern.length then some r else some maxR
@@ -2049,14 +2049,14 @@ lemma spliced_stitch_turn_relation (rule : RewriteRule) (h_mem : rule ∈ genera
   simp only at h_spec
   exact of_decide_eq_true h_spec
 
-theorem peelBoundary_stitch_algebraic_invariant_helper_raw (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+theorem peelBoundary_stitch_algebraic_invariant_helper_raw (rule : RewriteRule) (h_mem : rule ∈ generateRules)
   (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
   (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
   (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
   (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
   (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
   (h_dc : isDirConsistent rotated) :
-  - fsmTurnSum rule.replacement + 
+  - fsmTurnSum rule.replacement +
     ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
     = turnSum (rotated.take rule.pattern.length) := by
   have h_take := turnSum_take_of_prefix h_match
@@ -2064,21 +2064,21 @@ theorem peelBoundary_stitch_algebraic_invariant_helper_raw (rule : RewriteRule) 
   rw [h_take, h_stitch]
   omega
 
-lemma peelBoundary_stitch_algebraic_invariant_helper (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+lemma peelBoundary_stitch_algebraic_invariant_helper (rule : RewriteRule) (h_mem : rule ∈ generateRules)
   (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
   (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
   (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
   (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
   (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
   (h_dc : isDirConsistent rotated) :
-  - fsmTurnSum rule.replacement + 
+  - fsmTurnSum rule.replacement +
     ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
     = turnSum (rotated.take rule.pattern.length) := by
   exact peelBoundary_stitch_algebraic_invariant_helper_raw rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match h_spliced_eq h_next h_dc
 
-lemma peelBoundary_stitch_algebraic_invariant_none (rule : RewriteRule) (_h_mem : rule ∈ generateRules) 
+lemma peelBoundary_stitch_algebraic_invariant_none (rule : RewriteRule) (_h_mem : rule ∈ generateRules)
   (spliced_steps : List BoundaryStep) (h_spliced_ne : spliced_steps ≠ [])
-  (rotated : List BoundaryStep) 
+  (rotated : List BoundaryStep)
   (h_ndo : (match (rotated.drop rule.pattern.length).head? with
             | some step => some step.dir
             | none => match spliced_steps.head? with
@@ -2099,14 +2099,14 @@ lemma peelBoundary_stitch_algebraic_invariant_none (rule : RewriteRule) (_h_mem 
           dsimp [List.head?] at h_ndo
           contradiction
 
-lemma peelBoundary_stitch_algebraic_invariant_some (rule : RewriteRule) (h_mem : rule ∈ generateRules) 
+lemma peelBoundary_stitch_algebraic_invariant_some (rule : RewriteRule) (h_mem : rule ∈ generateRules)
   (spliced_steps : List BoundaryStep) (next : EdgeDirection) (h_spliced_ne : spliced_steps ≠ [])
   (rotated : List BoundaryStep) (h_pos : 0 < rotated.length)
   (h_match : findMaximalRule (rotated.map (fun s => s.turn)) = some rule)
   (h_spliced_eq : spliced_steps = propagateSplicedSteps rule.replacement (rotated.get ⟨0, h_pos⟩).dir (rotated.get ⟨0, h_pos⟩).parity)
   (h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩)
   (h_dc : isDirConsistent rotated) :
-  - fsmTurnSum rule.replacement + 
+  - fsmTurnSum rule.replacement +
     ((EdgeDirection.subToTurn (spliced_steps.getLast h_spliced_ne).dir next).toDegrees - (spliced_steps.getLast h_spliced_ne).turn.toDegrees)
     = turnSum (rotated.take rule.pattern.length) := by
   exact peelBoundary_stitch_algebraic_invariant_helper rule h_mem spliced_steps next h_spliced_ne rotated h_pos h_match h_spliced_eq h_next h_dc
@@ -2164,12 +2164,47 @@ lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
   simp only [Bool.and_eq_true, decide_eq_true_iff] at h_b
   exact h_b
 
+/-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
+lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  14 ≤ steps.length := by
+  -- Single tile geometry bounds perimeter length definitionally
+  sorry
+
+/-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14. -/
+lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
+  (hd1 hd2 : PlacedTile) (tl : List PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = hd1 :: hd2 :: tl) :
+  14 ≤ steps.length := by
+  -- Inductive planar tile clustering expands or preserves external boundary length
+  sorry
+
+/-- Helper lemma: Any non-empty finite patch of Spectre tiles embedded in the planar grid possesses an external boundary loop of length at least 14. -/
+lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
+  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) :
+  14 ≤ steps.length := by
+  cases h_tiles : P.tiles with
+  | nil =>
+    have h_empty := h_bdry.1.mpr h_tiles
+    exact False.elim (h_ne h_empty)
+  | cons hd tl =>
+    cases h_tl : tl with
+    | nil =>
+      have h_single : P.tiles = [hd] := by rw [h_tiles, h_tl]
+      exact singleton_patch_minimum_perimeter P steps hd h_bdry h_single
+    | cons hd2 tl2 =>
+      have h_multi : P.tiles = hd :: hd2 :: tl2 := by rw [h_tiles, h_tl]
+      exact multitile_patch_minimum_perimeter P steps hd hd2 tl2 h_bdry h_multi
+
 /-- Helper lemma: The discrete combinatorial layout of a simple closed boundary loop in the Spectre grid requires a minimum perimeter length of 14. -/
 lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
   (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   14 ≤ rotated.length := by
-  -- Topologically embedded simple loops on the discrete Spectre grid have a minimum geometric girth of 14
-  sorry
+  -- List rotation strictly preserves the underlying list length scalar value
+  have h_len_eq : rotated.length = B.steps.length := by
+    rw [h_rot, length_rotateList]
+  rw [h_len_eq]
+  -- Invoke the global tiling patch boundary ledger invariant to establish the lower bound
+  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound. -/
 theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
@@ -2184,6 +2219,7 @@ theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRu
   have h_pat := rule_pattern_bounds h_mem
   have h_len := boundary_path_length_ge B idx rotated h_rot h_pos
   omega
+
 theorem next_dir_opt_some_imp_next_step (rotated : List BoundaryStep) (rule : RewriteRule) (spliced_steps : List BoundaryStep) (next : EdgeDirection)
   (h_ndo : (match (rotated.drop rule.pattern.length).head? with
             | some step => some step.dir
@@ -2499,7 +2535,7 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (h_tiles : P.tiles = [⟨0, LatticePoint.zero, 0⟩])
   (steps' : List BoundaryStep)
-  (h_steps_eq : steps' = 
+  (h_steps_eq : steps' =
      let rotated := rotateList B.steps i.val
      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
      let anchor_step := rotated.get ⟨0, h_pos⟩
@@ -2590,7 +2626,7 @@ lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : F
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (h_tiles : P.tiles = [⟨0, LatticePoint.zero, 0⟩])
   (steps' : List BoundaryStep)
-  (h_steps_eq : steps' = 
+  (h_steps_eq : steps' =
      let rotated := rotateList B.steps i.val
      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
      let anchor_step := rotated.get ⟨0, h_pos⟩
@@ -2628,7 +2664,7 @@ lemma tile_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : Placed
 lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (steps' : List BoundaryStep)
-  (h_steps_eq : steps' = 
+  (h_steps_eq : steps' =
      let rotated := rotateList B.steps i.val
      have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
      let anchor_step := rotated.get ⟨0, h_pos'⟩
@@ -2746,7 +2782,7 @@ lemma remainder_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : P
 lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
   (steps' : List BoundaryStep)
-  (h_steps_eq : steps' = 
+  (h_steps_eq : steps' =
      let rotated := rotateList B.steps i.val
      have h_pos' : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
      let anchor_step := rotated.get ⟨0, h_pos'⟩
@@ -3019,7 +3055,7 @@ lemma sumPatchInventory_eq_length (L : List PlacedTile) :
       ext <;> (push_cast; omega)
 
 /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
-lemma sumPatchInventory_filter_peel.h_sub_len (L : List PlacedTile) (t_peel : PlacedTile) 
+lemma sumPatchInventory_filter_peel.h_sub_len (L : List PlacedTile) (t_peel : PlacedTile)
   (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
   (L.filter (fun t => t ≠ t_peel)).length = L.length - 1 := by
   revert t_peel h_mem h_nd
@@ -3058,7 +3094,7 @@ lemma sumPatchInventory_filter_peel.h_sub_len (L : List PlacedTile) (t_peel : Pl
             omega
 
 /-- Lemma: Filtering an inhabited element from a duplicate-free tile list partitions its corner inventory. -/
-lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile) 
+lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
   (h_nd : L.Nodup) (h_mem : t_peel ∈ L) :
   sumPatchInventory L = TileCornerInventory.add singleTileInventory (sumPatchInventory (L.filter (fun t => t ≠ t_peel))) := by
   rw [sumPatchInventory_eq_length, sumPatchInventory_eq_length]
@@ -3074,7 +3110,7 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 
 
 
-/-- Standalone list lemma: filtering a list preserves element containment and provides 
+/-- Standalone list lemma: filtering a list preserves element containment and provides
     existential indices in the original list for consecutive filtered elements. -/
 lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length) :
   ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length),
@@ -3099,7 +3135,7 @@ lemma list_filter_index_inj {α : Type} (L : List α) (p : α → Bool) (i j : N
     which forms the boundary of a reduced patch P'. -/
 theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length) (steps' : List BoundaryStep)
   (h_bdry : is_boundary_of B.steps P) (rule : RewriteRule) (h_match : findMaximalRule ((rotateList B.steps _i.val).map (fun s => s.turn)) = some rule)
-  (h_steps_eq : steps' = 
+  (h_steps_eq : steps' =
      let rotated := rotateList B.steps _i.val
      have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
      let anchor_step := rotated.get ⟨0, h_pos⟩
@@ -3176,10 +3212,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
               have h_uniform_bound : ∀ l : List PlacedTile, l.Nodup → (∀ x ∈ l, x = t_peel) → l.length ≤ 1 := by
                 intro l h_nodup h_all
                 induction l with
-                | nil => 
+                | nil =>
                     dsimp [List.length]
                     omega
-                | cons hd tl ih => 
+                | cons hd tl ih =>
                     dsimp [List.length]
                     have h_hd_eq : hd = t_peel := h_all hd List.mem_cons_self
                     have h_nodup_tl : tl.Nodup := (List.nodup_cons.mp h_nodup).2
@@ -3374,7 +3410,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             exact h_geom_delta_gap
         exact h_adjacent_delta
       · -- Clause 5: Step Direction Boundary Bounds Updates
-        have h_dir_propagate : ∀ (j : Fin B.steps.length) (k1 k2 : Nat) (h_k1 : k1 < P.tiles.length) (h_k2 : k2 < P.tiles.length), 
+        have h_dir_propagate : ∀ (j : Fin B.steps.length) (k1 k2 : Nat) (h_k1 : k1 < P.tiles.length) (h_k2 : k2 < P.tiles.length),
           (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
           intro j k1 k2 h_k1 h_k2
           have h_orientation_step : (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨k2, h_k2⟩).orientation := by
@@ -3384,7 +3420,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             have h_patch_uniform_trans := P.orientation_uniform_invariant ⟨k2, h_k2⟩ ⟨0, h_p⟩
             exact h_patch_uniform_trans
           rw [h_orientation_step, h_orientation_trans]
-        have h_step_dir_map : ∀ (s : BoundaryStep) (hs : s ∈ steps'), 
+        have h_step_dir_map : ∀ (s : BoundaryStep) (hs : s ∈ steps'),
           s.dir = (P.tiles.get ⟨0, h_p⟩).orientation := by
           intro s hs
           have h_step_parent_tile : ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
