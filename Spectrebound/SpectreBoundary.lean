@@ -2188,7 +2188,6 @@ lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : Pla
   (h_nd : (steps.map (fun s => (hd.pos, s.dir))).Nodup)
   (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
   steps.length ≤ 14 := by
-  -- Map step sequences into the static tile edge list frame to enforce size constraints
   have h_len_eq : steps.length = (steps.map (fun s => (hd.pos, s.dir))).length := by rw [List.length_map]
   rw [h_len_eq]
   have h_sub_elements : ∀ x ∈ steps.map (fun s => (hd.pos, s.dir)), x ∈ getPlacedTileEdges hd := by
