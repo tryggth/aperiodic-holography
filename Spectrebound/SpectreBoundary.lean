@@ -2133,13 +2133,23 @@ def checkRuleDirMatch (r : RewriteRule) : Bool :=
     isValidTurnDiff last_dir next
   )
 
+theorem generateRules_dir_match :
+  (generateRules.all checkRuleDirMatch) = true := by
+  decide
+
 lemma rule_dir_match (B : BoundaryPath) (idx : Fin B.steps.length) {r : RewriteRule}
   (h_match : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps idx.val)) = some r) (d : EdgeDirection) :
   isValidTurnDiff (propagateSplicedLastDir r.replacement d) (propagatePatternDir r.pattern d) = true := by
-  -- Extract localized direction bounds from the validated maximal boundary path match context
-  have h_valid_context : r ∈ generateRules := findMaximalRule_mem h_match
-  -- Simple non-self-intersecting loops limit the lookup scope to geometrically true configurations
-  sorry
+  have h_mem := findMaximalRule_mem h_match
+  have h_all := generateRules_dir_match
+  have h_b := mem_of_list_all checkRuleDirMatch generateRules r h_all h_mem
+  unfold checkRuleDirMatch at h_b
+  have h_d_mem : d ∈ ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] : List (Fin 12)) := by
+    have h_lt := d.isLt
+    simp only [List.mem_cons, List.mem_nil_iff, or_false, Fin.ext_iff]
+    omega
+  have h_spec := List.all_eq_true.mp h_b d h_d_mem
+  exact h_spec
 
 theorem generateRules_pattern_bounds :
   (generateRules.all (fun r => 1 <= r.pattern.length && r.pattern.length <= 12)) = true := by
