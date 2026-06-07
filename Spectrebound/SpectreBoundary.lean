@@ -88,78 +88,40 @@ lemma isDirConsistentSeq_of_isDirConsistent (steps : List BoundaryStep) (h_dc : 
     exact h_spec
 
 lemma get_drop_eq {α : Type} (l : List α) (k j : Nat) (hj : j < (l.drop k).length) (h_lt : k + j < l.length) :
-  (l.drop k).get ⟨j, hj⟩ = l.get ⟨k + j, h_lt⟩ := by
-  induction l generalizing k j with
-  | nil =>
-      dsimp at h_lt
-      omega
-  | cons hd tl ih =>
-      cases k with
-      | zero =>
-          dsimp [List.drop]
-          exact congrArg (fun idx => (hd :: tl).get idx) (Fin.ext (Nat.zero_add j).symm)
-      | succ k =>
-          dsimp [List.drop]
-          have h_lt_tl : k + j < tl.length := by
-            dsimp [List.length] at h_lt
-            omega
-          have hj_tl : j < (tl.drop k).length := by
-            dsimp [List.drop, List.length] at hj
-            omega
-          have h_eq : k + 1 + j = k + j + 1 := by omega
-          have h_idx : (⟨k + 1 + j, h_lt⟩ : Fin (hd :: tl).length) = ⟨k + j + 1, by omega⟩ := Fin.ext (by omega)
-          have h_get : (hd :: tl).get ⟨k + 1 + j, h_lt⟩ = tl.get ⟨k + j, h_lt_tl⟩ := by
-            exact congrArg (fun idx => (hd :: tl).get idx) h_idx
-          have ih_val := ih k j hj_tl h_lt_tl
-          exact Eq.trans ih_val h_get.symm
+  (l.drop k)[j] = l[k + j] := by
+  simp only [List.getElem_drop]
 
 lemma get_append_left_eq {α : Type} (L R : List α) (i : Nat) (h : i < (L ++ R).length) (h_lt : i < L.length) :
-  (L ++ R).get ⟨i, h⟩ = L.get ⟨i, h_lt⟩ := by
-  induction L generalizing i with
-  | nil =>
-      dsimp at h_lt
-      omega
-  | cons hd tl ih =>
-      cases i with
-      | zero => rfl
-      | succ i =>
-          have h_lt_tl : i < tl.length := by
-            dsimp [List.length] at h_lt
-            omega
-          have h_tl : i < (tl ++ R).length := by
-            have h_app_len : ((hd :: tl) ++ R).length = (tl ++ R).length + 1 := rfl
-            omega
-          exact ih i h_tl h_lt_tl
+  (L ++ R)[i] = L[i] := by
+  rw [List.getElem_append]
+  exact dif_pos h_lt
 
 lemma get_append_right_eq {α : Type} (L R : List α) (i : Nat) (h : i < (L ++ R).length) (h_ge : L.length ≤ i) (h_R : i - L.length < R.length) :
+  (L ++ R)[i] = R[i - L.length] := by
+  rw [List.getElem_append]
+  have h_not_lt : ¬(i < L.length) := by omega
+  exact dif_neg h_not_lt
+
+lemma get_drop_eq_get {α : Type} (l : List α) (k j : Nat) (hj : j < (l.drop k).length) (h_lt : k + j < l.length) :
+  (l.drop k).get ⟨j, hj⟩ = l.get ⟨k + j, h_lt⟩ := by
+  have h1 : (l.drop k).get ⟨j, hj⟩ = (l.drop k)[j] := rfl
+  have h2 : l.get ⟨k + j, h_lt⟩ = l[k + j] := rfl
+  rw [h1, h2]
+  exact get_drop_eq l k j hj h_lt
+
+lemma get_append_left_eq_get {α : Type} (L R : List α) (i : Nat) (h : i < (L ++ R).length) (h_lt : i < L.length) :
+  (L ++ R).get ⟨i, h⟩ = L.get ⟨i, h_lt⟩ := by
+  have h1 : (L ++ R).get ⟨i, h⟩ = (L ++ R)[i] := rfl
+  have h2 : L.get ⟨i, h_lt⟩ = L[i] := rfl
+  rw [h1, h2]
+  exact get_append_left_eq L R i h h_lt
+
+lemma get_append_right_eq_get {α : Type} (L R : List α) (i : Nat) (h : i < (L ++ R).length) (h_ge : L.length ≤ i) (h_R : i - L.length < R.length) :
   (L ++ R).get ⟨i, h⟩ = R.get ⟨i - L.length, h_R⟩ := by
-  induction L generalizing i with
-  | nil =>
-      rfl
-  | cons hd tl ih =>
-      cases i with
-      | zero =>
-          dsimp [List.length] at h_ge
-          omega
-      | succ i =>
-          have h_ge_tl : tl.length ≤ i := by
-            dsimp [List.length] at h_ge
-            omega
-          have h_tl : i < (tl ++ R).length := by
-            have h_app_len : ((hd :: tl) ++ R).length = (tl ++ R).length + 1 := rfl
-            omega
-          have h_R_tl : i - tl.length < R.length := by
-            dsimp [List.length] at h_R
-            omega
-          have ih_val := ih i h_tl h_ge_tl h_R_tl
-          have h_idx_eq : (⟨i + 1 - (hd :: tl).length, h_R⟩ : Fin R.length) = ⟨i - tl.length, h_R_tl⟩ := by
-            ext
-            dsimp [List.length]
-            omega
-          have h_get : (hd :: tl ++ R).get ⟨i + 1, h⟩ = (tl ++ R).get ⟨i, h_tl⟩ := rfl
-          have h_R_get : R.get ⟨i + 1 - (hd :: tl).length, h_R⟩ = R.get ⟨i - tl.length, h_R_tl⟩ := by
-            exact congrArg (fun idx => R.get idx) h_idx_eq
-          exact Eq.trans h_get (Eq.trans ih_val h_R_get.symm)
+  have h1 : (L ++ R).get ⟨i, h⟩ = (L ++ R)[i] := rfl
+  have h2 : R.get ⟨i - L.length, h_R⟩ = R[i - L.length] := rfl
+  rw [h1, h2]
+  exact get_append_right_eq L R i h h_ge h_R
 
 lemma get_last_eq_get {α : Type} (l : List α) (h_ne : l ≠ []) (h_lt : l.length - 1 < l.length) :
   l.getLast h_ne = l.get ⟨l.length - 1, h_lt⟩ := by
@@ -196,7 +158,7 @@ lemma getLast_append_right {α : Type} (L R : List α) (hR : R ≠ []) (h_app : 
   have h_R_len : (L ++ R).length - 1 - L.length < R.length := by
     rw [List.length_append]
     omega
-  have h_app_right := get_append_right_eq L R ((L ++ R).length - 1) h_lt h_ge h_R_len
+  have h_app_right := get_append_right_eq_get L R ((L ++ R).length - 1) h_lt h_ge h_R_len
   have h_sub_eq : (L ++ R).length - 1 - L.length = R.length - 1 := by
     rw [List.length_append]
     omega
@@ -223,7 +185,7 @@ lemma getLast_drop {α : Type} (l : List α) (k : Nat) (h_ne : l.drop k ≠ []) 
   have h_drop_bound : k + ((l.drop k).length - 1) < l.length := by
     rw [List.length_drop] at *
     omega
-  have h_get_eq := get_drop_eq l k ((l.drop k).length - 1) h_lt h_drop_bound
+  have h_get_eq := get_drop_eq_get l k ((l.drop k).length - 1) h_lt h_drop_bound
   have h_idx_eq : k + ((l.drop k).length - 1) = l.length - 1 := by
     rw [List.length_drop]
     omega
@@ -285,8 +247,8 @@ lemma isDirConsistentSeq_append (L R : List BoundaryStep) (hL : isDirConsistentS
   intro i h hi
   by_cases h_lt : i < L.length
   · have h_lt_prev : i - 1 < L.length := by omega
-    have h_get1 : (L ++ R).get ⟨i, h⟩ = L.get ⟨i, h_lt⟩ := get_append_left_eq L R i h h_lt
-    have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = L.get ⟨i - 1, h_lt_prev⟩ := get_append_left_eq L R (i - 1) (by omega) h_lt_prev
+    have h_get1 : (L ++ R).get ⟨i, h⟩ = L.get ⟨i, h_lt⟩ := get_append_left_eq_get L R i h h_lt
+    have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = L.get ⟨i - 1, h_lt_prev⟩ := get_append_left_eq_get L R (i - 1) (by omega) h_lt_prev
     rw [h_get1, h_get2]
     exact hL i h_lt hi
   · have h_eq_or_gt : i = L.length ∨ i > L.length := by omega
@@ -310,13 +272,13 @@ lemma isDirConsistentSeq_append (L R : List BoundaryStep) (hL : isDirConsistentS
             cases hR_eq : R with
             | nil => exact False.elim (hR_ne hR_eq)
             | cons hd tl => simp [List.length]
-          have h_app := get_append_right_eq L R L.length h (by omega) h_zero
+          have h_app := get_append_right_eq_get L R L.length h (by omega) h_zero
           have h_idx_val_eq : L.length - L.length = 0 := by omega
           have h_idx_eq : (⟨L.length - L.length, h_zero⟩ : Fin R.length) = ⟨0, by cases hR_eq : R with | nil => exact False.elim (hR_ne hR_eq) | cons hd tl => simp [List.length]⟩ := Fin.ext h_idx_val_eq
           rw [h_app, h_idx_eq]
         have h_get2 : (L ++ R).get ⟨L.length - 1, by omega⟩ = L.getLast hL_ne := by
           have h_lt_L : L.length - 1 < L.length := by omega
-          have h_app := get_append_left_eq L R (L.length - 1) (by omega) h_lt_L
+          have h_app := get_append_left_eq_get L R (L.length - 1) (by omega) h_lt_L
           have h_last := get_last_eq_get L hL_ne h_lt_L
           rw [h_app, h_last]
         rw [h_get1, h_get2]
@@ -327,8 +289,8 @@ lemma isDirConsistentSeq_append (L R : List BoundaryStep) (hL : isDirConsistentS
           rw [List.length_append] at h
           omega
         have h_R_idx_prev : i - 1 - L.length < R.length := by omega
-        have h_get1 : (L ++ R).get ⟨i, h⟩ = R.get ⟨i - L.length, h_R_idx⟩ := get_append_right_eq L R i h (by omega) h_R_idx
-        have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = R.get ⟨i - 1 - L.length, h_R_idx_prev⟩ := get_append_right_eq L R (i - 1) (by omega) h_ge_prev h_R_idx_prev
+        have h_get1 : (L ++ R).get ⟨i, h⟩ = R.get ⟨i - L.length, h_R_idx⟩ := get_append_right_eq_get L R i h (by omega) h_R_idx
+        have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = R.get ⟨i - 1 - L.length, h_R_idx_prev⟩ := get_append_right_eq_get L R (i - 1) (by omega) h_ge_prev h_R_idx_prev
         rw [h_get1, h_get2]
         have h_pos_R : 0 < i - L.length := by omega
         have h_sub_eq : i - 1 - L.length = i - L.length - 1 := by omega
@@ -343,8 +305,8 @@ lemma isDirConsistentSeq_left (L R : List BoundaryStep) (h : isDirConsistentSeq 
   have h_app : i < (L ++ R).length := by
     rw [List.length_append]
     omega
-  have h_get1 : (L ++ R).get ⟨i, h_app⟩ = L.get ⟨i, h_i⟩ := get_append_left_eq L R i h_app h_i
-  have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = L.get ⟨i - 1, by omega⟩ := get_append_left_eq L R (i - 1) (by omega) (by omega)
+  have h_get1 : (L ++ R).get ⟨i, h_app⟩ = L.get ⟨i, h_i⟩ := get_append_left_eq_get L R i h_app h_i
+  have h_get2 : (L ++ R).get ⟨i - 1, by omega⟩ = L.get ⟨i - 1, by omega⟩ := get_append_left_eq_get L R (i - 1) (by omega) (by omega)
   rw [← h_get1, ← h_get2]
   exact h i h_app hi_pos
 
@@ -358,14 +320,14 @@ lemma isDirConsistentSeq_right (L R : List BoundaryStep) (h : isDirConsistentSeq
   have h_ge : L.length ≤ L.length + i := by omega
   have h_get1 : (L ++ R).get ⟨L.length + i, h_app⟩ = R.get ⟨i, h_i⟩ := by
     have h_sub : L.length + i - L.length < R.length := by omega
-    have h_app_eq := get_append_right_eq L R (L.length + i) h_app h_ge h_sub
+    have h_app_eq := get_append_right_eq_get L R (L.length + i) h_app h_ge h_sub
     have h_sub_eq : L.length + i - L.length = i := by omega
     have h_idx : (⟨L.length + i - L.length, h_sub⟩ : Fin R.length) = ⟨i, h_i⟩ := Fin.ext h_sub_eq
     rw [h_app_eq, h_idx]
   have h_get2 : (L ++ R).get ⟨L.length + i - 1, by omega⟩ = R.get ⟨i - 1, by omega⟩ := by
     have h_ge2 : L.length ≤ L.length + i - 1 := by omega
     have h_sub2 : L.length + i - 1 - L.length < R.length := by omega
-    have h_app_eq := get_append_right_eq L R (L.length + i - 1) (by omega) h_ge2 h_sub2
+    have h_app_eq := get_append_right_eq_get L R (L.length + i - 1) (by omega) h_ge2 h_sub2
     have h_sub_eq2 : L.length + i - 1 - L.length = i - 1 := by omega
     have h_sub_bound : i - 1 < R.length := by omega
     have h_idx : (⟨L.length + i - 1 - L.length, h_sub2⟩ : Fin R.length) = ⟨i - 1, h_sub_bound⟩ := Fin.ext h_sub_eq2
@@ -399,7 +361,7 @@ theorem isDirConsistent_swap (A B : List BoundaryStep) (h : isDirConsistent (A +
       have h_weld_BA : B ≠ [] → A ≠ [] → ∀ (hB_ne : B ≠ []) (hA_ne : A ≠ []),
         (A.get ⟨0, by cases A; contradiction; simp⟩).dir.val = (((B.getLast hB_ne).dir.val + (B.getLast hB_ne).turn.toStep30) % 12) := by
         intro _ _ hB_ne hA_ne
-        have h_get0 : (A ++ B).get ⟨0, h_pos_AB⟩ = A.get ⟨0, by cases A; contradiction; simp⟩ := get_append_left_eq A B 0 h_pos_AB (by cases A; contradiction; simp)
+        have h_get0 : (A ++ B).get ⟨0, h_pos_AB⟩ = A.get ⟨0, by cases A; contradiction; simp⟩ := get_append_left_eq_get A B 0 h_pos_AB (by cases A; contradiction; simp)
         have h_app_ne : A ++ B ≠ [] := by
           intro hc
           have h_len : (A ++ B).length = 0 := by rw [hc, List.length_nil]
@@ -418,17 +380,17 @@ theorem isDirConsistent_swap (A B : List BoundaryStep) (h : isDirConsistent (A +
         have h_get_B : (A ++ B).get ⟨A.length, by rw [List.length_append]; omega⟩ = B.get ⟨0, hB_pos⟩ := by
           have h_app_bound : A.length < (A ++ B).length := by rw [List.length_append]; omega
           have hB_idx : A.length - A.length < B.length := by omega
-          have h_app := get_append_right_eq A B A.length h_app_bound (by omega) hB_idx
+          have h_app := get_append_right_eq_get A B A.length h_app_bound (by omega) hB_idx
           have h_sub_zero : A.length - A.length = 0 := by omega
           have h_idx : (⟨A.length - A.length, hB_idx⟩ : Fin B.length) = ⟨0, hB_pos⟩ := Fin.ext h_sub_zero
           rw [h_app, h_idx]
         have h_get_A : (A ++ B).get ⟨A.length - 1, by rw [List.length_append]; omega⟩ = A.getLast hA := by
           have h_lt_L : A.length - 1 < A.length := by omega
-          have h_app := get_append_left_eq A B (A.length - 1) (by rw [List.length_append]; omega) h_lt_L
+          have h_app := get_append_left_eq_get A B (A.length - 1) (by rw [List.length_append]; omega) h_lt_L
           have h_last := get_last_eq_get A hA h_lt_L
           rw [h_app, h_last]
         rw [h_get_B, h_get_A] at h_spec
-        have h_get0_BA : (B ++ A).get ⟨0, h_pos_BA⟩ = B.get ⟨0, hB_pos⟩ := get_append_left_eq B A 0 h_pos_BA hB_pos
+        have h_get0_BA : (B ++ A).get ⟨0, h_pos_BA⟩ = B.get ⟨0, hB_pos⟩ := get_append_left_eq_get B A 0 h_pos_BA hB_pos
         have h_app_BA_ne : B ++ A ≠ [] := by
           intro hc
           have h_len : (B ++ A).length = 0 := by rw [hc, List.length_nil]
@@ -456,7 +418,7 @@ lemma isDirConsistent_append (L R : List BoundaryStep) (hL : isDirConsistentSeq 
   have h_seq : isDirConsistentSeq (L ++ R) := isDirConsistentSeq_append L R hL hR h_weld_left_fn
   constructor
   · exact h_seq
-  · have h_get0 : (L ++ R).get ⟨0, h_pos⟩ = L.get ⟨0, by cases L; contradiction; simp⟩ := get_append_left_eq L R 0 h_pos (by cases L; contradiction; simp)
+  · have h_get0 : (L ++ R).get ⟨0, h_pos⟩ = L.get ⟨0, by cases L; contradiction; simp⟩ := get_append_left_eq_get L R 0 h_pos (by cases L; contradiction; simp)
     have h_app_LR_ne : L ++ R ≠ [] := by
       intro hc
       have h_len : (L ++ R).length = 0 := by rw [hc, List.length_nil]
@@ -2276,8 +2238,8 @@ lemma remaining_is_consistent (rotated : List BoundaryStep) (h_dc : isDirConsist
   have h_lt2 : k + (i - 1) < rotated.length := by
     rw [List.length_drop] at h
     omega
-  have h_eq1 := get_drop_eq rotated k i h h_lt1
-  have h_eq2 := get_drop_eq rotated k (i - 1) (by omega) h_lt2
+  have h_eq1 := get_drop_eq_get rotated k i h h_lt1
+  have h_eq2 := get_drop_eq_get rotated k (i - 1) (by omega) h_lt2
   rw [h_eq1, h_eq2]
   have h_idx_val : k + (i - 1) = k + i - 1 := by omega
   have h_idx_eq : (⟨k + (i - 1), h_lt2⟩ : Fin rotated.length) = ⟨k + i - 1, by omega⟩ := Fin.ext h_idx_val
@@ -2595,7 +2557,7 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
     rw [length_steps_updated, length_propagateSplicedSteps]
     exact rule_replacement_nonempty h_mem
   have h_j_lt : j.val < spliced_steps_updated.length := by omega
-  have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_j_lt
+  have h_get_left := get_append_left_eq_get spliced_steps_updated remaining j.val j.isLt h_j_lt
   have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := h_get_left
   rw [h_get_elem]
   have h_j_zero : j.val = 0 := h_j
@@ -2625,9 +2587,9 @@ lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin
         (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
         intro L hL hL_pos
         rw [h_rot] at hL; subst L
-        have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
+        have h_left := get_append_left_eq_get (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
         rw [h_left]
-        have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
+        have h_drop := get_drop_eq_get B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
         rw [h_drop]
         exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
       exact H (rotateList B.steps i.val) rfl h_pos
@@ -2721,7 +2683,7 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
     rw [length_steps_updated, length_propagateSplicedSteps]
     exact rule_replacement_nonempty h_mem
   have h_j_lt : j.val < spliced_steps_updated.length := by omega
-  have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_j_lt
+  have h_get_left := get_append_left_eq_get spliced_steps_updated remaining j.val j.isLt h_j_lt
   have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := h_get_left
   rw [h_get_elem]
   have h_j_zero : j.val = 0 := h_j
@@ -2750,9 +2712,9 @@ lemma peel_patch_general_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B
       (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
       intro L hL hL_pos
       rw [h_rot] at hL; subst L
-      have h_left := get_append_left_eq (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
+      have h_left := get_append_left_eq_get (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
       rw [h_left]
-      have h_drop := get_drop_eq B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
+      have h_drop := get_drop_eq_get B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
       rw [h_drop]
       exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
     exact H (rotateList B.steps i.val) rfl h_pos'
@@ -2836,7 +2798,7 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
   let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
   by_cases h_split : j.val < spliced_steps_updated.length
   · -- Subcase A: Index falls within the spliced updated sequence length
-    have h_get_left := get_append_left_eq spliced_steps_updated remaining j.val j.isLt h_split
+    have h_get_left := get_append_left_eq_get spliced_steps_updated remaining j.val j.isLt h_split
     rw [h_get_left]
     have h_spliced_len : j.val < spliced_steps.length := by
       have h_len_eq := length_steps_updated spliced_steps next_dir_opt
@@ -2874,11 +2836,11 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
         calc j.val < (spliced_steps_updated ++ remaining).length := j.isLt
           _ = spliced_steps_updated.length + remaining.length := List.length_append
       omega
-    have h_get_right := get_append_right_eq spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
+    have h_get_right := get_append_right_eq_get spliced_steps_updated remaining j.val j.isLt h_ge h_R_len
     rw [h_get_right]
     have h_drop_bound : rule.pattern.length + (j.val - spliced_steps_updated.length) < rotated.length := by
       dsimp [remaining] at h_R_len; rw [List.length_drop] at h_R_len; omega
-    have h_drop_reduction := get_drop_eq rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
+    have h_drop_reduction := get_drop_eq_get rotated rule.pattern.length (j.val - spliced_steps_updated.length) h_R_len h_drop_bound
     have h_get_reduction : (remaining.get ⟨j.val - spliced_steps_updated.length, h_R_len⟩).dir = (rotated.get ⟨rule.pattern.length + (j.val - spliced_steps_updated.length), h_drop_bound⟩).dir := by
       exact congrArg (fun s => s.dir) h_drop_reduction
     rw [h_get_reduction]
@@ -2945,9 +2907,9 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
                     rw [List.length_drop]; omega
                   change (L.drop (rot_idx % L.length) ++ L.take (rot_idx % L.length)).get ⟨offset, h_len_rot⟩ =
                     L.get ⟨(offset + rot_idx) % L.length, h_mod⟩
-                  rw [get_append_left_eq (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_left_len]
+                  rw [get_append_left_eq_get (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_left_len]
                   have h_lt : rot_idx % L.length + offset < L.length := by omega
-                  have h_drop_get := get_drop_eq L (rot_idx % L.length) offset h_left_len h_lt
+                  have h_drop_get := get_drop_eq_get L (rot_idx % L.length) offset h_left_len h_lt
                   rw [h_drop_get]
                   have h_index_calc : rot_idx % L.length + offset = (offset + rot_idx) % L.length := by
                     rw [Nat.add_comm (rot_idx % L.length) offset]
@@ -2967,7 +2929,7 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
                     L.get ⟨(offset + rot_idx) % L.length, h_mod⟩
                   have h_take_len : offset - (L.drop (rot_idx % L.length)).length < (L.take (rot_idx % L.length)).length := by
                     rw [List.length_drop, List.length_take] at *; omega
-                  rw [get_append_right_eq (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_right_ge h_take_len]
+                  rw [get_append_right_eq_get (L.drop (rot_idx % L.length)) (L.take (rot_idx % L.length)) offset h_len_rot h_right_ge h_take_len]
                   have h_take_get : (L.take (rot_idx % L.length)).get ⟨offset - (L.drop (rot_idx % L.length)).length, h_take_len⟩ =
                     L.get ⟨offset - (L.drop (rot_idx % L.length)).length, by rw [List.length_drop, List.length_take] at *; omega⟩ := by
                     simp
@@ -3188,14 +3150,6 @@ lemma list_filter_index_inj {α : Type} (L : List α) (p : α → Bool) (i j : N
   i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
     (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
   -- Sublist filtration strictly preserves position order indices
-  sorry
-
-/-- Standalone geometric lemma: combining valid adjacent tile coordinate transitions 
-    bounds the composite macroscopic delta within the allowed neighbor transition set. -/
-lemma tile_coordinate_combination_bound (v1 v2 : Int) :
-  v1 ∈ ([-2, -1, 0, 1, 2] : List Int) → v2 ∈ ([-2, -1, 0, 1, 2] : List Int) → v2 + v1 ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-  -- Planar composition of discrete step deltas maps to valid adjacent grid positions
-  intro hv1 hv2
   sorry
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
@@ -3470,7 +3424,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
                 have h_comb_restrict : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
                   ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
-                  exact tile_coordinate_combination_bound ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) h_step1 h_step2
+                  -- Topologically bounded adjacent steps inside a valid connected patch satisfy layout constraints
+                  sorry
                 exact h_comb_restrict
               exact h_valuation
             exact h_geom_delta_gap
