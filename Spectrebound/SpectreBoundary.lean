@@ -2223,14 +2223,20 @@ lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : Pla
   have h_edge_len : (getPlacedTileEdges hd).length = 14 := length_getPlacedTileEdges hd
   omega
 
+/-- Helper lemma: A simple non-self-intersecting outer boundary loop tracking a single tile generates duplicate-free absolute edge segment lookups. -/
+lemma singleton_boundary_simplicity_to_nodup (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  (steps.map (fun s => (hd.pos, s.dir))).Nodup := by
+  -- Simple non-self-intersecting loops imply distinct edge element lookups
+  sorry
+
 /-- Helper lemma: A simple closed boundary path mapped entirely into a single tile's edge array has an upper length bound of 14. -/
 lemma singleton_boundary_length_le_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
   steps.length ≤ 14 := by
   have h_nd : (steps.map (fun s => (hd.pos, s.dir))).Nodup := by
-    -- Simple, non-self-intersecting outer boundary loops generate duplicate-free position-direction maps
-    sorry
+    exact singleton_boundary_simplicity_to_nodup P steps hd h_bdry h_tiles
   exact singleton_boundary_cardinality_bound steps hd h_nd h_subset
 
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
