@@ -3180,6 +3180,13 @@ lemma singleton_path_perimeter_bound (P : TilingPatch) (B : BoundaryPath)
   -- Isolated tile edge-sharing geometries bound path size independently of the ledger
   sorry
 
+/-- Helper lemma: A maximal prefix rule match over a complete 14-element perimeter forces a pattern length of 14. -/
+lemma singleton_maximal_rule_pattern_length (turns : List ExteriorTurn) (rule : RewriteRule)
+  (h_len : turns.length = 14) (h_match : findMaximalRule turns = some rule) :
+  rule.pattern.length = 14 := by
+  -- Static rule pattern size resolution over maximum matching cycles
+  sorry
+
 /-- Helper lemma: linking single-tile boundary peribles to maximal rule pattern length bounds. -/
 lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
   (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
@@ -3190,8 +3197,9 @@ lemma singleton_patch_rule_pattern_bound (P : TilingPatch) (B : BoundaryPath) (i
     rw [length_rotateList]
     exact singleton_path_perimeter_bound P B h_bdry h_nt
   have h_maximal_match : rule.pattern.length = (rotateList B.steps i.val).length := by
-    -- A maximal rule match over a complete 14-sided single tile perimeter covers the entire loop length
-    sorry
+    have h_rule_len : rule.pattern.length = 14 := by
+      exact singleton_maximal_rule_pattern_length ((rotateList B.steps i.val).map (fun s => s.turn)) rule (by rw [List.length_map]; exact h_path_len) h_match
+    omega
   omega
 
 /-- Standalone combinatorial invariant: a singleton patch configuration matching a maximal 
