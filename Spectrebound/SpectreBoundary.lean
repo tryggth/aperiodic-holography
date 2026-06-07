@@ -2180,8 +2180,30 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
 lemma list_length_le_of_nodup_subset {α : Type} [DecidableEq α] (L1 L2 : List α)
   (h_nd : L1.Nodup) (h_sub : ∀ x ∈ L1, x ∈ L2) :
   L1.length ≤ L2.length := by
-  -- List element containment sizes under duplicate-free constraints are bounded by the reference target length
-  sorry
+  induction L1 generalizing L2 with
+  | nil =>
+    simp only [List.length_nil, Nat.zero_le]
+  | cons hd tl ih =>
+    simp only [List.length_cons]
+    have h_hd_mem : hd ∈ L2 := h_sub hd (List.Mem.head _)
+    have h_nd_tl := (List.nodup_cons.mp h_nd).2
+    have h_hd_not_mem := (List.nodup_cons.mp h_nd).1
+    let L2' := L2.erase hd
+    have h_sub' : ∀ x ∈ tl, x ∈ L2' := by
+      intro x hx
+      have hx_mem : x ∈ L2 := h_sub x (List.Mem.tail _ hx)
+      have hx_ne : x ≠ hd := by
+        intro hc
+        subst hc
+        contradiction
+      exact (List.mem_erase_of_ne hx_ne).mpr hx_mem
+    have h_ih_bound := ih L2' h_nd_tl h_sub'
+    have h_erase_len : L2'.length = L2.length - 1 := List.length_erase_of_mem h_hd_mem
+    have h_L2_pos : 0 < L2.length := by
+      cases L2
+      · simp at h_hd_mem
+      · exact Nat.zero_lt_succ _
+    omega
 
 /-- Helper lemma: The cardinality of an injective sequence bounded within a finite set of size 14 cannot exceed 14. -/
 lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : PlacedTile)
