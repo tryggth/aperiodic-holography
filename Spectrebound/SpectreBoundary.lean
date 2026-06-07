@@ -2175,19 +2175,42 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: Pure list combinatorics version of the Pigeonhole Principle.
+    A duplicate-free list whose elements are universally contained within another finite reference list cannot exceed its length. -/
+lemma list_length_le_of_nodup_subset {α : Type} [DecidableEq α] (L1 L2 : List α)
+  (h_nd : L1.Nodup) (h_sub : ∀ x ∈ L1, x ∈ L2) :
+  L1.length ≤ L2.length := by
+  -- List element containment sizes under duplicate-free constraints are bounded by the reference target length
+  sorry
+
 /-- Helper lemma: The cardinality of an injective sequence bounded within a finite set of size 14 cannot exceed 14. -/
 lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : PlacedTile)
+  (h_nd : (steps.map (fun s => (hd.pos, s.dir))).Nodup)
   (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
   steps.length ≤ 14 := by
-  -- Injective planar path steps mapped into a static size-14 edge set are bounded by 14
-  sorry
+  -- Map step sequences into the static tile edge list frame to enforce size constraints
+  have h_len_eq : steps.length = (steps.map (fun s => (hd.pos, s.dir))).length := by rw [List.length_map]
+  rw [h_len_eq]
+  have h_sub_elements : ∀ x ∈ steps.map (fun s => (hd.pos, s.dir)), x ∈ getPlacedTileEdges hd := by
+    intro x hx
+    rw [List.mem_map] at hx
+    rcases hx with ⟨s, hs_mem, rfl⟩
+    rw [List.mem_iff_get] at hs_mem
+    rcases hs_mem with ⟨j, rfl⟩
+    exact h_subset j
+  have h_bound := list_length_le_of_nodup_subset (steps.map (fun s => (hd.pos, s.dir))) (getPlacedTileEdges hd) h_nd h_sub_elements
+  have h_edge_len : (getPlacedTileEdges hd).length = 14 := length_getPlacedTileEdges hd
+  omega
 
 /-- Helper lemma: A simple closed boundary path mapped entirely into a single tile's edge array has an upper length bound of 14. -/
 lemma singleton_boundary_length_le_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_subset : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
   steps.length ≤ 14 := by
-  exact singleton_boundary_cardinality_bound steps hd h_subset
+  have h_nd : (steps.map (fun s => (hd.pos, s.dir))).Nodup := by
+    -- Simple, non-self-intersecting outer boundary loops generate duplicate-free position-direction maps
+    sorry
+  exact singleton_boundary_cardinality_bound steps hd h_nd h_subset
 
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
 lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
