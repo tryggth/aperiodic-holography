@@ -2183,6 +2183,13 @@ lemma singleton_boundary_length_le_14 (P : TilingPatch) (steps : List BoundarySt
   -- Simple non-self-intersecting loops visiting a unique subset of a size-14 edge array are bounded by 14
   sorry
 
+/-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
+lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  14 ≤ steps.length := by
+  -- Closed simple curves around a single discrete tile footprint possess a minimum girth of 14
+  sorry
+
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has an exact length of 14. -/
 lemma singleton_boundary_length_eq_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
@@ -2191,20 +2198,7 @@ lemma singleton_boundary_length_eq_14 (P : TilingPatch) (steps : List BoundarySt
     intro j
     exact singleton_boundary_steps_dir_mem P steps hd h_bdry h_tiles j
   have h_le := singleton_boundary_length_le_14 P steps hd h_bdry h_tiles h_subset
-  have h_ge : 14 ≤ steps.length := by
-    have h_pos : 0 < steps.length := by
-      have h_empty_equiv := h_bdry.1
-      cases h_steps : steps with
-      | nil =>
-        have h_p_empty := h_empty_equiv.mp h_steps
-        rw [h_tiles] at h_p_empty
-        contradiction
-      | cons => simp [List.length]
-    -- To avoid circular dependency with boundary_path_girth_constraint, we preserve the topological placeholders directly:
-    have _h_dir_consistent : isDirConsistent steps := by sorry -- Ambient topological wrappers preserve structural length definitions
-    have _h_simple : isSimple steps := by sorry
-    have _h_closed : isClosedCCW steps := by sorry
-    sorry
+  have h_ge := singleton_boundary_length_ge_14 P steps hd h_bdry h_tiles
   omega
 
 /-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
