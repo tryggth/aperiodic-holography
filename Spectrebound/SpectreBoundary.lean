@@ -2208,14 +2208,10 @@ def checkRuleDirMatch (r : RewriteRule) : Bool :=
     isValidTurnDiff last_dir next
   )
 
-theorem generateRules_dir_match :
-  (generateRules.all checkRuleDirMatch) = true := by
-  sorry
-
-lemma rule_dir_match {r : RewriteRule} (h : r ∈ generateRules) (d : EdgeDirection) :
+lemma rule_dir_match (B : BoundaryPath) (idx : Fin B.steps.length) {r : RewriteRule}
+  (h_match : findMaximalRule (List.map (fun s => s.turn) (rotateList B.steps idx.val)) = some r) (d : EdgeDirection) :
   isValidTurnDiff (propagateSplicedLastDir r.replacement d) (propagatePatternDir r.pattern d) = true := by
-  -- NOTE: generateRules_dir_match is a sorry (the check is computationally false for 85/155 rules).
-  -- This lemma depends on it and is therefore also a sorry.
+  -- Realized maximal rules extracted from valid non-self-intersecting boundary paths satisfy direction matching constraints
   sorry
 
 theorem generateRules_pattern_bounds :
@@ -2451,7 +2447,7 @@ theorem peelBoundary_dir_consistent (B : BoundaryPath) (i : Fin B.steps.length) 
     rw [h_last_dir, h_next_dir]
     exact (dir_add_subToTurn (propagateSplicedLastDir rule.replacement (rotated.get ⟨0, h_pos⟩).dir)
       (propagatePatternDir rule.pattern (rotated.get ⟨0, h_pos⟩).dir)
-      (rule_dir_match h_mem (rotated.get ⟨0, h_pos⟩).dir)).symm
+      (rule_dir_match B i h_match (rotated.get ⟨0, h_pos⟩).dir)).symm
 
   -- h_weld2 uses the wrap condition from isDirConsistent_iff_seq_and_wrap
   have h_weld2 : (spliced_steps_updated.get ⟨0, h_spl_pos⟩).dir.val =
