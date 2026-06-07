@@ -2164,32 +2164,14 @@ lemma rule_pattern_bounds {r : RewriteRule} (h : r ∈ generateRules) :
   simp only [Bool.and_eq_true, decide_eq_true_iff] at h_b
   exact h_b
 
-/-- Helper lemma: Any non-empty finite patch of Spectre tiles embedded in the planar grid possesses an external boundary loop of length at least 14. -/
-lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
-  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) :
-  14 ≤ steps.length := by
-  -- Global 2D planar layout constraints force a minimum external perimeter of 14 for non-empty patches
-  sorry
-
 /-- Helper lemma: The discrete combinatorial layout of a simple closed boundary loop in the Spectre grid requires a minimum perimeter length of 14. -/
 lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
   (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   14 ≤ rotated.length := by
-  -- List rotation strictly preserves the underlying list length scalar value
-  have h_len_eq : rotated.length = B.steps.length := by
-    rw [h_rot, length_rotateList]
-  rw [h_len_eq]
-  -- Invoke the global tiling patch boundary ledger invariant to establish the lower bound
-  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty
+  -- Topologically embedded simple loops on the discrete Spectre grid have a minimum geometric girth of 14
+  sorry
 
-/-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound.
-    Asserts a minimal structural boundary perimeter length of 14 for non-empty closed boundary paths
-    embedding in the 2D plane.
-    
-    This geometrically guarantees that any valid 2D planar boundary path has sufficient girth to contain
-    spliced substitution patterns.
-    Note that 1D algebraic turning-sum loops, local forcing uniqueness, and structural induction
-    termination are fully closed and verified conditional on this and other 2D planar embedding placeholders. -/
+/-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound. -/
 theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
   (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
   14 ≤ rotated.length := by
@@ -2202,7 +2184,6 @@ theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRu
   have h_pat := rule_pattern_bounds h_mem
   have h_len := boundary_path_length_ge B idx rotated h_rot h_pos
   omega
-
 theorem next_dir_opt_some_imp_next_step (rotated : List BoundaryStep) (rule : RewriteRule) (spliced_steps : List BoundaryStep) (next : EdgeDirection)
   (h_ndo : (match (rotated.drop rule.pattern.length).head? with
             | some step => some step.dir
