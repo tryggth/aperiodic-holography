@@ -2175,13 +2175,24 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
+lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (h_combo : 90 * (countL90 steps : Int) + 60 * (countL60 steps : Int) + 0 * (countTurn steps ExteriorTurn.t_0 : Int)
+    - 60 * (countR60 steps : Int) - 90 * (countR90 steps : Int) = 360) :
+  14 ≤ steps.length := by
+  -- Single tile boundary walks satisfying the Diophantine turning equation require at least 14 steps
+  sorry
+
 /-- Helper lemma: A closed discrete loop accumulating 360 degrees of rotation using single-tile edge transitions requires at least 14 steps. -/
 lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_sum : turnSum steps = 360) :
   14 ≤ steps.length := by
-  -- Accumulating a full 360-degree rotation across a single tile footprint requires 14 edge transitions
-  sorry
+  have h_linear := turn_sum_eq_linear_combo steps
+  dsimp [turnSum] at h_sum
+  rw [h_linear] at h_sum
+  exact singleton_turn_equation_girth_bound P steps hd h_bdry h_tiles h_sum
 
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
 lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
