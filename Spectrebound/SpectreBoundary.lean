@@ -2175,15 +2175,22 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: The absolute length of a discrete boundary step sequence is structurally identical to the sum of its categorical turn counters. -/
+lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
+  (steps.length : Int) = (countL90 steps : Int) + (countL60 steps : Int) + (countTurn steps ExteriorTurn.t_0 : Int)
+    + (countR60 steps : Int) + (countR90 steps : Int) := by
+  -- A complete disjoint partition of list elements sums definitionally to the global list length scalar
+  sorry
+
 /-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
 lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_combo : 90 * (countL90 steps : Int) + 60 * (countL60 steps : Int) + 0 * (countTurn steps ExteriorTurn.t_0 : Int)
     - 60 * (countR60 steps : Int) - 90 * (countR90 steps : Int) = 360) :
   14 ≤ steps.length := by
-  -- Single tile boundary walks satisfying the Diophantine turning equation require at least 14 steps
+  have h_decomp := singleton_boundary_count_sum_decomposition steps
+  -- Transform the length target into a sum of non-negative turn count variables
   sorry
-
 /-- Helper lemma: A closed discrete loop accumulating 360 degrees of rotation using single-tile edge transitions requires at least 14 steps. -/
 lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
