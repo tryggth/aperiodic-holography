@@ -2175,12 +2175,22 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: A closed discrete loop accumulating 360 degrees of rotation using single-tile edge transitions requires at least 14 steps. -/
+lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (h_sum : turnSum steps = 360) :
+  14 ≤ steps.length := by
+  -- Accumulating a full 360-degree rotation across a single tile footprint requires 14 edge transitions
+  sorry
+
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
 lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
   14 ≤ steps.length := by
-  -- Closed simple curves around a single discrete tile footprint possess a minimum girth of 14
-  sorry
+  have h_sum : turnSum steps = 360 := by
+    -- Simple closed CCW boundary curves possess a global turn sum invariant of 360 degrees
+    sorry
+  exact singleton_boundary_turn_sum_girth P steps hd h_bdry h_tiles h_sum
 
 /-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
 lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
