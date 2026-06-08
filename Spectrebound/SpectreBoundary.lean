@@ -2223,14 +2223,72 @@ lemma singleton_boundary_cardinality_bound (steps : List BoundaryStep) (hd : Pla
   have h_edge_len : (getPlacedTileEdges hd).length = 14 := length_getPlacedTileEdges hd
   omega
 
+/-- Helper lemma: A cyclic step sequence on a discrete grid that visits the exact same absolute edge location at two distinct index offsets is topologically self-intersecting. -/
+lemma discrete_path_loop_self_intersection (steps : List BoundaryStep) (i j : Fin steps.length) (h_ne : i ≠ j)
+  (h_edge_eq : steps.get i = steps.get j) :
+  ¬ isSimple steps := by
+  -- Duplicate visits to identical directed edge segments definitionally violate simple loop properties
+  sorry
+
+/-- Helper lemma: In a single tile patch, if two boundary steps share the same direction, they are identical. -/
+lemma singleton_boundary_step_uniqueness (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (i' j' : Fin steps.length) (h_dir_eq : (steps.get i').dir = (steps.get j').dir) :
+  steps.get i' = steps.get j' := by
+  -- Single tile boundary configurations have unique step matching mapping properties
+  sorry
+
+/-- Helper lemma: General list mapping index helper to bridge propositional bounds gaps. -/
+lemma test_get_map {α β : Type} (f : α → β) (l : List α) (i : Fin (l.map f).length) (i' : Fin l.length) (h : i.val = i'.val) :
+  (l.map f).get i = f (l.get i') := by
+  rcases i with ⟨vi, hi⟩
+  rcases i' with ⟨vi', hi'⟩
+  dsimp at h
+  subst h
+  induction l generalizing vi with
+  | nil =>
+    simp at hi
+  | cons hd tl ih =>
+    cases vi with
+    | zero => rfl
+    | succ vi =>
+      have hi_new : vi < (tl.map f).length := by
+        simp [List.length_map] at hi
+        rw [List.length_map]
+        exact hi
+      have hi'_new : vi < tl.length := by
+        simp at hi'
+        exact hi'
+      exact ih vi hi_new hi'_new
+
 /-- Helper lemma: A step index duplication collision on an isolated tile footprint directly violates path simplicity invariants. -/
 lemma singleton_boundary_collision_contradiction (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (i j : Fin (steps.map (fun s => (hd.pos, s.dir))).length) (h_ne : i ≠ j)
   (h_eq : (steps.map (fun s => (hd.pos, s.dir))).get i = (steps.map (fun s => (hd.pos, s.dir))).get j) :
   ¬ isSimple steps := by
-  -- Duplicate index lookups mapping to identical coordinate edge segments contradict topological simplicity
-  sorry
+  have h_len_eq : steps.length = (steps.map (fun s => (hd.pos, s.dir))).length := by rw [List.length_map]
+  rcases i with ⟨vi, hi⟩
+  rcases j with ⟨vj, hj⟩
+  have hi_map : vi < steps.length := by omega
+  have hj_map : vj < steps.length := by omega
+  let i' : Fin steps.length := ⟨vi, hi_map⟩
+  let j' : Fin steps.length := ⟨vj, hj_map⟩
+  have h_ne_map : i' ≠ j' := by
+    intro hc
+    apply h_ne
+    have h_val_eq : vi = vj := Fin.ext_iff.mp hc
+    ext
+    exact h_val_eq
+  have h_get_i : (steps.map (fun s => (hd.pos, s.dir))).get ⟨vi, hi⟩ = (hd.pos, (steps.get i').dir) := by
+    exact test_get_map (fun s => (hd.pos, s.dir)) steps ⟨vi, hi⟩ i' rfl
+  have h_get_j : (steps.map (fun s => (hd.pos, s.dir))).get ⟨vj, hj⟩ = (hd.pos, (steps.get j').dir) := by
+    exact test_get_map (fun s => (hd.pos, s.dir)) steps ⟨vj, hj⟩ j' rfl
+  rw [h_get_i, h_get_j] at h_eq
+  simp only [Prod.mk.injEq, true_and] at h_eq
+  have h_steps_eq : steps.get i' = steps.get j' := by
+    exact singleton_boundary_step_uniqueness P steps hd h_bdry h_tiles i' j' h_eq
+  exact discrete_path_loop_self_intersection steps i' j' h_ne_map h_steps_eq
 
 /-- Helper lemma: A simple non-self-intersecting outer boundary loop tracking a single tile generates duplicate-free absolute edge segment lookups. -/
 lemma singleton_boundary_simplicity_to_nodup (P : TilingPatch) (steps : List BoundaryStep)
