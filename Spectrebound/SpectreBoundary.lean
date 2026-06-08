@@ -2185,18 +2185,16 @@ lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List Boundary
 
 /-- Helper lemma: A valid simple closed boundary path enclosing exactly one placed tile has a lower length bound of 14. -/
 lemma singleton_boundary_length_ge_14 (P : TilingPatch) (steps : List BoundaryStep)
-  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (h_closed : turnSum steps = 360) :
   14 ≤ steps.length := by
-  have h_sum : turnSum steps = 360 := by
-    -- Simple closed CCW boundary curves possess a global turn sum invariant of 360 degrees
-    sorry
-  exact singleton_boundary_turn_sum_girth P steps hd h_bdry h_tiles h_sum
+  exact singleton_boundary_turn_sum_girth P steps hd h_bdry h_tiles h_closed
 
 /-- Helper lemma: A singleton patch consisting of exactly one tile requires an external perimeter of length at least 14. -/
 lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
-  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (h_closed : turnSum steps = 360) :
   14 ≤ steps.length := by
-  exact singleton_boundary_length_ge_14 P steps hd h_bdry h_tiles
+  exact singleton_boundary_length_ge_14 P steps hd h_bdry h_tiles h_closed
+
 /-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14. -/
 lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
   (hd1 hd2 : PlacedTile) (tl : List PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = hd1 :: hd2 :: tl) :
@@ -2206,7 +2204,7 @@ lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List Boundary
 
 /-- Helper lemma: Any non-empty finite patch of Spectre tiles embedded in the planar grid possesses an external boundary loop of length at least 14. -/
 lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
-  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) :
+  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) (h_closed : turnSum steps = 360) :
   14 ≤ steps.length := by
   cases h_tiles : P.tiles with
   | nil =>
@@ -2216,7 +2214,7 @@ lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundarySte
     cases h_tl : tl with
     | nil =>
       have h_single : P.tiles = [hd] := by rw [h_tiles, h_tl]
-      exact singleton_patch_minimum_perimeter P steps hd h_bdry h_single
+      exact singleton_patch_minimum_perimeter P steps hd h_bdry h_single h_closed
     | cons hd2 tl2 =>
       have h_multi : P.tiles = hd :: hd2 :: tl2 := by rw [h_tiles, h_tl]
       exact multitile_patch_minimum_perimeter P steps hd hd2 tl2 h_bdry h_multi
@@ -2230,7 +2228,7 @@ lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.lengt
     rw [h_rot, length_rotateList]
   rw [h_len_eq]
   -- Invoke the global tiling patch boundary ledger invariant to establish the lower bound
-  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty
+  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty B.closed
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound. -/
 theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
