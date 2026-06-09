@@ -2234,8 +2234,9 @@ lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
 /-- Helper lemma: The exact geometric turn inventory of a single tile boundary strictly limits its structural turn counts. -/
 lemma singleton_turn_inventory_bounds (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
-  -- Constraints defining the maximum/minimum counts based on the monotile's native edge inventory
-  (countR60 steps : Int) + (countR90 steps : Int) ≥ 2 ∧ (countL90 steps : Int) ≤ 6 := by
+  (countL90 steps : Int) = 5 ∧ (countL60 steps : Int) = 2 ∧ (countTurn steps ExteriorTurn.t_0 : Int) = 4 ∧
+  (countR60 steps : Int) = 2 ∧ (countR90 steps : Int) = 1 := by
+  -- Closed simple curves visiting an isolated tile touch each edge direction injectively matching the tile footprint constants
   sorry
 
 /-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
@@ -2246,8 +2247,7 @@ lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List Bounda
   14 ≤ steps.length := by
   have h_decomp := singleton_boundary_count_sum_decomposition steps
   have h_bounds := singleton_turn_inventory_bounds P steps hd h_bdry h_tiles
-  -- Transform the length target into a sum of bounded non-negative turn count variables
-  sorry
+  omega
 
 /-- Helper lemma: A closed discrete loop accumulating 360 degrees of rotation using single-tile edge transitions requires at least 14 steps. -/
 lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List BoundaryStep)
