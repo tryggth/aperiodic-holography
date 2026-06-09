@@ -2242,10 +2242,10 @@ lemma count_turn_eq_of_perimeter_perm_nat (steps : List BoundaryStep) (hd : Plac
 /-- Helper lemma: Lists that form structural permutations of the standard tile footprint preserve categorical turn frequencies. -/
 lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep) (hd : PlacedTile)
   (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0)))
-  (t : ExteriorTurn) (target_count : Int) :
-  (countTurn steps t : Int) = target_count := by
-  -- Lift the natural number permutation identity cleanly using type casting
-  sorry
+  (t : ExteriorTurn) (target_count : Nat) (h_target : countTurn ((getTileEdgeDirections hd).map (fun _ => { turn := ExteriorTurn.t_0, dir := 0, parity := EdgeParity.standard })) t = target_count) :
+  (countTurn steps t : Int) = (target_count : Int) := by
+  have h_nat := count_turn_eq_of_perimeter_perm_nat steps hd h_perm t target_count h_target
+  omega
 
 /-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
 lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List BoundaryStep)
