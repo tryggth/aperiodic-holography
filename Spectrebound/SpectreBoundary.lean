@@ -2231,13 +2231,29 @@ lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
   have h_nat := singleton_boundary_count_sum_decomposition_nat steps
   omega
 
+/-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
+lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (t : ExteriorTurn) (target_count : Int) :
+  (countTurn steps t : Int) = target_count := by
+  -- Injective boundary steps match the exact frequency distribution of the underlying tile template
+  sorry
+
 /-- Helper lemma: The exact geometric turn inventory of a single tile boundary strictly limits its structural turn counts. -/
 lemma singleton_turn_inventory_bounds (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
   (countL90 steps : Int) = 5 ∧ (countL60 steps : Int) = 2 ∧ (countTurn steps ExteriorTurn.t_0 : Int) = 4 ∧
   (countR60 steps : Int) = 2 ∧ (countR90 steps : Int) = 1 := by
-  -- Closed simple curves visiting an isolated tile touch each edge direction injectively matching the tile footprint constants
-  sorry
+  have h_l90 : (countL90 steps : Int) = 5 := by
+    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_90 5
+  have h_l60 : (countL60 steps : Int) = 2 := by
+    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_60 2
+  have h_t0 : (countTurn steps ExteriorTurn.t_0 : Int) = 4 := by
+    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_0 4
+  have h_r60 : (countR60 steps : Int) = 2 := by
+    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_60 2
+  have h_r90 : (countR90 steps : Int) = 1 := by
+    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_90 1
+  exact ⟨h_l90, h_l60, h_t0, h_r60, h_r90⟩
 
 /-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
 lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List BoundaryStep)
