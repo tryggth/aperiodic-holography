@@ -144,7 +144,7 @@ def list_get_opt {α : Type} (l : List α) (idx : Nat) : Option α :=
     Contains exactly 5 Left 90° turns, with each being uniquely identifiable by its flanking turns. -/
 def spectrePerimeterTurns : List ExteriorTurn :=
   open ExteriorTurn in
-  [ t_minus_90, t_90, t_0, t_minus_60, t_90, t_60, t_0, t_90, t_minus_90, t_60, t_90, t_minus_60, t_90, t_0 ]
+  [ t_90, t_minus_60, t_90, t_60, t_0, t_60, t_minus_90, t_60, t_90, t_60, t_minus_90, t_60, t_90, t_minus_60 ]
 
 /-- Extracts all 3-turn sliding windows (handling cyclic wrapping) from the perimeter
     where the middle turn is a Left 90° corner. -/

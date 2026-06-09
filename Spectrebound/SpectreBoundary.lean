@@ -1224,14 +1224,14 @@ theorem turnSum_propagateSplicedSteps (turns : List ExteriorTurn) (dir : EdgeDir
     matches the curvature invariant for a valid anchor triplet. -/
 theorem valid_anchor_curvature (t1 t2 t3 : ExteriorTurn)
   (h_valid : (t1, t2, t3) ∈ getTileTriplets spectrePerimeterTurns) :
-  (getRemainingPerimeter (t1, t2, t3)).foldl (fun acc t => acc + t.inverse.toDegrees) 0 = -180 := by
+  (getRemainingPerimeter (t1, t2, t3)).foldl (fun acc t => acc + t.inverse.toDegrees) 0 = -270 := by
   revert h_valid
   cases t1 <;> cases t2 <;> cases t3 <;> intro h <;> first | contradiction | decide
 
 /-- Curvature splice invariant: the sum of turns on propagateSplicedSteps matches the computed invariant. -/
 theorem curvature_splice_invariant (B : BoundaryPath) (anchor_idx : Fin B.steps.length)
   (h_valid : getTurnTriplet B anchor_idx ∈ getTileTriplets spectrePerimeterTurns) :
-  turnSum (propagateSplicedSteps (getRemainingPerimeter (getTurnTriplet B anchor_idx)) (B.steps.get anchor_idx).dir (B.steps.get anchor_idx).parity) = -180 := by
+  turnSum (propagateSplicedSteps (getRemainingPerimeter (getTurnTriplet B anchor_idx)) (B.steps.get anchor_idx).dir (B.steps.get anchor_idx).parity) = -270 := by
   rw [turnSum_propagateSplicedSteps]
   let triplet := getTurnTriplet B anchor_idx
   have h_eq : getTurnTriplet B anchor_idx = triplet := rfl
@@ -1545,15 +1545,15 @@ lemma mem_of_list_all {α : Type} (p : α → Bool) (L : List α) (x : α) (h_al
           exact ih h_all.2 h_t
 
 theorem generateRules_turn_sum_invariant :
-  (generateRules.all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270))) = true := by
+  (generateRules.all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 360))) = true := by
   decide
 
 set_option maxRecDepth 300000
 
 lemma rule_turn_sum_invariant {r : RewriteRule} (h : r ∈ generateRules) :
-  fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270 := by
+  fsmTurnSum r.replacement = fsmTurnSum r.pattern - 360 := by
   have h_all := generateRules_turn_sum_invariant
-  have h_b := mem_of_list_all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 270)) generateRules r h_all h
+  have h_b := mem_of_list_all (fun r => decide (fsmTurnSum r.replacement = fsmTurnSum r.pattern - 360)) generateRules r h_all h
   simp only [decide_eq_true_iff] at h_b
   exact h_b
 
@@ -2231,49 +2231,72 @@ lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
   have h_nat := singleton_boundary_count_sum_decomposition_nat steps
   omega
 
+/-- Helper lemma: Maps countTurn operation directly to Mathlib's native List.count over mapped attributes -/
+lemma countTurn_eq_count_map (L : List BoundaryStep) (t : ExteriorTurn) :
+  countTurn L t = (L.map (fun s => s.turn)).count t := by
+  induction L with
+  | nil => rfl
+  | cons hd tl ih =>
+    unfold countTurn at *
+    dsimp [List.filter, List.map]
+    cases h : hd.turn == t <;> (simp [List.count_cons, h, ih])
+
 /-- Helper lemma: Pure Nat version of turn frequency preservation under list permutation. -/
-lemma count_turn_eq_of_perimeter_perm_nat (steps : List BoundaryStep) (hd : PlacedTile)
-  (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0))) -- structural placeholder template matches native layout signature
-  (t : ExteriorTurn) (target_count : Nat) (h_target : countTurn ((getTileEdgeDirections hd).map (fun _ => { turn := ExteriorTurn.t_0, dir := 0, parity := EdgeParity.standard })) t = target_count) :
+lemma count_turn_eq_of_perimeter_perm_nat (steps : List BoundaryStep)
+  (h_perm : List.Perm (steps.map (fun s => s.turn)) spectrePerimeterTurns)
+  (t : ExteriorTurn) (target_count : Nat) (h_target : spectrePerimeterTurns.count t = target_count) :
   countTurn steps t = target_count := by
-  -- Direct structural connection to Mathlib counting invariants will be established in the next step
-  sorry
+  have h1 := countTurn_eq_count_map steps t
+  have h2 : (steps.map (fun s => s.turn)).count t = spectrePerimeterTurns.count t := List.Perm.count_eq h_perm t
+  omega
 
 /-- Helper lemma: Lists that form structural permutations of the standard tile footprint preserve categorical turn frequencies. -/
-lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep) (hd : PlacedTile)
-  (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0)))
-  (t : ExteriorTurn) (target_count : Nat) (h_target : countTurn ((getTileEdgeDirections hd).map (fun _ => { turn := ExteriorTurn.t_0, dir := 0, parity := EdgeParity.standard })) t = target_count) :
+lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep)
+  (h_perm : List.Perm (steps.map (fun s => s.turn)) spectrePerimeterTurns)
+  (t : ExteriorTurn) (target_count : Nat) (h_target : spectrePerimeterTurns.count t = target_count) :
   (countTurn steps t : Int) = (target_count : Int) := by
-  have h_nat := count_turn_eq_of_perimeter_perm_nat steps hd h_perm t target_count h_target
+  have h_nat := count_turn_eq_of_perimeter_perm_nat steps h_perm t target_count h_target
   omega
+
+/-- Core Topological Lemma: A simple closed boundary visiting only the edges of a single tile must be a structural permutation of that tile's native perimeter. -/
+lemma boundary_path_implies_turn_permutation (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (h_mem_witness : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  List.Perm (steps.map (fun s => s.turn)) spectrePerimeterTurns := by
+  -- Topological bijection: A simple closed path traversing a single connected component's edges
+  -- exactly matches its structural boundary sequence.
+  sorry
 
 /-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
 lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List BoundaryStep)
-  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (t : ExteriorTurn) (target_count : Int) :
-  (countTurn steps t : Int) = target_count := by
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (t : ExteriorTurn) (target_count : Nat)
+  (h_target : spectrePerimeterTurns.count t = target_count) :
+  (countTurn steps t : Int) = (target_count : Int) := by
   have h_mem_witness : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd := by
     intro j
     exact singleton_boundary_steps_dir_mem P steps hd h_bdry h_tiles j
-  sorry
+  have h_perm := boundary_path_implies_turn_permutation P steps hd h_bdry h_tiles h_mem_witness
+  exact count_turn_eq_of_perimeter_perm steps h_perm t target_count h_target
+
+#reduce spectrePerimeterTurns.count ExteriorTurn.t_90
+#reduce spectrePerimeterTurns.count ExteriorTurn.t_60
+#reduce spectrePerimeterTurns.count ExteriorTurn.t_0
+#reduce spectrePerimeterTurns.count ExteriorTurn.t_minus_60
+#reduce spectrePerimeterTurns.count ExteriorTurn.t_minus_90
+
 
 /-- Helper lemma: The exact geometric turn inventory of a single tile boundary strictly limits its structural turn counts. -/
 lemma singleton_turn_inventory_bounds (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) :
-  (countL90 steps : Int) = 5 ∧ (countL60 steps : Int) = 2 ∧ (countTurn steps ExteriorTurn.t_0 : Int) = 4 ∧
-  (countR60 steps : Int) = 2 ∧ (countR90 steps : Int) = 1 := by
-  have h_l90 : (countL90 steps : Int) = 5 := by
-    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_90 5
-  have h_l60 : (countL60 steps : Int) = 2 := by
-    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_60 2
-  have h_t0 : (countTurn steps ExteriorTurn.t_0 : Int) = 4 := by
-    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_0 4
-  have h_r60 : (countR60 steps : Int) = 2 := by
-    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_60 2
-  have h_r90 : (countR90 steps : Int) = 1 := by
-    exact singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_90 1
+  (countL90 steps : Int) = 4 ∧ (countL60 steps : Int) = 5 ∧ (countTurn steps ExteriorTurn.t_0 : Int) = 1 ∧
+  (countR60 steps : Int) = 2 ∧ (countR90 steps : Int) = 2 := by
+  have h_l90 : (countL90 steps : Int) = 4 := singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_90 4 (by decide)
+  have h_l60 : (countL60 steps : Int) = 5 := singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_60 5 (by decide)
+  have h_t0 : (countTurn steps ExteriorTurn.t_0 : Int) = 1 := singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_0 1 (by decide)
+  have h_r60 : (countR60 steps : Int) = 2 := singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_60 2 (by decide)
+  have h_r90 : (countR90 steps : Int) = 2 := singleton_boundary_count_of_mem_inventory P steps hd h_bdry h_tiles ExteriorTurn.t_minus_90 2 (by decide)
   exact ⟨h_l90, h_l60, h_t0, h_r60, h_r90⟩
 
-/-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
 lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
   (h_combo : 90 * (countL90 steps : Int) + 60 * (countL60 steps : Int) + 0 * (countTurn steps ExteriorTurn.t_0 : Int)
