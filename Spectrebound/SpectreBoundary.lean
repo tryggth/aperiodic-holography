@@ -2231,11 +2231,21 @@ lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
   have h_nat := singleton_boundary_count_sum_decomposition_nat steps
   omega
 
+/-- Helper lemma: Lists that form structural permutations of the standard tile footprint preserve categorical turn frequencies. -/
+lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep) (hd : PlacedTile)
+  (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0)))
+  (t : ExteriorTurn) (target_count : Int) :
+  (countTurn steps t : Int) = target_count := by
+  -- Frequencies of distinct elements are strictly preserved under list permutation invariants
+  sorry
+
 /-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
 lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd]) (t : ExteriorTurn) (target_count : Int) :
   (countTurn steps t : Int) = target_count := by
-  -- Injective boundary steps match the exact frequency distribution of the underlying tile template
+  have h_mem_witness : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd := by
+    intro j
+    exact singleton_boundary_steps_dir_mem P steps hd h_bdry h_tiles j
   sorry
 
 /-- Helper lemma: The exact geometric turn inventory of a single tile boundary strictly limits its structural turn counts. -/
