@@ -2175,12 +2175,61 @@ lemma singleton_boundary_steps_dir_mem (P : TilingPatch) (steps : List BoundaryS
   subst ht_mem
   exact ht_edge
 
+/-- Helper lemma: Pure Nat structural induction version of the categorical length partition decomposition. -/
+lemma singleton_boundary_count_sum_decomposition_nat (steps : List BoundaryStep) :
+  steps.length = countL90 steps + countL60 steps + countTurn steps ExteriorTurn.t_0 + countR60 steps + countR90 steps := by
+  induction steps with
+  | nil => rfl
+  | cons hd tl ih =>
+    cases hd with | mk turn dir parity =>
+    cases turn with
+    | t_90 =>
+      have h1 : countL90 ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl) = countL90 tl + 1 := rfl
+      have h2 : countL60 ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl) = countL60 tl := rfl
+      have h3 : countTurn ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl) ExteriorTurn.t_0 = countTurn tl ExteriorTurn.t_0 := rfl
+      have h4 : countR60 ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl) = countR60 tl := rfl
+      have h5 : countR90 ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl) = countR90 tl := rfl
+      have h_len : ({ turn := ExteriorTurn.t_90, dir := dir, parity := parity } :: tl).length = tl.length + 1 := rfl
+      omega
+    | t_60 =>
+      have h1 : countL90 ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl) = countL90 tl := rfl
+      have h2 : countL60 ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl) = countL60 tl + 1 := rfl
+      have h3 : countTurn ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl) ExteriorTurn.t_0 = countTurn tl ExteriorTurn.t_0 := rfl
+      have h4 : countR60 ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl) = countR60 tl := rfl
+      have h5 : countR90 ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl) = countR90 tl := rfl
+      have h_len : ({ turn := ExteriorTurn.t_60, dir := dir, parity := parity } :: tl).length = tl.length + 1 := rfl
+      omega
+    | t_0 =>
+      have h1 : countL90 ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl) = countL90 tl := rfl
+      have h2 : countL60 ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl) = countL60 tl := rfl
+      have h3 : countTurn ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl) ExteriorTurn.t_0 = countTurn tl ExteriorTurn.t_0 + 1 := rfl
+      have h4 : countR60 ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl) = countR60 tl := rfl
+      have h5 : countR90 ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl) = countR90 tl := rfl
+      have h_len : ({ turn := ExteriorTurn.t_0, dir := dir, parity := parity } :: tl).length = tl.length + 1 := rfl
+      omega
+    | t_minus_60 =>
+      have h1 : countL90 ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl) = countL90 tl := rfl
+      have h2 : countL60 ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl) = countL60 tl := rfl
+      have h3 : countTurn ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl) ExteriorTurn.t_0 = countTurn tl ExteriorTurn.t_0 := rfl
+      have h4 : countR60 ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl) = countR60 tl + 1 := rfl
+      have h5 : countR90 ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl) = countR90 tl := rfl
+      have h_len : ({ turn := ExteriorTurn.t_minus_60, dir := dir, parity := parity } :: tl).length = tl.length + 1 := rfl
+      omega
+    | t_minus_90 =>
+      have h1 : countL90 ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl) = countL90 tl := rfl
+      have h2 : countL60 ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl) = countL60 tl := rfl
+      have h3 : countTurn ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl) ExteriorTurn.t_0 = countTurn tl ExteriorTurn.t_0 := rfl
+      have h4 : countR60 ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl) = countR60 tl := rfl
+      have h5 : countR90 ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl) = countR90 tl + 1 := rfl
+      have h_len : ({ turn := ExteriorTurn.t_minus_90, dir := dir, parity := parity } :: tl).length = tl.length + 1 := rfl
+      omega
+
 /-- Helper lemma: The absolute length of a discrete boundary step sequence is structurally identical to the sum of its categorical turn counters. -/
 lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
   (steps.length : Int) = (countL90 steps : Int) + (countL60 steps : Int) + (countTurn steps ExteriorTurn.t_0 : Int)
     + (countR60 steps : Int) + (countR90 steps : Int) := by
-  -- A complete disjoint partition of list elements sums definitionally to the global list length scalar
-  sorry
+  have h_nat := singleton_boundary_count_sum_decomposition_nat steps
+  omega
 
 /-- Helper lemma: Any step sequence whose linear turn combo sums to 360 degrees under single-tile constraints has a length of at least 14. -/
 lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List BoundaryStep)
@@ -2191,6 +2240,7 @@ lemma singleton_turn_equation_girth_bound (P : TilingPatch) (steps : List Bounda
   have h_decomp := singleton_boundary_count_sum_decomposition steps
   -- Transform the length target into a sum of non-negative turn count variables
   sorry
+
 /-- Helper lemma: A closed discrete loop accumulating 360 degrees of rotation using single-tile edge transitions requires at least 14 steps. -/
 lemma singleton_boundary_turn_sum_girth (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
