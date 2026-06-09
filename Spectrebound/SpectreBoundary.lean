@@ -2231,12 +2231,20 @@ lemma singleton_boundary_count_sum_decomposition (steps : List BoundaryStep) :
   have h_nat := singleton_boundary_count_sum_decomposition_nat steps
   omega
 
+/-- Helper lemma: Pure Nat version of turn frequency preservation under list permutation. -/
+lemma count_turn_eq_of_perimeter_perm_nat (steps : List BoundaryStep) (hd : PlacedTile)
+  (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0))) -- structural placeholder template matches native layout signature
+  (t : ExteriorTurn) (target_count : Nat) (h_target : countTurn ((getTileEdgeDirections hd).map (fun _ => { turn := ExteriorTurn.t_0, dir := 0, parity := EdgeParity.standard })) t = target_count) :
+  countTurn steps t = target_count := by
+  -- Element counting frequencies are strictly identical under choice of list permutation serialization
+  sorry
+
 /-- Helper lemma: Lists that form structural permutations of the standard tile footprint preserve categorical turn frequencies. -/
 lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep) (hd : PlacedTile)
   (h_perm : List.Perm (steps.map (fun s => s.turn)) ((getTileEdgeDirections hd).map (fun _ => ExteriorTurn.t_0)))
   (t : ExteriorTurn) (target_count : Int) :
   (countTurn steps t : Int) = target_count := by
-  -- Frequencies of distinct elements are strictly preserved under list permutation invariants
+  -- Lift the natural number permutation identity cleanly using type casting
   sorry
 
 /-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
