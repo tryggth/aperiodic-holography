@@ -677,7 +677,7 @@ lemma turn_sum_eq_linear_combo (L : List BoundaryStep) :
       cases hd with | mk turn dir parity =>
       have ih' := ih
       simp only [countL90, countL60, countR60, countR90, countTurn, ExteriorTurn.toDegrees] at ih'
-      cases turn <;> (simp (config := { decide := true }) [countL90, countL60, countR60, countR90, countTurn, ExteriorTurn.toDegrees, List.filter_cons]; rw [ih']; push_cast; omega)
+      cases turn <;> (simp (config := { decide := true }) [countL90, countL60, countR60, countR90, countTurn, ExteriorTurn.toDegrees]; rw [ih'];  omega)
 
 /-- The Diophantine Turning Equation:
     For any closed, CCW loop of steps, the turn counts satisfy:
@@ -717,7 +717,7 @@ lemma parityFlips_eq_counts (L : List BoundaryStep) :
     cases hd with | mk turn dir parity =>
     have ih' := ih
     simp only [parityFlips, countL90, countR90, countTurn] at ih'
-    cases turn <;> (simp (config := { decide := true }) [parityFlips, countL90, countR90, countTurn, List.filter_cons]; omega)
+    cases turn <;> (simp (config := { decide := true }) [parityFlips, countL90, countR90, countTurn]; omega)
 
 
 lemma parity_returns_iff_even_flips (n : Nat) :
@@ -1454,7 +1454,6 @@ lemma propagateSplicedSteps_get_zero (T_perimeter : List ExteriorTurn) (dir : Ed
     omega
   | cons hd tl =>
     rfl
-
 
 
 def fsmTurnSum (l : List ExteriorTurn) : Int :=
@@ -2278,12 +2277,6 @@ lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List 
   have h_perm := boundary_path_implies_turn_permutation P steps hd h_bdry h_tiles h_mem_witness
   exact count_turn_eq_of_perimeter_perm steps h_perm t target_count h_target
 
-#reduce spectrePerimeterTurns.count ExteriorTurn.t_90
-#reduce spectrePerimeterTurns.count ExteriorTurn.t_60
-#reduce spectrePerimeterTurns.count ExteriorTurn.t_0
-#reduce spectrePerimeterTurns.count ExteriorTurn.t_minus_60
-#reduce spectrePerimeterTurns.count ExteriorTurn.t_minus_90
-
 
 /-- Helper lemma: The exact geometric turn inventory of a single tile boundary strictly limits its structural turn counts. -/
 lemma singleton_turn_inventory_bounds (P : TilingPatch) (steps : List BoundaryStep)
@@ -2354,7 +2347,7 @@ lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundarySte
 
 /-- Helper lemma: The discrete combinatorial layout of a simple closed boundary loop in the Spectre grid requires a minimum perimeter length of 14. -/
 lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
-  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
+  (h_rot : rotated = rotateList B.steps idx.val) :
   14 ≤ rotated.length := by
   -- List rotation strictly preserves the underlying list length scalar value
   have h_len_eq : rotated.length = B.steps.length := by
@@ -2365,16 +2358,16 @@ lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.lengt
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound. -/
 theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
-  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
+  (h_rot : rotated = rotateList B.steps idx.val) :
   14 ≤ rotated.length := by
-  exact boundary_path_girth_constraint B idx rotated h_rot h_pos
+  exact boundary_path_girth_constraint B idx rotated h_rot
 
 theorem rule_pattern_length_lt (rule : RewriteRule) (h_mem : rule ∈ generateRules)
   (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
-  (h_rot : rotated = rotateList B.steps idx.val) (h_pos : 0 < rotated.length) :
+  (h_rot : rotated = rotateList B.steps idx.val) :
   rule.pattern.length < rotated.length := by
   have h_pat := rule_pattern_bounds h_mem
-  have h_len := boundary_path_length_ge B idx rotated h_rot h_pos
+  have h_len := boundary_path_length_ge B idx rotated h_rot
   omega
 
 theorem next_dir_opt_some_imp_next_step (rotated : List BoundaryStep) (rule : RewriteRule) (spliced_steps : List BoundaryStep) (next : EdgeDirection)
@@ -2512,7 +2505,7 @@ theorem peelBoundary_dir_consistent (B : BoundaryPath) (i : Fin B.steps.length) 
     have h_len : remaining.length = 0 := by rw [hc, List.length_nil]
     dsimp [remaining] at h_len
     rw [List.length_drop] at h_len
-    have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl h_pos
+    have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl
     omega
   have h_spliced_ne : spliced_steps ≠ [] := by
     intro hc
@@ -2676,7 +2669,7 @@ lemma peelBoundary_stitch_sum (B : BoundaryPath) (i : Fin B.steps.length) (rule 
         intro hc
         have h_len_rem : (rotated.drop rule.pattern.length).length = 0 := by rw [hc, List.length_nil]
         rw [List.length_drop] at h_len_rem
-        have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl h_pos
+        have h_rule_len := rule_pattern_length_lt rule h_mem B i rotated rfl
         omega
       have h_next : ∃ (t : ExteriorTurn) (p : EdgeParity), (rotated.drop rule.pattern.length).head? = some ⟨t, next, p⟩ :=
         next_dir_opt_some_imp_next_step rotated rule spliced_steps next h_ndo h_rem_ne
@@ -3288,11 +3281,22 @@ lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α 
   (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
   intro h_get1 h_get2
 
-  -- Step 1: Establish Index Injectivity (i = j ↔ m1 = m2)
+-- Step 1: Establish Index Injectivity (i = j ↔ m1 = m2)
   have h_filter_nd : (L.filter p).Nodup := List.Nodup.filter p h_nd
   have h_inj : i = j ↔ m1 = m2 := by
-    -- Injectivity of list indices for Nodup lists
-    sorry
+    constructor
+    · intro h_eq
+      subst h_eq
+      have h_elem_eq : L.get ⟨m1, hm1⟩ = L.get ⟨m2, hm2⟩ := by
+        rw [← h_get1, ← h_get2]
+      have h_fin_eq := (List.Nodup.get_inj_iff h_nd).mp h_elem_eq
+      exact Fin.ext_iff.mp h_fin_eq
+    · intro h_eq
+      subst h_eq
+      have h_elem_eq : (L.filter p).get ⟨i, hi⟩ = (L.filter p).get ⟨j, hj⟩ := by
+        rw [h_get1, h_get2]
+      have h_fin_eq := (List.Nodup.get_inj_iff h_filter_nd).mp h_elem_eq
+      exact Fin.ext_iff.mp h_fin_eq
 
   -- Step 2: Isolate the Reverse Implication
   have h_rev : ∀ (i' j' : Nat) (hi' : i' < (L.filter p).length) (hj' : j' < (L.filter p).length) (m1' m2' : Nat) (hm1' : m1' < L.length) (hm2' : m2' < L.length),
