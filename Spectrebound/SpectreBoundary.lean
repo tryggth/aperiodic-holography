@@ -3118,7 +3118,7 @@ lemma peel_patch_general_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin
     rcases h_witness with ⟨t_orig, ht_mem_reduced, ht_edge⟩
     exact ⟨t_orig, ht_mem_reduced, ht_edge⟩
 
-lemma h_list_injective : ∀ (L : List PlacedTile) (h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
+lemma h_list_injective : ∀ (L : List PlacedTile) (_h_nd : L.Nodup) (n1 n2 : Nat) (hn1 : n1 < L.length) (hn2 : n2 < L.length),
   L.get ⟨n1, hn1⟩ = L.get ⟨n2, hn2⟩ → n1 = n2 := by
   intro L
   induction L with
@@ -3276,12 +3276,21 @@ lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i 
   rcases List.mem_iff_get.mp h_mem2.1 with ⟨⟨g2, hg2⟩, h_get2⟩
   exact ⟨g1, g2, hg1, hg2, h_get1.symm, h_get2.symm⟩
 
+/-- Standalone list lemma: the reverse implication of filter index monotonicity. -/
+lemma list_filter_index_rev {α : Type} (L : List α) (_h_nd : L.Nodup) (p : α → Bool)
+  (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length)
+  (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length)
+  (h_get1 : (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩)
+  (h_get2 : (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩)
+  (h_lt : i < j) : m1 < m2 := by
+  -- Strict monotonicity implies ordered index preservation mapping back to the parent list
+  sorry
+
 /-- Standalone list lemma: filtering a list preserves strict monotonicity of element indices. -/
 lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
   (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
   intro h_get1 h_get2
-
--- Step 1: Establish Index Injectivity (i = j ↔ m1 = m2)
+  -- Step 1: Establish Index Injectivity (i = j ↔ m1 = m2)
   have h_filter_nd : (L.filter p).Nodup := List.Nodup.filter p h_nd
   have h_inj : i = j ↔ m1 = m2 := by
     constructor
@@ -3298,14 +3307,7 @@ lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α 
       have h_fin_eq := (List.Nodup.get_inj_iff h_filter_nd).mp h_elem_eq
       exact Fin.ext_iff.mp h_fin_eq
 
-  -- Step 2: Isolate the Reverse Implication
-  have h_rev : ∀ (i' j' : Nat) (hi' : i' < (L.filter p).length) (hj' : j' < (L.filter p).length) (m1' m2' : Nat) (hm1' : m1' < L.length) (hm2' : m2' < L.length),
-    (L.filter p).get ⟨i', hi'⟩ = L.get ⟨m1', hm1'⟩ →
-    (L.filter p).get ⟨j', hj'⟩ = L.get ⟨m2', hm2'⟩ →
-    i' < j' → m1' < m2' := by
-    sorry
-
-  -- Step 3: Deploy Trichotomy to solve the Forward Implication
+  -- Step 2: Deploy Trichotomy to solve the Forward Implication
   constructor
   · intro h_m1_lt
     by_contra h_not_lt
@@ -3313,17 +3315,29 @@ lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α 
     rcases h_cases with h_eq | h_gt
     · have h_m_eq := h_inj.mp h_eq
       omega
-    · have h_m_rev := h_rev j i hj hi m2 m1 hm2 hm1 h_get2 h_get1 h_gt
+    · have h_m_rev := list_filter_index_rev L h_nd p j i hj hi m2 m1 hm2 hm1 h_get2 h_get1 h_gt
       omega
   · intro h_i_lt
-    exact h_rev i j hi hj m1 m2 hm1 hm2 h_get1 h_get2 h_i_lt
+    exact list_filter_index_rev L h_nd p i j hi hj m1 m2 hm1 hm2 h_get1 h_get2 h_i_lt
 
 /-- Standalone list lemma: filtering a list strictly preserves index injection order properties. -/
 lemma list_filter_index_inj {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) :
   i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
     (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
-  -- Sublist filtration strictly preserves position order indices
-  sorry
+  intro h_lt
+  have h_mem1 : (L.filter p).get ⟨i, hi⟩ ∈ L.filter p := by
+    rw [List.mem_iff_get]
+    exact ⟨⟨i, hi⟩, rfl⟩
+  have h_mem2 : (L.filter p).get ⟨j, hj⟩ ∈ L.filter p := by
+    rw [List.mem_iff_get]
+    exact ⟨⟨j, hj⟩, rfl⟩
+  rw [List.mem_filter] at h_mem1 h_mem2
+  rcases List.mem_iff_get.mp h_mem1.1 with ⟨⟨m1, hm1⟩, h_get1⟩
+  rcases List.mem_iff_get.mp h_mem2.1 with ⟨⟨m2, hm2⟩, h_get2⟩
+  use m1, m2, hm1, hm2
+  refine ⟨h_get1.symm, h_get2.symm, ?_⟩
+  have h_mono := list_filter_index_mono L h_nd p i j hi hj m1 m2 hm1 hm2 h_get1.symm h_get2.symm
+  exact h_mono.mpr h_lt
 
 /-- Theorem: Peeling a boundary B of patch P constructs a valid sequence steps'
     which forms the boundary of a reduced patch P'. -/
