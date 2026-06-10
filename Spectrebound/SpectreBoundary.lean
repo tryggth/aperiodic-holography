@@ -3272,17 +3272,25 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
 lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length) :
   ∃ (g1 : Nat) (g2 : Nat) (hg1 : g1 < L.length) (hg2 : g2 < L.length),
     (L.filter p).get ⟨i, hi1⟩ = L.get ⟨g1, hg1⟩ ∧ (L.filter p).get ⟨i + 1, hi2⟩ = L.get ⟨g2, hg2⟩ := by
-  -- Filter index projections map directly to valid positions in the parent list structure
-  sorry
+  have h_mem1 : (L.filter p).get ⟨i, hi1⟩ ∈ L.filter p := by
+    rw [List.mem_iff_get]
+    exact ⟨⟨i, hi1⟩, rfl⟩
+  have h_mem2 : (L.filter p).get ⟨i + 1, hi2⟩ ∈ L.filter p := by
+    rw [List.mem_iff_get]
+    exact ⟨⟨i + 1, hi2⟩, rfl⟩
+  rw [List.mem_filter] at h_mem1 h_mem2
+  rcases List.mem_iff_get.mp h_mem1.1 with ⟨⟨g1, hg1⟩, h_get1⟩
+  rcases List.mem_iff_get.mp h_mem2.1 with ⟨⟨g2, hg2⟩, h_get2⟩
+  exact ⟨g1, g2, hg1, hg2, h_get1.symm, h_get2.symm⟩
 
 /-- Standalone list lemma: filtering a list preserves strict monotonicity of element indices. -/
-lemma list_filter_index_mono {α : Type} (L : List α) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
+lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
   (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
   -- Sublist filtration strictly preserves position order indices
   sorry
 
 /-- Standalone list lemma: filtering a list strictly preserves index injection order properties. -/
-lemma list_filter_index_inj {α : Type} (L : List α) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) :
+lemma list_filter_index_inj {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) :
   i < j → ∃ (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length),
     (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ ∧ (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ ∧ m1 < m2 := by
   -- Sublist filtration strictly preserves position order indices
@@ -3466,11 +3474,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                     rcases List.mem_iff_get.mp h_mem_filter with ⟨⟨idx_k, h_k_lt⟩, h_k_get⟩
                     have h_sublist_bounds : idx < idx_k ∧ idx_k < idx + 1 := by
                       have h_lt1 : idx < idx_k := by
-                        have h_spec := list_filter_index_mono P.tiles (fun t => decide (t ≠ t_peel)) idx idx_k h1 h_k_lt g1 k hg1 (by omega) h_get1 h_k_get
-                        omega
+                        exact (list_filter_index_mono P.tiles h_bdry.2.2.1 (fun t => decide (t ≠ t_peel)) idx idx_k h1 h_k_lt g1 k hg1 (by omega) h_get1 h_k_get).1 hk1
                       have h_lt2 : idx_k < idx + 1 := by
-                        have h_spec := list_filter_index_mono P.tiles (fun t => decide (t ≠ t_peel)) idx_k (idx + 1) h_k_lt h2 k g2 (by omega) hg2 h_k_get h_get2
-                        omega
+                        exact (list_filter_index_mono P.tiles h_bdry.2.2.1 (fun t => decide (t ≠ t_peel)) idx_k (idx + 1) h_k_lt h2 k g2 (by omega) hg2 h_k_get h_get2).1 hk2
                       exact ⟨h_lt1, h_lt2⟩
                     omega
                   simp only [h_intermediate_is_peeled, ne_eq, not_true_eq_false]
@@ -3522,7 +3528,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                       exact Fin.ext_iff.mp h_fin_eq
                     omega
                   have h_filter_mono : g1 < g2 := by
-                    have h_mono_spec := list_filter_index_inj P.tiles (fun t => t ≠ t_peel) idx (idx + 1) h1 h2 (by omega)
+                    have h_mono_spec := list_filter_index_inj P.tiles h_bdry.2.2.1 (fun t => decide (t ≠ t_peel)) idx (idx + 1) h1 h2 (by omega)
                     rcases h_mono_spec with ⟨m1, m2, hm1, hm2, h_mget1, h_mget2, h_mlt⟩
                     have h_g1_eq_m1 : g1 = m1 := by
                       have h_lookup_eq : P.tiles.get ⟨g1, hg1⟩ = P.tiles.get ⟨m1, hm1⟩ := by
