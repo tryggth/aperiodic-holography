@@ -2323,14 +2323,14 @@ lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List Boundary
 
 /-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14. -/
 lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
-  (hd1 hd2 : PlacedTile) (tl : List PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = hd1 :: hd2 :: tl) :
+  (hd1 hd2 : PlacedTile) (tl : List PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = hd1 :: hd2 :: tl) (h_simple : isSimple steps) :
   14 ≤ steps.length := by
   -- Inductive planar tile clustering expands or preserves external boundary length
   sorry
 
 /-- Helper lemma: Any non-empty finite patch of Spectre tiles embedded in the planar grid possesses an external boundary loop of length at least 14. -/
 lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
-  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) (h_closed : turnSum steps = 360) :
+  (h_bdry : is_boundary_of steps P) (h_ne : steps ≠ []) (h_closed : turnSum steps = 360) (h_simple : isSimple steps) :
   14 ≤ steps.length := by
   cases h_tiles : P.tiles with
   | nil =>
@@ -2343,7 +2343,7 @@ lemma tiling_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundarySte
       exact singleton_patch_minimum_perimeter P steps hd h_bdry h_single h_closed
     | cons hd2 tl2 =>
       have h_multi : P.tiles = hd :: hd2 :: tl2 := by rw [h_tiles, h_tl]
-      exact multitile_patch_minimum_perimeter P steps hd hd2 tl2 h_bdry h_multi
+      exact multitile_patch_minimum_perimeter P steps hd hd2 tl2 h_bdry h_multi h_simple
 
 /-- Helper lemma: The discrete combinatorial layout of a simple closed boundary loop in the Spectre grid requires a minimum perimeter length of 14. -/
 lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
@@ -2354,7 +2354,7 @@ lemma boundary_path_girth_constraint (B : BoundaryPath) (idx : Fin B.steps.lengt
     rw [h_rot, length_rotateList]
   rw [h_len_eq]
   -- Invoke the global tiling patch boundary ledger invariant to establish the lower bound
-  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty B.closed
+  exact tiling_patch_minimum_perimeter B.patch B.steps B.is_bdry B.non_empty B.closed B.simple
 
 /-- Macroscopic 2D Planar Embedding Boundary Conditions: Geometrical Lower Bound. -/
 theorem boundary_path_length_ge (B : BoundaryPath) (idx : Fin B.steps.length) (rotated : List BoundaryStep)
