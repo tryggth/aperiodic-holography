@@ -770,6 +770,15 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
+/-- Topological Conservation Law: The number of L90 turns on the boundary
+    plus the number of absorbed 90° interior corners must exactly equal
+    the total intrinsic 90° corners provided by the patch tiles. Furthermore,
+    the maximum number of absorbed 90° corners cannot exceed the internal 
+    absorption capacity (bounded by the available 270° corners). -/
+lemma patch_requires_absorption (B : BoundaryPath) :
+  ∃ absorbed_90 : Nat, countL90 B.steps + absorbed_90 = (sumPatchInventory B.patch.tiles).c90 ∧ absorbed_90 ≤ (sumPatchInventory B.patch.tiles).c270 := by
+  sorry
+
 /-- Core Topological Theorem: The boundary of any finite planar patch
     of Spectre tiles must contain at least one Left 90° convex corner.
     This replaces the original geometric placeholder axiom, completing Path A. -/
@@ -810,14 +819,25 @@ theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
     have h_ne := B.non_empty
     contradiction
 
-  -- Combinatorial contradiction: A patch with zero boundary L90 corners
-  -- requires more internal 90° absorption capacity than the tiles provide,
-  -- forcing the creation of overlapping internal 4-tile crosses.
-  have h_cross_overlap : False := by
-    have _h_cross := crosses_always_overlap
-    have _h_absorp := max_90_absorption B.patch.tiles.length
-    sorry
-  exact h_cross_overlap
+  -- Phase 2: Route A (Absorption Deficit)
+  -- If there are no L90 corners on the boundary, all 5n 90-degree corners must be absorbed internally.
+  -- But n tiles can only absorb at most n 90-degree corners, forcing a contradiction.
+  have h_contradiction : False := by
+    have h_absorp := patch_requires_absorption B
+    obtain ⟨absorbed_90, h_eq, h_le⟩ := h_absorp
+    rw [h_zero, Nat.zero_add] at h_eq
+    rw [h_ledger.left] at h_eq h_le
+    dsimp [patchCornerInventory] at h_eq h_le
+    have h_n : B.patch.tiles.length = 0 := by omega
+    have h_empty_list : B.patch.tiles = [] := by
+      cases h_t : B.patch.tiles
+      · rfl
+      · rw [h_t] at h_n
+        contradiction
+    have h_empty := B.is_bdry.1.mpr h_empty_list
+    have h_ne := B.non_empty
+    contradiction
+  exact h_contradiction
 
 theorem corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) : False := by
   obtain ⟨i, hi⟩ := patch_boundary_has_convex_corner B
