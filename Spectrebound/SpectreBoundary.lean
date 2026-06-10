@@ -3258,8 +3258,6 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
   ext <;> (push_cast; omega)
 
 
-
-
 /-- Standalone list lemma: filtering a list preserves element containment and provides
     existential indices in the original list for consecutive filtered elements. -/
 lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i : Nat) (hi1 : i < (L.filter p).length) (hi2 : i + 1 < (L.filter p).length) :
@@ -3276,6 +3274,117 @@ lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i 
   rcases List.mem_iff_get.mp h_mem2.1 with ⟨⟨g2, hg2⟩, h_get2⟩
   exact ⟨g1, g2, hg1, hg2, h_get1.symm, h_get2.symm⟩
 
+
+lemma mem_of_get?_eq_some {α : Type} {l : List α} {k : Nat} {x : α} (h : l[k]? = some x) : x ∈ l := by
+  induction l generalizing k with
+  | nil => contradiction
+  | cons hd tl ih =>
+    cases k with
+    | zero =>
+      injection h with h_eq
+      subst h_eq
+      simp
+    | succ k' =>
+      have h_mem := ih h
+      simp [h_mem]
+
+lemma list_get?_of_get {α : Type} (L : List α) (i : Nat) (hi : i < L.length) :
+  L[i]? = some (L.get ⟨i, hi⟩) := by
+  induction L generalizing i with
+  | nil => contradiction
+  | cons hd tl ih =>
+    cases i with
+    | zero => rfl
+    | succ i' =>
+      have hi' : i' < tl.length := by
+        dsimp [List.length] at hi
+        omega
+      exact ih i' hi'
+
+/-- Bite-sized induction helper: Proving monotonicity using non-dependent Option getters -/
+lemma getElem?_filter_index_mono {α : Type} (L : List α) (p : α → Bool) (h_nd : L.Nodup)
+  (i j m1 m2 : Nat) (x y : α)
+  (h_fi : (L.filter p)[i]? = some x)
+  (h_fj : (L.filter p)[j]? = some y)
+  (h_m1 : L[m1]? = some x)
+  (h_m2 : L[m2]? = some y)
+  (h_lt : i < j) : m1 < m2 := by
+  induction L generalizing i j m1 m2 with
+  | nil =>
+    contradiction
+  | cons hd tl ih =>
+    have h_nd_tl : tl.Nodup := (List.nodup_cons.mp h_nd).2
+    have h_hd_not_mem : hd ∉ tl := (List.nodup_cons.mp h_nd).1
+    dsimp [List.filter] at h_fi h_fj
+    cases h_p : p hd
+    · -- false branch
+      rw [h_p] at h_fi h_fj
+      dsimp only at h_fi h_fj
+      cases m1 with
+      | zero =>
+        injection h_m1 with h_eq
+        subst h_eq
+        have h_x_mem : hd ∈ tl.filter p := mem_of_get?_eq_some h_fi
+        have h_x_mem_tl : hd ∈ tl := mem_of_mem_filter h_x_mem
+        contradiction
+      | succ m1' =>
+        cases m2 with
+        | zero =>
+          injection h_m2 with h_eq
+          subst h_eq
+          have h_y_mem : hd ∈ tl.filter p := mem_of_get?_eq_some h_fj
+          have h_y_mem_tl : hd ∈ tl := mem_of_mem_filter h_y_mem
+          contradiction
+        | succ m2' =>
+          have ih_call := ih h_nd_tl i j m1' m2' h_fi h_fj h_m1 h_m2 h_lt
+          omega
+    · -- true branch
+      rw [h_p] at h_fi h_fj
+      dsimp only at h_fi h_fj
+      cases i with
+      | zero =>
+        cases m1 with
+        | zero =>
+          cases m2 with
+          | zero =>
+            cases j with
+            | zero => omega
+            | succ j' =>
+              injection h_m2 with h_eq
+              subst h_eq
+              have h_y_mem : hd ∈ tl.filter p := mem_of_get?_eq_some h_fj
+              have h_y_mem_tl : hd ∈ tl := mem_of_mem_filter h_y_mem
+              contradiction
+          | succ m2' => omega
+        | succ m1' =>
+          injection h_fi with h_eq
+          subst h_eq
+          have h_x_mem : hd ∈ tl := mem_of_get?_eq_some h_m1
+          contradiction
+      | succ i' =>
+        cases m1 with
+        | zero =>
+          injection h_m1 with h_eq
+          subst h_eq
+          have h_x_mem : hd ∈ tl.filter p := mem_of_get?_eq_some h_fi
+          have h_x_mem_tl : hd ∈ tl := mem_of_mem_filter h_x_mem
+          contradiction
+        | succ m1' =>
+          cases j with
+          | zero => omega
+          | succ j' =>
+            cases m2 with
+            | zero =>
+              injection h_m2 with h_eq
+              subst h_eq
+              have h_y_mem : hd ∈ tl.filter p := mem_of_get?_eq_some h_fj
+              have h_y_mem_tl : hd ∈ tl := mem_of_mem_filter h_y_mem
+              contradiction
+            | succ m2' =>
+              have h_lt' : i' < j' := by omega
+              have ih_call := ih h_nd_tl i' j' m1' m2' h_fi h_fj h_m1 h_m2 h_lt'
+              omega
+
 /-- Standalone list lemma: the reverse implication of filter index monotonicity. -/
 lemma list_filter_index_rev {α : Type} (L : List α) (_h_nd : L.Nodup) (p : α → Bool)
   (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length)
@@ -3283,8 +3392,16 @@ lemma list_filter_index_rev {α : Type} (L : List α) (_h_nd : L.Nodup) (p : α 
   (h_get1 : (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩)
   (h_get2 : (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩)
   (h_lt : i < j) : m1 < m2 := by
-  -- Strict monotonicity implies ordered index preservation mapping back to the parent list
-  sorry
+  have h_fi : (L.filter p)[i]? = some (L.get ⟨m1, hm1⟩) := by
+    rw [← h_get1]
+    exact list_get?_of_get (L.filter p) i hi
+  have h_fj : (L.filter p)[j]? = some (L.get ⟨m2, hm2⟩) := by
+    rw [← h_get2]
+    exact list_get?_of_get (L.filter p) j hj
+  have h_m1 : L[m1]? = some (L.get ⟨m1, hm1⟩) := list_get?_of_get L m1 hm1
+  have h_m2 : L[m2]? = some (L.get ⟨m2, hm2⟩) := list_get?_of_get L m2 hm2
+  exact getElem?_filter_index_mono L p _h_nd i j m1 m2 _ _ h_fi h_fj h_m1 h_m2 h_lt
+
 
 /-- Standalone list lemma: filtering a list preserves strict monotonicity of element indices. -/
 lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
