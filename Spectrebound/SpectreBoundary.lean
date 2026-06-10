@@ -3286,8 +3286,33 @@ lemma list_filter_adjacent_bound {α : Type} (L : List α) (p : α → Bool) (i 
 /-- Standalone list lemma: filtering a list preserves strict monotonicity of element indices. -/
 lemma list_filter_index_mono {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) (m1 m2 : Nat) (hm1 : m1 < L.length) (hm2 : m2 < L.length) :
   (L.filter p).get ⟨i, hi⟩ = L.get ⟨m1, hm1⟩ → (L.filter p).get ⟨j, hj⟩ = L.get ⟨m2, hm2⟩ → (m1 < m2 ↔ i < j) := by
-  -- Sublist filtration strictly preserves position order indices
-  sorry
+  intro h_get1 h_get2
+
+  -- Step 1: Establish Index Injectivity (i = j ↔ m1 = m2)
+  have h_filter_nd : (L.filter p).Nodup := List.Nodup.filter p h_nd
+  have h_inj : i = j ↔ m1 = m2 := by
+    -- Injectivity of list indices for Nodup lists
+    sorry
+
+  -- Step 2: Isolate the Reverse Implication
+  have h_rev : ∀ (i' j' : Nat) (hi' : i' < (L.filter p).length) (hj' : j' < (L.filter p).length) (m1' m2' : Nat) (hm1' : m1' < L.length) (hm2' : m2' < L.length),
+    (L.filter p).get ⟨i', hi'⟩ = L.get ⟨m1', hm1'⟩ →
+    (L.filter p).get ⟨j', hj'⟩ = L.get ⟨m2', hm2'⟩ →
+    i' < j' → m1' < m2' := by
+    sorry
+
+  -- Step 3: Deploy Trichotomy to solve the Forward Implication
+  constructor
+  · intro h_m1_lt
+    by_contra h_not_lt
+    have h_cases : i = j ∨ j < i := by omega
+    rcases h_cases with h_eq | h_gt
+    · have h_m_eq := h_inj.mp h_eq
+      omega
+    · have h_m_rev := h_rev j i hj hi m2 m1 hm2 hm1 h_get2 h_get1 h_gt
+      omega
+  · intro h_i_lt
+    exact h_rev i j hi hj m1 m2 hm1 hm2 h_get1 h_get2 h_i_lt
 
 /-- Standalone list lemma: filtering a list strictly preserves index injection order properties. -/
 lemma list_filter_index_inj {α : Type} (L : List α) (h_nd : L.Nodup) (p : α → Bool) (i j : Nat) (hi : i < (L.filter p).length) (hj : j < (L.filter p).length) :
