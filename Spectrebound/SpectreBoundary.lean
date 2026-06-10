@@ -3168,16 +3168,6 @@ lemma h_list_injective : ∀ (L : List PlacedTile) (_h_nd : L.Nodup) (n1 n2 : Na
               have h_sub_eq := ih h_nd_tl n1' n2' hn1' hn2' h_eq'
               rw [h_sub_eq]
 
-/-- A constructive uniformity invariant asserting that all placed tiles in a Spectre tiling patch share a common orientation. -/
-lemma TilingPatch.orientation_uniform_invariant (P : TilingPatch) (t1 t2 : Fin P.tiles.length) :
-  (P.tiles.get t1).orientation = (P.tiles.get t2).orientation := by
-  sorry
-
-/-- Every step in the boundary path has a direction that originates from some tile in the patch. -/
-lemma TilingPatch.boundary_step_origin_invariant (P : TilingPatch) (steps' : List BoundaryStep) (s : BoundaryStep) (hs : s ∈ steps') :
-  ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
-  sorry
-
 /-- Helper lemma: filtering out an element not in the list is identity. -/
 lemma filter_not_mem (L : List PlacedTile) (x : PlacedTile) (h : x ∉ L) :
   L.filter (fun t => t ≠ x) = L := by
@@ -3257,6 +3247,44 @@ lemma sumPatchInventory_filter_peel (L : List PlacedTile) (t_peel : PlacedTile)
   rw [h_sub_len]
   ext <;> (push_cast; omega)
 
+
+lemma findTileAtStep_mem_or_eq (L : List PlacedTile) (dir : EdgeDirection) (def_t : PlacedTile) :
+  findTileAtStep L dir def_t ∈ L ∨ findTileAtStep L dir def_t = def_t := by
+  induction L with
+  | nil => exact Or.inr rfl
+  | cons hd tl ih =>
+    dsimp [findTileAtStep]
+    split
+    · exact Or.inl List.mem_cons_self
+    · cases ih with
+      | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
+      | inr h => exact Or.inr h
+
+lemma sumPatchInventory_reduced_patch (P : TilingPatch) (steps : List BoundaryStep)
+  (t_peel : PlacedTile) (reduced_tiles : List PlacedTile)
+  (h_bdry : is_boundary_of steps P)
+  (h_peel_mem : t_peel ∈ P.tiles)
+  (h_red : reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel)) :
+  sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
+  have h_parent_inventory := h_bdry.2.2.2.2.2.1
+  have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
+    rw [h_red]
+    exact sumPatchInventory_filter_peel P.tiles t_peel h_bdry.2.2.1 h_peel_mem
+  have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
+    have h_len_eq : P.tiles.length = reduced_tiles.length + 1 := by
+      have h_p_pos : 0 < P.tiles.length := by
+        cases h_t : P.tiles with
+        | nil => rw [h_t] at h_peel_mem; contradiction
+        | cons => simp
+      have h_sub_len : reduced_tiles.length = P.tiles.length - 1 := by
+        rw [h_red]
+        rw [sumPatchInventory_filter_peel.h_sub_len P.tiles t_peel h_bdry.2.2.1 h_peel_mem]
+      omega
+    dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
+    rw [h_len_eq]
+    ext <;> (push_cast; omega)
+  rw [h_inventory_peel, h_patch_inventory_step] at h_parent_inventory
+  exact patch_inventory_inj (sumPatchInventory reduced_tiles) (patchCornerInventory reduced_tiles.length) h_parent_inventory
 
 /-- Standalone list lemma: filtering a list preserves element containment and provides
     existential indices in the original list for consecutive filtered elements. -/
@@ -3733,66 +3761,22 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             exact h_geom_delta_gap
         exact h_adjacent_delta
       · -- Clause 5: Step Direction Boundary Bounds Updates
-        have h_dir_propagate : ∀ (j : Fin B.steps.length) (k1 k2 : Nat) (h_k1 : k1 < P.tiles.length) (h_k2 : k2 < P.tiles.length),
-          (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
-          intro j k1 k2 h_k1 h_k2
-          have h_orientation_step : (P.tiles.get ⟨k1, h_k1⟩).orientation = (P.tiles.get ⟨k2, h_k2⟩).orientation := by
-            have h_patch_uniform := P.orientation_uniform_invariant ⟨k1, h_k1⟩ ⟨k2, h_k2⟩
-            exact h_patch_uniform
-          have h_orientation_trans : (P.tiles.get ⟨k2, h_k2⟩).orientation = (P.tiles.get ⟨0, h_p⟩).orientation := by
-            have h_patch_uniform_trans := P.orientation_uniform_invariant ⟨k2, h_k2⟩ ⟨0, h_p⟩
-            exact h_patch_uniform_trans
-          rw [h_orientation_step, h_orientation_trans]
-        have h_step_dir_map : ∀ (s : BoundaryStep) (hs : s ∈ steps'),
-          s.dir = (P.tiles.get ⟨0, h_p⟩).orientation := by
-          intro s hs
-          have h_step_parent_tile : ∃ (k : Nat) (hk : k < P.tiles.length), s.dir = (P.tiles.get ⟨k, hk⟩).orientation := by
-            exact P.boundary_step_origin_invariant steps' s hs
-          rcases h_step_parent_tile with ⟨k, hk, h_sdir⟩
-          have h_uniform_link := h_dir_propagate _i k 0 hk h_p
-          rw [h_sdir, h_uniform_link]
-        intro s hs
+        intro s _hs
         exact s.dir.isLt
-      · -- Update corner pool inventory invariant
-        have h_inventory_sum : sumPatchInventory reduced_tiles = patchCornerInventory reduced_tiles.length := by
-          have h_parent_inventory := h_bdry.2.2.2.2.2.1
-          have h_peel_mem : t_peel ∈ P.tiles := by
-            dsimp [t_peel]
-            have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
-            have h_find_mem_or_eq : ∀ (L : List PlacedTile) (def_t : PlacedTile), findTileAtStep L anchor_step.dir def_t ∈ L ∨ findTileAtStep L anchor_step.dir def_t = def_t := by
-              intro L def_t
-              induction L with
-              | nil => exact Or.inr rfl
-              | cons hd tl ih =>
-                  dsimp [findTileAtStep]
-                  split
-                  · exact Or.inl List.mem_cons_self
-                  · cases ih with
-                    | inl h => exact Or.inl (List.mem_cons_of_mem hd h)
-                    | inr h => exact Or.inr h
-            cases h_find_mem_or_eq P.tiles default_tile with
-            | inl h => exact h
-            | inr h => rw [h]; exact h_def_in
-          have h_inventory_peel : sumPatchInventory P.tiles = TileCornerInventory.add singleTileInventory (sumPatchInventory reduced_tiles) := by
-            exact sumPatchInventory_filter_peel P.tiles t_peel h_bdry.2.2.1 h_peel_mem
-          have h_patch_inventory_step : patchCornerInventory P.tiles.length = TileCornerInventory.add singleTileInventory (patchCornerInventory reduced_tiles.length) := by
-            have h_len_eq : P.tiles.length = reduced_tiles.length + 1 := by
-              have h_sub_len : reduced_tiles.length = P.tiles.length - 1 := by
-                rw [show reduced_tiles = P.tiles.filter (fun t => t ≠ t_peel) from rfl]
-                rw [sumPatchInventory_filter_peel.h_sub_len P.tiles t_peel h_bdry.2.2.1 h_peel_mem]
-              omega
-            dsimp [patchCornerInventory, TileCornerInventory.add, singleTileInventory]
-            rw [h_len_eq]
-            ext <;> (push_cast; omega)
-          rw [h_inventory_peel, h_patch_inventory_step] at h_parent_inventory
-          exact patch_inventory_inj (sumPatchInventory reduced_tiles) (patchCornerInventory reduced_tiles.length) h_parent_inventory
-        exact h_inventory_sum
-      · -- Update edge witness containment loop
+      · -- Clause 6: Update corner pool inventory invariant
+        have h_peel_mem : t_peel ∈ P.tiles := by
+          have h_def_in : default_tile ∈ P.tiles := List.get_mem P.tiles ⟨0, h_p⟩
+          cases findTileAtStep_mem_or_eq P.tiles anchor_step.dir default_tile with
+          | inl h => exact h
+          | inr h =>
+            change findTileAtStep P.tiles anchor_step.dir default_tile ∈ P.tiles
+            rw [h]; exact h_def_in
+        exact sumPatchInventory_reduced_patch P B.steps t_peel reduced_tiles h_bdry h_peel_mem rfl
+      · -- Clause 7: Update edge witness containment loop
         intro j
         by_cases hj : j.val = 0
         · exact peel_patch_general_spliced P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
         · exact peel_patch_general_remainder P B _i rule h_bdry h_match steps' h_steps_eq j hj t_peel reduced_tiles rfl
-
 
 
 /-- Phase 4: The Inductive Peel Boundary Reduction.
