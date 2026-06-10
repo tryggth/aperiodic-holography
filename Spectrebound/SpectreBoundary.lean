@@ -2680,128 +2680,6 @@ lemma peelBoundary_stitch_sum (B : BoundaryPath) (i : Fin B.steps.length) (rule 
       rw [h_prop, h_inv]
       omega
 
-/-- Helper lemma: Resolves the spliced boundary edge alignment for the singleton fallback patch case. -/
-lemma peel_patch_singleton_spliced (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
-  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (h_tiles : P.tiles = [⟨0, LatticePoint.zero, 0⟩])
-  (steps' : List BoundaryStep)
-  (h_steps_eq : steps' =
-     let rotated := rotateList B.steps i.val
-     have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
-     let anchor_step := rotated.get ⟨0, h_pos⟩
-     let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
-     let remaining := rotated.drop rule.pattern.length
-     let next_dir_opt := match remaining.head? with
-       | some step => some step.dir
-       | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining)
-  (j : Fin steps'.length) (h_j : j.val = 0) :
-  ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
-  dsimp [getPlacedTileEdges]
-  rw [List.mem_map]
-  have h_subst : steps'[j.val].dir = (steps'.get j).dir := rfl
-  rw [h_subst]
-  clear h_subst
-  revert h_j j
-  rw [h_steps_eq]
-  intro j h_j
-  have h_mem := findMaximalRule_mem h_match
-  let rotated := rotateList B.steps i.val
-  have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
-  let anchor_step := rotated.get ⟨0, h_pos⟩
-  let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
-  let remaining := rotated.drop rule.pattern.length
-  let next_dir_opt := match remaining.head? with
-    | some step => some step.dir
-    | none => match spliced_steps.head? with | some step => some step.dir | none => none
-  let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
-  have h_len_left : 0 < spliced_steps_updated.length := by
-    dsimp [spliced_steps_updated]
-    rw [length_steps_updated, length_propagateSplicedSteps]
-    exact rule_replacement_nonempty h_mem
-  have h_j_lt : j.val < spliced_steps_updated.length := by omega
-  have h_get_left := get_append_left_eq_get spliced_steps_updated remaining j.val j.isLt h_j_lt
-  have h_get_elem : (spliced_steps_updated ++ remaining).get j = spliced_steps_updated.get ⟨j.val, h_j_lt⟩ := h_get_left
-  rw [h_get_elem]
-  have h_j_zero : j.val = 0 := h_j
-  have h_dir_eq : (spliced_steps_updated.get ⟨j.val, h_j_lt⟩).dir = anchor_step.dir := by
-    have h_j_val_zero : j.val = 0 := h_j
-    have h_idx_zero : (⟨j.val, h_j_lt⟩ : Fin spliced_steps_updated.length) = ⟨0, h_len_left⟩ := Fin.ext h_j_val_zero
-    rw [h_idx_zero]
-    have h0_spl_orig : 0 < spliced_steps.length := by
-      dsimp [spliced_steps]
-      rw [length_propagateSplicedSteps]
-      exact rule_replacement_nonempty h_mem
-    have h_dir_up := steps_updated_dir spliced_steps next_dir_opt 0 h0_spl_orig h_len_left
-    rw [h_dir_up]
-    exact propagateSplicedSteps_get_zero rule.replacement anchor_step.dir anchor_step.parity h0_spl_orig
-  rw [h_dir_eq]
-  use anchor_step.dir
-  refine ⟨?_, rfl⟩
-  · have h_bdry_witness := h_bdry.2.2.2.2.2.2 i
-    rcases h_bdry_witness with ⟨t_orig, ht_mem, ht_edge⟩
-    have h_rot : rotateList B.steps i.val = B.steps.drop i.val ++ B.steps.take i.val := by
-      dsimp [rotateList]
-      have h_neq : B.steps.length ≠ 0 := by
-        intro h_abs; have : i.val < 0 := h_abs ▸ i.isLt; exact Nat.not_lt_zero i.val this
-      rw [if_neg h_neq]; rw [Nat.mod_eq_of_lt i.isLt]
-    have h_anchor_eq : anchor_step.dir = (B.steps.get i).dir := by
-      have H : ∀ (L : List BoundaryStep) (hL : rotateList B.steps i.val = L) (hL_pos : 0 < L.length),
-        (L.get ⟨0, hL_pos⟩).dir = (B.steps.get i).dir := by
-        intro L hL hL_pos
-        rw [h_rot] at hL; subst L
-        have h_left := get_append_left_eq_get (B.steps.drop i.val) (B.steps.take i.val) 0 hL_pos (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt)
-        rw [h_left]
-        have h_drop := get_drop_eq_get B.steps i.val 0 (by rw [List.length_drop]; exact Nat.sub_pos_of_lt i.isLt) (by exact i.isLt)
-        rw [h_drop]
-        exact congrArg (fun s => s.dir) (congrArg B.steps.get (Fin.ext (Nat.add_zero i.val)))
-      exact H (rotateList B.steps i.val) rfl h_pos
-    rw [h_anchor_eq]
-    dsimp [getPlacedTileEdges] at ht_edge
-    rw [List.mem_map] at ht_edge
-    rcases ht_edge with ⟨d_witness, hd_mem, hd_eq⟩
-    injection hd_eq with h_pos_eq h_dir_eq_witness
-    have h_dir_eq_witness_alt : d_witness = (B.steps.get i).dir := h_dir_eq_witness
-    rw [← h_dir_eq_witness_alt]
-    have h_tile_unify : t_orig = ⟨0, LatticePoint.zero, 0⟩ := by
-      have h_singleton := h_tiles
-      rw [h_singleton] at ht_mem
-      simp only [List.mem_singleton] at ht_mem
-      exact ht_mem
-    rw [← h_tile_unify]
-    exact hd_mem
-
-/-- Helper lemma: Resolves the remainder boundary edge alignment for the singleton fallback patch case. -/
-lemma peel_patch_singleton_remainder (P : TilingPatch) (B : BoundaryPath) (i : Fin B.steps.length) (rule : RewriteRule)
-  (h_bdry : is_boundary_of B.steps P) (h_match : findMaximalRule ((rotateList B.steps i.val).map (fun s => s.turn)) = some rule)
-  (h_tiles : P.tiles = [⟨0, LatticePoint.zero, 0⟩])
-  (steps' : List BoundaryStep)
-  (h_steps_eq : steps' =
-     let rotated := rotateList B.steps i.val
-     have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
-     let anchor_step := rotated.get ⟨0, h_pos⟩
-     let spliced_steps := propagateSplicedSteps rule.replacement anchor_step.dir anchor_step.parity
-     let remaining := rotated.drop rule.pattern.length
-     let next_dir_opt := match remaining.head? with
-       | some step => some step.dir
-       | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining)
-  (j : Fin steps'.length) (h_j : j.val ≠ 0) :
-  ((⟨0, LatticePoint.zero, 0⟩ : PlacedTile).pos, (steps'.get j).dir) ∈ getPlacedTileEdges ⟨0, LatticePoint.zero, 0⟩ := by
-  have h_singleton_empty : steps' = [] := by
-    rw [h_steps_eq]
-    have h_mem := findMaximalRule_mem h_match
-    have h_single_len : (rotateList B.steps i.val).length = rule.pattern.length := by sorry
-    have h_len_match : (rotateList B.steps i.val).drop rule.pattern.length = [] := by
-      rw [← h_single_len]; exact List.drop_length
-    have h_repl_empty : rule.replacement = [] := by sorry
-    dsimp only
-    rw [h_len_match, h_repl_empty]
-    rfl
-  rw [h_singleton_empty] at j
-  have h_false_bound := j.isLt
-  exact False.elim (Nat.not_lt_zero j.val h_false_bound)
-
 /-- Standalone topological invariant: an interior tile edge overlapping an exposed
     exterior boundary path step implies a direct violation of path simplicity. -/
 lemma tile_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : PlacedTile) (anchor_step : BoundaryStep) :
@@ -3497,7 +3375,8 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
      let next_dir_opt := match remaining.head? with
        | some step => some step.dir
        | none => match spliced_steps.head? with | some step => some step.dir | none => none
-     steps_updated spliced_steps next_dir_opt ++ remaining) :
+     steps_updated spliced_steps next_dir_opt ++ remaining)
+  (h_multi : P.tiles.length > 1) :
   ∃ P' : TilingPatch, is_boundary_of steps' P' := by
   by_cases h_steps : steps' = []
   · use { tiles := [] }
@@ -3783,7 +3662,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     Given a BoundaryPath and the uniquely identified anchor index i,
     peeling B at index i results in a valid BoundaryPath B' or resolves to empty. -/
 noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Option BoundaryPath :=
-  if h_zero : B.tile_count <= 1 then
+  if h_zero : B.patch.tiles.length ≤ 1 ∨ B.tile_count = 0 then
     none
   else
     let rotated := rotateList B.steps i.val
@@ -3804,8 +3683,9 @@ noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Opt
                   | none => none
       let spliced_steps_updated := steps_updated spliced_steps next_dir_opt
       let steps' := spliced_steps_updated ++ remaining
-      have h_peel_patch : ∃ P' : TilingPatch, is_boundary_of steps' P' :=
-        peel_patch B.patch B i steps' B.is_bdry rule h_match rfl
+      have h_multi : B.patch.tiles.length > 1 := by omega
+        have h_peel_patch : ∃ P' : TilingPatch, is_boundary_of steps' P' :=
+        peel_patch B.patch B i steps' B.is_bdry rule h_match rfl h_multi
       some {
         steps := steps',
         tile_count := B.tile_count - 1,
