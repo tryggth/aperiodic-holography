@@ -779,10 +779,36 @@ def alg_countInternal120 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
 def alg_countInternal240 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
   2 * (P.tiles.length : Int) - (countR60 steps : Int)
 
+/-- A topological placeholder asserting that the algebraic internal count perfectly matches the sum of structurally valid interior vertices. -/
+lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
+  ∃ (vs : List (List InteriorAngle)),
+    (∀ v ∈ vs, ValidVertexSum v) ∧
+    (alg_countInternal240 P steps = (vs.map (fun v => (v.count InteriorAngle.a240 : Int))).sum) ∧
+    (alg_countInternal120 P steps = (vs.map (fun v => (v.count InteriorAngle.a120 : Int))).sum) := by
+  sorry
+
+/-- Base parity case: A single valid vertex sum can never contain more 240° corners than 120° corners. -/
+lemma valid_vertex_240_le_120 (v : List InteriorAngle) (h : ValidVertexSum v) :
+  (v.count InteriorAngle.a240 : Int) ≤ (v.count InteriorAngle.a120 : Int) := by
+  cases h <;> decide
+
+/-- Inductive parity case: The sum of 240° corners in any list of valid vertices is ≤ the sum of 120° corners. -/
+lemma list_sum_240_le_120 (vs : List (List InteriorAngle)) (h : ∀ v ∈ vs, ValidVertexSum v) :
+  (vs.map (fun v => (v.count InteriorAngle.a240 : Int))).sum ≤ (vs.map (fun v => (v.count InteriorAngle.a120 : Int))).sum := by
+  induction vs with
+  | nil => simp
+  | cons hd tl ih =>
+    simp only [List.map_cons, List.sum_cons]
+    have h_hd := valid_vertex_240_le_120 hd (h hd List.mem_cons_self)
+    have h_tl := ih (fun v hv => h v (List.mem_cons_of_mem hd hv))
+    omega
+
 /-- Geometric Ledger: Every internal 240° corner must pair with at least one 120° corner. -/
 lemma patch_internal_240_le_120 (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
   alg_countInternal240 P steps ≤ alg_countInternal120 P steps := by
-  sorry
+  rcases patch_internal_geometry_witness P steps h_bdry with ⟨vs, h_valid, h_eq240, h_eq120⟩
+  have h_sum_le := list_sum_240_le_120 vs h_valid
+  omega
 
 /-- Inventory Unpacking: Total 120° corners equal Internal 120s plus Boundary L60s. -/
 lemma patch_inventory_120_conservation (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
