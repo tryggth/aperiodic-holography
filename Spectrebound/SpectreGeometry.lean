@@ -3,6 +3,14 @@ import Mathlib.Data.Int.Basic
 set_option maxRecDepth 2000000
 set_option maxHeartbeats 0
 
+/-!
+  SPECTREBOUND: GEOMETRY MODULE
+
+  This module defines the foundational discrete geometry of the Spectre aperiodic monotile.
+  Crucially, this formalization does NOT rely on a continuous 2D Euclidean coordinate physics engine.
+  Instead, it maps the continuous space into discrete 1D combinatorial arrays and Diophantine ledgers,
+  computing spatial boundaries using algebraic topological invariants (similar to an Anderson-Putnam complex).
+-/
 namespace Spectrebound
 
 /-- Exterior turning angles observed on a boundary walk -/
