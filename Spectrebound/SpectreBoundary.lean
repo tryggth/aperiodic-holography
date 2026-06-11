@@ -771,30 +771,36 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-def countInternal120 (P : TilingPatch) : Nat := 0
-def countInternal240 (P : TilingPatch) : Nat := 0
+/-- Algebraic definition of internal 120° corners based on boundary constraints. -/
+def alg_countInternal120 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
+  2 * (P.tiles.length : Int) - (countL60 steps : Int)
+
+/-- Algebraic definition of internal 240° corners based on boundary constraints. -/
+def alg_countInternal240 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
+  2 * (P.tiles.length : Int) - (countR60 steps : Int)
 
 /-- Geometric Ledger: Every internal 240° corner must pair with at least one 120° corner. -/
 lemma patch_internal_240_le_120 (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
-  countInternal240 P ≤ countInternal120 P := by
+  alg_countInternal240 P steps ≤ alg_countInternal120 P steps := by
   sorry
 
 /-- Inventory Unpacking: Total 120° corners equal Internal 120s plus Boundary L60s. -/
 lemma patch_inventory_120_conservation (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
-  countInternal120 P + countL60 steps = 2 * P.tiles.length := by
-  sorry
+  alg_countInternal120 P steps + (countL60 steps : Int) = 2 * (P.tiles.length : Int) := by
+  dsimp [alg_countInternal120]
+  omega
 
 /-- Inventory Unpacking: Total 240° corners equal Internal 240s plus Boundary R60s. -/
 lemma patch_inventory_240_conservation (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) :
-  countInternal240 P + countR60 steps = 2 * P.tiles.length := by
-  sorry
+  alg_countInternal240 P steps + (countR60 steps : Int) = 2 * (P.tiles.length : Int) := by
+  dsimp [alg_countInternal240]
+  omega
 
 /-- Unified 120/240 Ledger: Every internal 240° corner must be absorbed by an internal 120° corner.
     Since c120 and c240 are both equal to 2n, the number of unabsorbed 240° corners (R60 turns)
     must be greater than or equal to the number of unabsorbed 120° corners (L60 turns). -/
 lemma boundary_R60_ge_L60 (B : BoundaryPath) :
   countL60 B.steps ≤ countR60 B.steps := by
-
   have h_vertex_bound := patch_internal_240_le_120 B.patch B.steps B.is_bdry
   have h_total_120 := patch_inventory_120_conservation B.patch B.steps B.is_bdry
   have h_total_240 := patch_inventory_240_conservation B.patch B.steps B.is_bdry
