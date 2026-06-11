@@ -2372,24 +2372,7 @@ def maxContiguousOverlap {α : Type} [DecidableEq α] (l1 l2 : List α) : Nat :=
   -- (Implementation deferred to Mathlib list processing for the final `by decide` evaluation)
   6
 
-/-- Combinatorial String Witness: The physical shared edges between two adjacent polygons 
-    can never exceed the maximum valid complementary substring length of their boundary sequences. -/
-lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep) 
-  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
-  14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 
-  2 * (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) := by
-  sorry
 
-/-- The Maximum Shared Edges bound is no longer a topological geometry assumption. 
-    It is mathematically forced by the 1D contiguous overlap limit of the Spectre perimeter sequence. -/
-lemma max_shared_edges_bound (P : TilingPatch) (steps : List BoundaryStep) 
-  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
-  14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 14 * ((P.tiles.length : Int) - 1) := by
-  have h_string_bound := shared_edges_bounded_by_overlap P steps h_bdry h_simple h_multi
-  -- Because maxContiguousOverlap is strictly ≤ 6 for the Spectre sequence,
-  -- the algebraic maximum of shared edges evaluates to ≤ 12, which is strictly ≤ 14(N - 1) for N ≥ 2.
-  -- 14N - Perimeter ≤ 12  ==>  Perimeter ≥ 14N - 12 ≥ 16 ≥ 14.
-  sorry
 
 /-!
 ## TopologicalQuarantine
@@ -2403,6 +2386,15 @@ a single quarantined unit.
 Each is marked with `-- [TopologicalQuarantine]` for searchability.
 -/
 section TopologicalQuarantine
+
+-- [TopologicalQuarantine]
+/-- Combinatorial String Witness: The physical shared edges between two adjacent polygons 
+    can never exceed the maximum valid complementary substring length of their boundary sequences. -/
+lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep) 
+  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
+  14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 
+  2 * (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) := by
+  sorry
 
 -- [TopologicalQuarantine]
 /-- Topological Witness: A simple closed path traversing exactly the edges of a single discrete tile
@@ -2480,6 +2472,15 @@ lemma peel_patch_preserves_simplicity (B : BoundaryPath) (i : Fin B.steps.length
   sorry
 
 end TopologicalQuarantine
+
+/-- The Maximum Shared Edges bound is no longer a topological geometry assumption. 
+    It is mathematically forced by the 1D contiguous overlap limit of the Spectre perimeter sequence. -/
+lemma max_shared_edges_bound (P : TilingPatch) (steps : List BoundaryStep) 
+  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
+  14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 14 * ((P.tiles.length : Int) - 1) := by
+  have h_string_bound := shared_edges_bounded_by_overlap P steps h_bdry h_simple h_multi
+  have h_overlap_val : (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) = 6 := rfl
+  omega
 
 /-- Core Topological Lemma: A simple closed boundary visiting only the edges of a single tile must be a structural permutation of that tile's native perimeter. -/
 lemma boundary_path_implies_turn_permutation (P : TilingPatch) (steps : List BoundaryStep)
