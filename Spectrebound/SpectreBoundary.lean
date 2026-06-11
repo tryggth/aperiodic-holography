@@ -775,11 +775,26 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-/-- Algebraic definition of internal 120° corners based on boundary constraints. -/
+/-- 
+  Algebraic definition of internal 120° corners based on boundary constraints.
+  
+  MAGIC NUMBER JUSTIFICATION (The '2' Coefficient):
+  A single Spectre monotile possesses exactly two 120° interior corners and two 240° interior corners.
+  Because the global tiling patch inventory is strictly additive, a patch of N tiles contains 
+  exactly (2 * N) total 120° corners. The internal count is therefore the total algebraic 
+  inventory minus the unabsorbed corners that appear as L60 turns on the boundary.
+-/
 def alg_countInternal120 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
   2 * (P.tiles.length : Int) - (countL60 steps : Int)
 
-/-- Algebraic definition of internal 240° corners based on boundary constraints. -/
+/-- 
+  Algebraic definition of internal 240° corners based on boundary constraints.
+  
+  MAGIC NUMBER JUSTIFICATION (The '2' Coefficient):
+  Mirroring the 120° logic, a single Spectre monotile contributes exactly two 240° corners 
+  to the patch. The internal 240° count is the total theoretical inventory (2 * N) minus 
+  the unabsorbed corners that manifest as R60 turns on the boundary.
+-/
 def alg_countInternal240 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
   2 * (P.tiles.length : Int) - (countR60 steps : Int)
 
