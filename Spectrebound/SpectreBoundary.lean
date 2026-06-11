@@ -597,6 +597,7 @@ inductive ValidVertexSum : List InteriorAngle → Prop where
   | t_junction : ValidVertexSum [InteriorAngle.a90, InteriorAngle.a90, InteriorAngle.a180]
   | line_segment : ValidVertexSum [InteriorAngle.a180, InteriorAngle.a180]
   | corner_match : ValidVertexSum [InteriorAngle.a90, InteriorAngle.a270]
+  | corner_120_240_match : ValidVertexSum [InteriorAngle.a120, InteriorAngle.a240]
 
 /-- The maximum number of 90-degree corners that can be absorbed by the corner_match configuration
     is bounded by the number of 270-degree corners (which is n for a patch of n tiles). -/
@@ -770,13 +771,11 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-/-- Topological Conservation Law: The number of L90 turns on the boundary
-    plus the number of absorbed 90° interior corners must exactly equal
-    the total intrinsic 90° corners provided by the patch tiles. Furthermore,
-    the maximum number of absorbed 90° corners cannot exceed the internal 
-    absorption capacity (bounded by the available 270° corners). -/
-lemma patch_requires_absorption (B : BoundaryPath) :
-  ∃ absorbed_90 : Nat, countL90 B.steps + absorbed_90 = (sumPatchInventory B.patch.tiles).c90 ∧ absorbed_90 ≤ (sumPatchInventory B.patch.tiles).c270 := by
+/-- Unified 120/240 Ledger: Every internal 240° corner must be absorbed by an internal 120° corner.
+    Since c120 and c240 are both equal to 2n, the number of unabsorbed 240° corners (R60 turns)
+    must be greater than or equal to the number of unabsorbed 120° corners (L60 turns). -/
+lemma boundary_R60_ge_L60 (B : BoundaryPath) :
+  countL60 B.steps ≤ countR60 B.steps := by
   sorry
 
 /-- Core Topological Theorem: The boundary of any finite planar patch
@@ -819,24 +818,15 @@ theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
     have h_ne := B.non_empty
     contradiction
 
-  -- Phase 2: Route A (Absorption Deficit)
-  -- If there are no L90 corners on the boundary, all 5n 90-degree corners must be absorbed internally.
-  -- But n tiles can only absorb at most n 90-degree corners, forcing a contradiction.
+  -- Phase 2: Route C (Unified 120/240 Ledger)
+  -- The Diophantine turning equation requires: 3*L90 + 2*L60 - 3*R90 - 2*R60 = 12
+  -- Since internal 240-degree corners exclusively require 120-degree corners to absorb them,
+  -- and the total inventory of both is equal, the boundary must have R60 >= L60.
+  -- Substituting R60 >= L60 and L90 = 0 yields a strict algebraic contradiction.
   have h_contradiction : False := by
-    have h_absorp := patch_requires_absorption B
-    obtain ⟨absorbed_90, h_eq, h_le⟩ := h_absorp
-    rw [h_zero, Nat.zero_add] at h_eq
-    rw [h_ledger.left] at h_eq h_le
-    dsimp [patchCornerInventory] at h_eq h_le
-    have h_n : B.patch.tiles.length = 0 := by omega
-    have h_empty_list : B.patch.tiles = [] := by
-      cases h_t : B.patch.tiles
-      · rfl
-      · rw [h_t] at h_n
-        contradiction
-    have h_empty := B.is_bdry.1.mpr h_empty_list
-    have h_ne := B.non_empty
-    contradiction
+    have h_dio := diophantine_turning_equation B
+    have h_bound := boundary_R60_ge_L60 B
+    omega
   exact h_contradiction
 
 theorem corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) : False := by
