@@ -1,5 +1,6 @@
 import Mathlib.Data.List.Basic
 import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Permutation
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Int.Basic
 import Spectrebound.SpectreGeometry
@@ -2321,6 +2322,27 @@ lemma count_turn_eq_of_perimeter_perm (steps : List BoundaryStep)
   have h_nat := count_turn_eq_of_perimeter_perm_nat steps h_perm t target_count h_target
   omega
 
+/-- Topological Witness: A simple closed path traversing exactly the edges of a single discrete tile
+    must be a cyclic shift of the tile's native perimeter sequence. -/
+lemma singleton_boundary_is_cyclic_shift (P : TilingPatch) (steps : List BoundaryStep)
+  (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
+  (h_mem_witness : ∀ (j : Fin steps.length), (hd.pos, (steps.get j).dir) ∈ getPlacedTileEdges hd) :
+  ∃ k, steps.map (fun s => s.turn) = rotateList spectrePerimeterTurns k := by
+  sorry
+
+/-- Structural list lemma: A cyclic rotation of a list is always a structural permutation of the original list. -/
+lemma perm_rotateList {α : Type} (l : List α) (k : Nat) : List.Perm (rotateList l k) l := by
+  dsimp [rotateList]
+  split
+  · next h =>
+    have h_nil : l = [] := List.eq_nil_of_length_eq_zero h
+    rw [h_nil]
+  · next h =>
+    have h_perm : List.Perm (l.drop (k % l.length) ++ l.take (k % l.length)) (l.take (k % l.length) ++ l.drop (k % l.length)) := List.perm_append_comm
+    have h_eq : l.take (k % l.length) ++ l.drop (k % l.length) = l := List.take_append_drop _ _
+    rw [h_eq] at h_perm
+    exact h_perm
+
 /-- Core Topological Lemma: A simple closed boundary visiting only the edges of a single tile must be a structural permutation of that tile's native perimeter. -/
 lemma boundary_path_implies_turn_permutation (P : TilingPatch) (steps : List BoundaryStep)
   (hd : PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = [hd])
@@ -2328,7 +2350,10 @@ lemma boundary_path_implies_turn_permutation (P : TilingPatch) (steps : List Bou
   List.Perm (steps.map (fun s => s.turn)) spectrePerimeterTurns := by
   -- Topological bijection: A simple closed path traversing a single connected component's edges
   -- exactly matches its structural boundary sequence.
-  sorry
+
+  rcases singleton_boundary_is_cyclic_shift P steps hd h_bdry h_tiles h_mem_witness with ⟨k, hk⟩
+  rw [hk]
+  exact perm_rotateList spectrePerimeterTurns k
 
 /-- Helper lemma: Mapping global step inclusions down to the discrete turn category totals of an isolated tile. -/
 lemma singleton_boundary_count_of_mem_inventory (P : TilingPatch) (steps : List BoundaryStep)
