@@ -775,24 +775,24 @@ theorem l90_zero_diophantine_shift (B : BoundaryPath) (h : countL90 B.steps = 0)
   rw [hk] at hd
   omega
 
-/-- 
+/--
   Algebraic definition of internal 120° corners based on boundary constraints.
-  
+
   MAGIC NUMBER JUSTIFICATION (The '2' Coefficient):
   A single Spectre monotile possesses exactly two 120° interior corners and two 240° interior corners.
-  Because the global tiling patch inventory is strictly additive, a patch of N tiles contains 
-  exactly (2 * N) total 120° corners. The internal count is therefore the total algebraic 
+  Because the global tiling patch inventory is strictly additive, a patch of N tiles contains
+  exactly (2 * N) total 120° corners. The internal count is therefore the total algebraic
   inventory minus the unabsorbed corners that appear as L60 turns on the boundary.
 -/
 def alg_countInternal120 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
   2 * (P.tiles.length : Int) - (countL60 steps : Int)
 
-/-- 
+/--
   Algebraic definition of internal 240° corners based on boundary constraints.
-  
+
   MAGIC NUMBER JUSTIFICATION (The '2' Coefficient):
-  Mirroring the 120° logic, a single Spectre monotile contributes exactly two 240° corners 
-  to the patch. The internal 240° count is the total theoretical inventory (2 * N) minus 
+  Mirroring the 120° logic, a single Spectre monotile contributes exactly two 240° corners
+  to the patch. The internal 240° count is the total theoretical inventory (2 * N) minus
   the unabsorbed corners that manifest as R60 turns on the boundary.
 -/
 def alg_countInternal240 (P : TilingPatch) (steps : List BoundaryStep) : Int :=
@@ -1023,7 +1023,7 @@ lemma unique_tile_of_triplet (B : BoundaryPath) (i : Fin B.steps.length)
     uniquely identifies the exact tile occupant and its exact orientation. -/
 theorem forcing_neighborhood (B : BoundaryPath) (i : Fin B.steps.length)
   (h_anchor : (B.steps.get i).turn = ExteriorTurn.t_90) :
-  ∃ (T : TileId), ∃ (orientation : EdgeDirection), 
+  ∃ (T : TileId), ∃ (orientation : EdgeDirection),
     step_on_tile B i T ∧ orientation = (B.steps.get i).dir ∧
     ∀ (T' : TileId) (o' : EdgeDirection), step_on_tile B i T' ∧ o' = (B.steps.get i).dir → T' = T := by
   have h_ex : ∃! (res : TileId × EdgeDirection), step_on_tile B i res.1 ∧ res.2 = (B.steps.get i).dir := by
@@ -2266,8 +2266,8 @@ lemma perm_rotateList {α : Type} (l : List α) (k : Nat) : List.Perm (rotateLis
     rw [h_eq] at h_perm
     exact h_perm
 
-/-- Generates the reverse-complement of a boundary sequence. When two tiles share an edge, 
-    the sequence of exterior turns on Tile A must perfectly match the reverse-complement 
+/-- Generates the reverse-complement of a boundary sequence. When two tiles share an edge,
+    the sequence of exterior turns on Tile A must perfectly match the reverse-complement
     of the sequence on Tile B. -/
 def reverseComplement (l : List ExteriorTurn) : List ExteriorTurn :=
   l.reverse.map (fun t => match t with
@@ -2289,7 +2289,7 @@ def isSubstr {α : Type} [DecidableEq α] : List α → List α → Bool
   | _, [] => false
   | sub, l@(_::ts) => isPrefix sub l || isSubstr sub ts
 
-/-- Computes the length of the longest contiguous matching substring between two lists. 
+/-- Computes the length of the longest contiguous matching substring between two lists.
     It evaluates every possible length and offset computationally. -/
 def maxContiguousOverlap {α : Type} [DecidableEq α] (l1 l2 : List α) : Nat :=
   let substrings := (List.range (l1.length + 1)).flatMap fun start =>
@@ -2314,11 +2314,11 @@ Each is marked with `-- [TopologicalQuarantine]` for searchability.
 section TopologicalQuarantine
 
 -- [TopologicalQuarantine]
-/-- Combinatorial String Witness: The physical shared edges between two adjacent polygons 
+/-- Combinatorial String Witness: The physical shared edges between two adjacent polygons
     can never exceed the maximum valid complementary substring length of their boundary sequences. -/
-lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep) 
+lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep)
   (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
-  14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 
+  14 * (P.tiles.length : Int) - (steps.length : Int) ≤
   2 * (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) := by
   sorry
 
@@ -2397,10 +2397,10 @@ lemma peel_patch_preserves_simplicity (B : BoundaryPath) (i : Fin B.steps.length
   isSimple (spliced_steps_updated ++ remaining) := by
   sorry
 
-/-- A spatial geometric constraint. Proves that for a closed planar tiling, 
-    not only must the internal 240° count be ≤ the 120° count, but the surplus 120° 
-    corners must physically group into valid 360° vertices (e.g., three 120° corners). 
-    Thus, the difference must be perfectly divisible by 3. 
+/-- A spatial geometric constraint. Proves that for a closed planar tiling,
+    not only must the internal 240° count be ≤ the 120° count, but the surplus 120°
+    corners must physically group into valid 360° vertices (e.g., three 120° corners).
+    Thus, the difference must be perfectly divisible by 3.
     Because this enforces spatial vertex closing, it is deferred to the topology engine. -/
 lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) :
   ∃ (vs : List (List InteriorAngle)),
@@ -2409,10 +2409,10 @@ lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) :
     (y = ((vs.map (fun v => (v.count InteriorAngle.a120 : Int))).sum)) := by
   sorry
 
-/-- The Topological Vertex Bridge: Asserts that a structurally valid planar patch 
-    satisfies the Modulo-3 Diophantine constraint, matching the algebraic count to 
+/-- The Topological Vertex Bridge: Asserts that a structurally valid planar patch
+    satisfies the Modulo-3 Diophantine constraint, matching the algebraic count to
     the physical geometric vertex sums. -/
-lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) 
+lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P)
   (h_le : alg_countInternal240 P steps ≤ alg_countInternal120 P steps) :
   ∃ (vs : List (List InteriorAngle)),
     (∀ v ∈ vs, ValidVertexSum v) ∧
@@ -2503,8 +2503,8 @@ theorem corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) 
   omega
 
 /-- Proves that any closed boundary must contain at least one strictly convex L90 turn.
-    Instead of spatial convex hulls, this is proven via pure Diophantine contradiction. 
-    If L90 = 0, the R60 ≥ L60 ledger forces the maximum total turn sum to be ≤ 0, 
+    Instead of spatial convex hulls, this is proven via pure Diophantine contradiction.
+    If L90 = 0, the R60 ≥ L60 ledger forces the maximum total turn sum to be ≤ 0,
     contradicting the closed loop requirement of 360. -/
 lemma existence_of_convex_anchor (B : BoundaryPath) :
   ∃ step ∈ B.steps, step.turn = ExteriorTurn.t_90 := by
@@ -2535,11 +2535,11 @@ lemma existence_of_convex_anchor (B : BoundaryPath) :
           · rw [h_t] at hx; revert hx; intro ⟨_, hc⟩; revert hc; decide
           · rfl
         exact h_none ⟨hd, hx.1, h_eq⟩
-  
+
   -- Extract the ledger bound and the closed sum
   have h_ledger := boundary_R60_ge_L60 B.patch B.steps B.is_bdry
   have h_closed := B.closed
-  
+
   -- Unfold the sum definition (mapping turns to degrees)
   -- Because R60 >= L60, and L90 = 0, the sum of all degrees mathematically cannot exceed 0.
   -- omega will evaluate: 60*L60 - 60*R60 - 90*R90 <= 0 != 360
@@ -2551,9 +2551,9 @@ lemma existence_of_convex_anchor (B : BoundaryPath) :
   rw [h_count_zero] at h_closed
   omega
 
-/-- The Maximum Shared Edges bound is no longer a topological geometry assumption. 
+/-- The Maximum Shared Edges bound is no longer a topological geometry assumption.
     It is mathematically forced by the 1D contiguous overlap limit of the Spectre perimeter sequence. -/
-lemma max_shared_edges_bound (P : TilingPatch) (steps : List BoundaryStep) 
+lemma max_shared_edges_bound (P : TilingPatch) (steps : List BoundaryStep)
   (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
   14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 14 * ((P.tiles.length : Int) - 1) := by
   have h_string_bound := shared_edges_bounded_by_overlap P steps h_bdry h_simple h_multi
@@ -3675,7 +3675,10 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
     · intro j; rw [h_steps] at j; exact Fin.elim0 j
   · by_cases h_nt : P.tiles.drop 1 = []
     · -- True Singleton Fallback Integration Path (Unreachable Dead-Code Case)
-      sorry
+      -- This branch is mathematically impossible because h_multi asserts P.tiles.length > 1
+      have h_len_drop : (P.tiles.drop 1).length = 0 := congrArg List.length h_nt
+      rw [List.length_drop] at h_len_drop
+      omega
     · let rotated := rotateList B.steps _i.val
       have h_pos : 0 < rotated.length := by rw [length_rotateList]; have h_ge := B.length_ge_two; omega
       let anchor_step := rotated.get ⟨0, h_pos⟩
