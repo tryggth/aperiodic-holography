@@ -2412,7 +2412,7 @@ lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) :
 /-- The Topological Vertex Bridge: Asserts that a structurally valid planar patch
     satisfies the Modulo-3 Diophantine constraint, matching the algebraic count to
     the physical geometric vertex sums. -/
-lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P)
+lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep)
   (h_le : alg_countInternal240 P steps ≤ alg_countInternal120 P steps) :
   ∃ (vs : List (List InteriorAngle)),
     (∀ v ∈ vs, ValidVertexSum v) ∧
