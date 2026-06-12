@@ -1023,12 +1023,17 @@ lemma unique_tile_of_triplet (B : BoundaryPath) (i : Fin B.steps.length)
     uniquely identifies the exact tile occupant and its exact orientation. -/
 theorem forcing_neighborhood (B : BoundaryPath) (i : Fin B.steps.length)
   (h_anchor : (B.steps.get i).turn = ExteriorTurn.t_90) :
-  ∃ (T : TileId) (orientation : EdgeDirection), T = T ∧ orientation = orientation := by
-  have h_ex : ∃ (res : TileId × EdgeDirection), step_on_tile B i res.1 ∧ res.2 = (B.steps.get i).dir := by
-    apply ExistsUnique.exists
+  ∃ (T : TileId), ∃ (orientation : EdgeDirection), 
+    step_on_tile B i T ∧ orientation = (B.steps.get i).dir ∧
+    ∀ (T' : TileId) (o' : EdgeDirection), step_on_tile B i T' ∧ o' = (B.steps.get i).dir → T' = T := by
+  have h_ex : ∃! (res : TileId × EdgeDirection), step_on_tile B i res.1 ∧ res.2 = (B.steps.get i).dir := by
     apply unique_tile_of_triplet B i (getTurnTriplet B i).1 (getTurnTriplet B i).2.1 (getTurnTriplet B i).2.2 rfl h_anchor
-  obtain ⟨⟨T, orientation⟩, ⟨_h_step, _h_dir⟩⟩ := h_ex
+  obtain ⟨⟨T, orientation⟩, ⟨h_step, h_dir⟩, h_uniq⟩ := h_ex
   use T, orientation
+  refine ⟨h_step, h_dir, ?_⟩
+  intro T' o' ⟨h_step', h_dir'⟩
+  have h_eq : (T', o') = (T, orientation) := h_uniq (T', o') ⟨h_step', h_dir'⟩
+  exact congrArg Prod.fst h_eq
 
 /-- Inverse of an exterior turn (reflecting inside vs outside perspective) -/
 def ExteriorTurn.inverse : ExteriorTurn → ExteriorTurn
@@ -2497,15 +2502,54 @@ theorem corner_mass_contradiction (B : BoundaryPath) (h : countL90 B.steps = 0) 
     exact List.length_pos_iff_ne_nil.mpr (by intro hc; rw [hc] at h_filter; contradiction)
   omega
 
-/-- Phase 2: Lemma 1 - The Existence of the Convex Anchor.
-    Every valid BoundaryPath for a non-empty patch must contain at least one Left 90° turn. -/
-theorem existence_of_convex_anchor (B : BoundaryPath) :
+/-- Proves that any closed boundary must contain at least one strictly convex L90 turn.
+    Instead of spatial convex hulls, this is proven via pure Diophantine contradiction. 
+    If L90 = 0, the R60 ≥ L60 ledger forces the maximum total turn sum to be ≤ 0, 
+    contradicting the closed loop requirement of 360. -/
+lemma existence_of_convex_anchor (B : BoundaryPath) :
   ∃ step ∈ B.steps, step.turn = ExteriorTurn.t_90 := by
-  obtain ⟨i, hi⟩ := patch_boundary_has_convex_corner B
-  use B.steps.get i
-  refine ⟨?_, hi⟩
-  rw [List.mem_iff_get]
-  use i
+  by_contra h_none
+  -- Push the negation inside the list to assert count(t_90) = 0
+  have h_count_zero : (B.steps.filter (fun s => s.turn == ExteriorTurn.t_90)).length = 0 := by
+    match h_len : (B.steps.filter (fun s => s.turn == ExteriorTurn.t_90)).length with
+    | 0 => exact h_len
+    | n + 1 =>
+      exfalso
+      have h_pos : (B.steps.filter (fun s => s.turn == ExteriorTurn.t_90)).length > 0 := by
+        rw [h_len]
+        omega
+      match h_filter : B.steps.filter (fun s => s.turn == ExteriorTurn.t_90) with
+      | [] =>
+        rw [h_filter] at h_pos
+        contradiction
+      | hd :: tl =>
+        have hx : hd ∈ B.steps.filter (fun s => s.turn == ExteriorTurn.t_90) := by
+          rw [h_filter]
+          exact List.Mem.head _
+        rw [List.mem_filter] at hx
+        have h_eq : hd.turn = ExteriorTurn.t_90 := by
+          cases h_t : hd.turn
+          · rw [h_t] at hx; revert hx; intro ⟨_, hc⟩; revert hc; decide
+          · rw [h_t] at hx; revert hx; intro ⟨_, hc⟩; revert hc; decide
+          · rw [h_t] at hx; revert hx; intro ⟨_, hc⟩; revert hc; decide
+          · rw [h_t] at hx; revert hx; intro ⟨_, hc⟩; revert hc; decide
+          · rfl
+        exact h_none ⟨hd, hx.1, h_eq⟩
+  
+  -- Extract the ledger bound and the closed sum
+  have h_ledger := boundary_R60_ge_L60 B.patch B.steps B.is_bdry
+  have h_closed := B.closed
+  
+  -- Unfold the sum definition (mapping turns to degrees)
+  -- Because R60 >= L60, and L90 = 0, the sum of all degrees mathematically cannot exceed 0.
+  -- omega will evaluate: 60*L60 - 60*R60 - 90*R90 <= 0 != 360
+  have h_linear := turn_sum_eq_linear_combo B.steps
+  unfold isClosedCCW at h_closed
+  dsimp at h_closed
+  rw [h_linear] at h_closed
+  unfold countL90 countTurn at h_closed
+  rw [h_count_zero] at h_closed
+  omega
 
 /-- The Maximum Shared Edges bound is no longer a topological geometry assumption. 
     It is mathematically forced by the 1D contiguous overlap limit of the Spectre perimeter sequence. -/
