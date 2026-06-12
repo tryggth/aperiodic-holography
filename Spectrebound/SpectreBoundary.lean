@@ -485,7 +485,7 @@ lemma length_getTileEdgeDirections (t : PlacedTile) : (getTileEdgeDirections t).
   rfl
 
 /-- Generates the 14 directed edge configurations for a placed tile in absolute space.
-    For Milestone 20, we pair the position with the genuine calculated absolute edge directions. -/
+    Pairs the position with the calculated absolute edge directions. -/
 def getPlacedTileEdges (t : PlacedTile) : List (LatticePoint × EdgeDirection) :=
   (getTileEdgeDirections t).map (fun d => (t.pos, d))
 
@@ -559,7 +559,7 @@ lemma patch_inventory_inj (A B : TileCornerInventory)
   · omega
 
 /-- Structural Relation: Asserts that a 1D steps sequence forms the boundary of a patch P.
-    For Milestone 10, we replace the reflexive placeholder tautology with a genuine physical
+    A genuine physical
     ledger invariant asserting that the total accumulated corner mass equals the expected multi-tile corner pool footprint. -/
 def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (steps = [] ↔ P.tiles = []) ∧
@@ -903,7 +903,7 @@ lemma matchTripletToCorner_unique (triplet : ExteriorTurn × ExteriorTurn × Ext
   injection h2
 
 /-- Relation: A physical tile occupies the boundary step i.
-    For Milestone 21, we replace list-index modulo matching with a genuine spatial
+    A genuine spatial
     coordinate selector that identifies tile positions by local edge overlap. -/
 def step_on_tile (B : BoundaryPath) (i : Fin B.steps.length) (T : TileId) : Prop :=
   ∃ h : B.patch.tiles ≠ [],
@@ -1018,7 +1018,7 @@ lemma unique_tile_of_triplet (B : BoundaryPath) (i : Fin B.steps.length)
   rw [h_eq]
   rfl
 
-/-- Phase 3: Lemma 2 - The Forcing Neighborhood.
+/-- The Forcing Neighborhood.
     Given a Left 90° turn at index `i` on a BoundaryPath, a finite sub-sequence of turns
     uniquely identifies the exact tile occupant and its exact orientation. -/
 theorem forcing_neighborhood (B : BoundaryPath) (i : Fin B.steps.length)
@@ -2485,7 +2485,7 @@ lemma patch_internal_240_le_120 (P : TilingPatch) (steps : List BoundaryStep) (h
 
 /-- Core Topological Theorem: The boundary of any finite planar patch
     of Spectre tiles must contain at least one Left 90° convex corner.
-    This replaces the original geometric placeholder axiom, completing Path A. -/
+    Proves the existence of a convex boundary anchor. -/
 theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
   ∃ i : Fin B.steps.length, (B.steps.get i).turn = ExteriorTurn.t_90 := by
   by_contra h_none
@@ -2515,7 +2515,7 @@ theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
     rw [hj]
     exact hc
 
-  -- Invoke Milestone 10 Ledger Invariant to inspect the corner pool mass
+  -- Invoke Ledger Invariant to inspect the corner pool mass
   have h_ledger := B.is_bdry.2.2.2.2.2
   have h_tiles_ne : B.patch.tiles ≠ [] := by
     intro hc
@@ -2523,7 +2523,6 @@ theorem patch_boundary_has_convex_corner (B : BoundaryPath) :
     have h_ne := B.non_empty
     contradiction
 
-  -- Phase 2: Route C (Unified 120/240 Ledger)
   -- The Diophantine turning equation requires: 3*L90 + 2*L60 - 3*R90 - 2*R60 = 12
   -- Since internal 240-degree corners exclusively require 120-degree corners to absorb them,
   -- and the total inventory of both is equal, the boundary must have R60 >= L60.
@@ -3994,7 +3993,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
 
 
 
-/-- Phase 4: The Inductive Peel Boundary Reduction.
+/-- The Inductive Peel Boundary Reduction.
     Given a BoundaryPath and the uniquely identified anchor index i,
     peeling B at index i results in a valid BoundaryPath B' or resolves to empty. -/
 noncomputable def peelBoundary (B : BoundaryPath) (i : Fin B.steps.length) : Option BoundaryPath :=
