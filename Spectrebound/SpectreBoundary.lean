@@ -2366,11 +2366,26 @@ def reverseComplement (l : List ExteriorTurn) : List ExteriorTurn :=
     | .t_60 => .t_minus_60
     | .t_90 => .t_minus_90)
 
-/-- Computes the length of the longest contiguous matching substring between two lists. -/
+/-- Computes whether the first list is a contiguous prefix of the second. -/
+def isPrefix {α : Type} [DecidableEq α] : List α → List α → Bool
+  | [], _ => true
+  | _, [] => false
+  | x::xs, y::ys => x == y && isPrefix xs ys
+
+/-- Computes whether the first list is a contiguous substring of the second. -/
+def isSubstr {α : Type} [DecidableEq α] : List α → List α → Bool
+  | [], _ => true
+  | _, [] => false
+  | sub, l@(_::ts) => isPrefix sub l || isSubstr sub ts
+
+/-- Computes the length of the longest contiguous matching substring between two lists. 
+    It evaluates every possible length and offset computationally. -/
 def maxContiguousOverlap {α : Type} [DecidableEq α] (l1 l2 : List α) : Nat :=
-  -- A computable discrete bound on sequence zipping.
-  -- (Implementation deferred to Mathlib list processing for the final `by decide` evaluation)
-  6
+  let substrings := (List.range (l1.length + 1)).flatMap fun start =>
+    (List.range (l1.length + 1 - start)).map fun len =>
+      let sub := (l1.drop start).take len
+      if isSubstr sub l2 then len else 0
+  substrings.foldl max 0
 
 
 
@@ -2479,7 +2494,7 @@ lemma max_shared_edges_bound (P : TilingPatch) (steps : List BoundaryStep)
   (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
   14 * (P.tiles.length : Int) - (steps.length : Int) ≤ 14 * ((P.tiles.length : Int) - 1) := by
   have h_string_bound := shared_edges_bounded_by_overlap P steps h_bdry h_simple h_multi
-  have h_overlap_val : (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) = 6 := rfl
+  have h_overlap_val : (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) = 2 := by decide
   omega
 
 /-- Core Topological Lemma: A simple closed boundary visiting only the edges of a single tile must be a structural permutation of that tile's native perimeter. -/
