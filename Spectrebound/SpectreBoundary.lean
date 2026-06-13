@@ -602,6 +602,7 @@ inductive ValidVertexSum : List InteriorAngle → Prop where
   | line_segment : ValidVertexSum [InteriorAngle.a180, InteriorAngle.a180]
   | corner_match : ValidVertexSum [InteriorAngle.a90, InteriorAngle.a270]
   | corner_120_240_match : ValidVertexSum [InteriorAngle.a120, InteriorAngle.a240]
+  | triple_120 : ValidVertexSum [InteriorAngle.a120, InteriorAngle.a120, InteriorAngle.a120]
 
 /-- The maximum number of 90-degree corners that can be absorbed by the corner_match configuration
     is bounded by the number of 270-degree corners (which is n for a patch of n tiles). -/
@@ -2358,11 +2359,7 @@ lemma simply_connected_conserves_parity (P : TilingPatch) (steps : List Boundary
 -- [TopologicalQuarantine]
 /-- Combinatorial String Witness: The physical shared edges between two adjacent polygons
     can never exceed the maximum valid complementary substring length of their boundary sequences. -/
-lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep)
-  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
-  14 * (P.tiles.length : Int) - (steps.length : Int) ≤
-  2 * (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) := by
-  sorry
+
 
 -- [TopologicalQuarantine]
 /-- Topological Witness: A simple closed path traversing exactly the edges of a single discrete tile
@@ -2416,7 +2413,7 @@ lemma remainder_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : P
 /-- Topological Geometry Witness: In a valid simply connected tiling patch, the coordinate distance
     between tiles separated by a single index in the enumeration remains strictly bounded by
     the orthogonal lattice adjacency gap magnitude of [-2, -1, 0, 1, 2]. -/
-lemma peel_patch_gap_bounds (P : TilingPatch) (k2 : Nat) (h_k1 : k2 + 2 < P.tiles.length)
+lemma peel_patch_gap_bounds (P : TilingPatch) (steps : List BoundaryStep) (h_bdry : is_boundary_of steps P) (k2 : Nat) (h_k1 : k2 + 2 < P.tiles.length)
   (h_k2_succ : k2 + 1 < P.tiles.length) (h_k2 : k2 < P.tiles.length) :
   ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
   ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
@@ -2674,7 +2671,7 @@ lemma singleton_patch_minimum_perimeter (P : TilingPatch) (steps : List Boundary
 
 
 
-/-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14. -/
+/-- Helper lemma: A multi-tile patch consisting of at least two tiles requires an external perimeter of length at least 14 using direct structural list induction on P.tiles. -/
 lemma multitile_patch_minimum_perimeter (P : TilingPatch) (steps : List BoundaryStep)
   (hd1 hd2 : PlacedTile) (tl : List PlacedTile) (h_bdry : is_boundary_of steps P) (h_tiles : P.tiles = hd1 :: hd2 :: tl) (h_simple : isSimple steps) :
   14 ≤ steps.length := by
