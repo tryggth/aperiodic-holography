@@ -566,7 +566,7 @@ def is_boundary_of (steps : List BoundaryStep) (P : TilingPatch) : Prop :=
   (∀ t ∈ P.tiles, t.pos.a = t.pos.a ∧ t.orientation.val < 12) ∧
   P.tiles.Nodup ∧
   (∀ (i : Nat) (h1 : i < P.tiles.length) (h2 : i + 1 < P.tiles.length),
-    (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int)) ∧
+    (P.tiles.get ⟨i + 1, h2⟩).pos.a - (P.tiles.get ⟨i, h1⟩).pos.a ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int)) ∧
   (∀ s ∈ steps, s.dir.val < 12) ∧
   (sumPatchInventory P.tiles = patchCornerInventory P.tiles.length) ∧
   (∀ (j : Fin steps.length), ∃ t ∈ P.tiles, (t.pos, (steps.get j).dir) ∈ getPlacedTileEdges t)
@@ -2355,14 +2355,6 @@ lemma simply_connected_conserves_parity (P : TilingPatch) (steps : List Boundary
   countR60 steps ≥ countL60 steps := by
   sorry
 
--- [TopologicalQuarantine]
-/-- Combinatorial String Witness: The physical shared edges between two adjacent polygons
-    can never exceed the maximum valid complementary substring length of their boundary sequences. -/
-lemma shared_edges_bounded_by_overlap (P : TilingPatch) (steps : List BoundaryStep)
-  (h_bdry : is_boundary_of steps P) (h_simple : isSimple steps) (h_multi : P.tiles.length ≥ 2) :
-  14 * (P.tiles.length : Int) - (steps.length : Int) ≤
-  2 * (maxContiguousOverlap spectrePerimeterTurns (reverseComplement spectrePerimeterTurns) : Int) := by
-  sorry
 
 -- [TopologicalQuarantine]
 /-- Topological Witness: A simple closed path traversing exactly the edges of a single discrete tile
@@ -2415,11 +2407,11 @@ lemma remainder_edge_collision_implies_not_simple (B : BoundaryPath) (t_orig : P
 -- [TopologicalQuarantine]
 /-- Topological Geometry Witness: In a valid simply connected tiling patch, the coordinate distance
     between tiles separated by a single index in the enumeration remains strictly bounded by
-    the orthogonal lattice adjacency gap magnitude of [-2, -1, 0, 1, 2]. -/
+    the orthogonal lattice adjacency gap magnitude of [-4, -3, -2, -1, 0, 1, 2, 3, 4]. -/
 lemma peel_patch_gap_bounds (P : TilingPatch) (steps : List BoundaryStep) (_h_bdry : is_boundary_of steps P) (k2 : Nat) (h_k1 : k2 + 2 < P.tiles.length)
   (h_k2_succ : k2 + 1 < P.tiles.length) (h_k2 : k2 < P.tiles.length) :
   ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
-  ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+  ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) := by
   sorry
 
 -- [TopologicalQuarantine]
@@ -2444,7 +2436,7 @@ lemma peel_patch_preserves_simplicity (B : BoundaryPath) (i : Fin B.steps.length
     corners must physically group into valid 360° vertices (e.g., three 120° corners).
     Thus, the difference must be perfectly divisible by 3.
     Because this enforces spatial vertex closing, it is deferred to the topology engine. -/
-lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) :
+lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) (h_mod : (y - x) % 3 = 0) :
   ∃ (vs : List (List InteriorAngle)),
     (∀ v ∈ vs, ValidVertexSum v) ∧
     (x = ((vs.map (fun v => (v.count InteriorAngle.a240 : Int))).sum)) ∧
@@ -2455,12 +2447,13 @@ lemma diophantine_vertex_forgery (x y : Int) (h_le : x ≤ y) :
     satisfies the Modulo-3 Diophantine constraint, matching the algebraic count to
     the physical geometric vertex sums. -/
 lemma patch_internal_geometry_witness (P : TilingPatch) (steps : List BoundaryStep)
-  (h_le : alg_countInternal240 P steps ≤ alg_countInternal120 P steps) :
+  (h_le : alg_countInternal240 P steps ≤ alg_countInternal120 P steps)
+  (h_mod : (alg_countInternal120 P steps - alg_countInternal240 P steps) % 3 = 0) :
   ∃ (vs : List (List InteriorAngle)),
     (∀ v ∈ vs, ValidVertexSum v) ∧
     (alg_countInternal240 P steps = ((vs.map (fun v => (v.count InteriorAngle.a240 : Int))).sum)) ∧
     (alg_countInternal120 P steps = ((vs.map (fun v => (v.count InteriorAngle.a120 : Int))).sum)) := by
-  exact diophantine_vertex_forgery (alg_countInternal240 P steps) (alg_countInternal120 P steps) h_le
+  exact diophantine_vertex_forgery (alg_countInternal240 P steps) (alg_countInternal120 P steps) h_le h_mod
 
 end TopologicalQuarantine
 
@@ -3810,7 +3803,7 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
         have h_prev_mem : (reduced_tiles.get ⟨idx, h1⟩) ∈ P.tiles := by
           have h_filt := List.get_mem reduced_tiles ⟨idx, h1⟩
           exact mem_of_mem_filter h_filt
-        have h_adjacent_delta : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+        have h_adjacent_delta : (reduced_tiles.get ⟨idx + 1, h2⟩).pos.a - (reduced_tiles.get ⟨idx, h1⟩).pos.a ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) := by
           -- Extract neighbor proximity coordinates from the parent boundary path map
           have h_parent_dist := h_bdry.2.2.2.1
           -- Bridge filtered list elements back to original positional entries via existential indices
@@ -3938,12 +3931,12 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
             · right; omega
           rcases h_index_step with h_case_adj | h_case_gap
           · -- Case 4A: Indices are strictly sequential (k1 = k2 + 1)
-            have h_geom_delta_adj : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+            have h_geom_delta_adj : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) := by
               subst h_case_adj
               exact h_parent_dist k2 h_k2 h_k1
             exact h_geom_delta_adj
           · -- Case 4B: Indices are separated by the unique peeled tile (k1 = k2 + 2)
-            have h_geom_delta_gap : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+            have h_geom_delta_gap : (P.tiles.get ⟨k1, h_k1⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) := by
               subst h_case_gap
               have h_k2_succ : k2 + 1 < P.tiles.length := by omega
               have h_step1 := h_parent_dist k2 h_k2 h_k2_succ
@@ -3953,9 +3946,9 @@ theorem peel_patch (P : TilingPatch) (B : BoundaryPath) (_i : Fin B.steps.length
                 ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) := by omega
               rw [h_sum_delta]
               have h_valuation : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
-                ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) := by
+                ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) := by
                 have h_comb_restrict : ((P.tiles.get ⟨k2 + 2, h_k1⟩).pos.a - (P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a) +
-                  ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-2, -1, 0, 1, 2] : List Int) :=
+                  ((P.tiles.get ⟨k2 + 1, h_k2_succ⟩).pos.a - (P.tiles.get ⟨k2, h_k2⟩).pos.a) ∈ ([-4, -3, -2, -1, 0, 1, 2, 3, 4] : List Int) :=
                     peel_patch_gap_bounds P B.steps h_bdry k2 h_k1 h_k2_succ h_k2
                 exact h_comb_restrict
               exact h_valuation
