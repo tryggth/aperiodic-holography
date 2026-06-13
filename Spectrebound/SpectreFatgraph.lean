@@ -59,9 +59,9 @@ def isPlanarGluing (ledger : GluingLedger) (darts : List DartId) : Bool :=
   let final_stack := darts.foldl (processDart ledger) []
   final_stack.isEmpty
 
-/-- A Discrete Planar Disk is a combinatorial map verified by the Context-Free Grammar. 
+/-- A Discrete Combinatorial Surface is a combinatorial map verified by the Context-Free Grammar. 
     By definition, it has Genus 0 and is simply connected. -/
-structure PlanarDisk where
+structure CombinatorialSurface where
   darts : List DartId
   ledger : GluingLedger
   -- The structural proof that the layout contains no voids or crossing geometry
