@@ -1,0 +1,81 @@
+name: Spectrebound Automated Publishing Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual trigger from the GitHub UI
+  schedule:
+    - cron: '0 0 * * *' # Nightly run to fetch new Google Drive logs
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # --- PART 1: THE LEAN 4 DOC-GEN PIPELINE ---
+      - name: Install Elan
+        run: |
+          curl -O --location https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh
+          chmod u+x elan-init.sh
+          ./elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Build Lean 4 HTML Documentation
+        run: |
+          lake update doc-gen4
+          lake build Spectrebound:docs
+          # doc-gen4 outputs to build/doc. We will move this to our final static deployment folder.
+
+      # --- PART 2: THE HEADLESS CMS (GOOGLE DRIVE -> BLOG) ---
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install Google API Client
+        run: pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib markdown
+        
+      - name: Fetch Gemini Conversations from Google Drive
+        env:
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          # Placeholder for the Python extraction script. 
+          # It authenticates via the SA JSON, pulls the docs from the Folder ID,
+          # and writes them as Markdown into a 'blog_src' directory.
+          mkdir -p blog_src
+          echo "Executing Drive fetch..." 
+          # python scripts/fetch_drive_logs.py
+
+      # --- PART 3: STATIC SITE GENERATION & UNIFICATION ---
+      - name: Prepare Final Pages Artifact
+        run: |
+          mkdir -p _site
+          # Move Lean documentation into a /proof subdirectory
+          mv build/doc _site/proof
+          
+          # Move the compiled blog into the root (Assuming Hugo/Jekyll or raw HTML step here)
+          # mv public/* _site/
+          
+          # Fallback index if SSG isn't configured yet
+          echo "<h1>Spectrebound Publishing Pipeline Active</h1><p><a href='/proof/'>View Verified Proof Docs</a></p>" > _site/index.html
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
