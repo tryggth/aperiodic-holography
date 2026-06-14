@@ -20,7 +20,7 @@ variable {p : Nat} [Fact p.Prime] {n_bulk n_bdry : Nat}
   structurally forbids multiple interior Parallel Sections for a fixed AsymptoticBoundary.
 -/
 theorem holographic_dirichlet_uniqueness 
-  (surface : CombinatorialSurface)
+  (_surface : CombinatorialSurface)
   (forcing : DirichletForcing p n_bulk n_bdry)
   (s_bdry : Fin n_bdry → StateField p)
   (s_bulk1 s_bulk2 : Fin n_bulk → StateField p)
