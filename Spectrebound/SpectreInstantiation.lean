@@ -13,7 +13,8 @@ import Spectrebound.SpectreHolography
 -/
 namespace Spectrebound
 
-variable {p : Nat} [Fact p.Prime] {n_bulk n_bdry : Nat}
+-- We constrain the finite field to be an odd prime (p > 2) to ensure -1 ≠ 1.
+variable {p : Nat} [Fact p.Prime] [Fact (2 < p)] {n_bulk n_bdry : Nat}
 
 instance : Inhabited ExteriorTurn where
   default := .t_0
@@ -40,11 +41,7 @@ def check_all_14_edges : Bool :=
     let phase := turnToPhaseInt turn
     phase != 1)
 
-/-- 
-  THE COMPUTATIONAL PROOF
-  The compiler checks the exact 14-edge datum of the Spectre monotile and 
-  natively verifies that the physical geometry structurally forbids the identity.
--/
+/-- THE COMPUTATIONAL PROOF -/
 lemma spectre_edges_never_identity : check_all_14_edges = true := by decide
 
 /-- Extracts the geometric phase of a specific dart and casts it to the finite field. -/
@@ -63,14 +60,31 @@ def assembleSpectreConnection (surface : CombinatorialSurface) (n : Nat) :
 
 /-- 
   TIER 3: The Local Chiral Barrier (The Geometric Truth)
+  Proves that because the `spectrePerimeterTurns` are strictly asymmetric, 
+  the geometric phase across any single glued edge structurally forbids local cancellation.
 -/
 lemma spectre_local_barrier (surface : CombinatorialSurface) (d : DartId) :
   getGeometricPhase surface d ≠ (1 : StateField p) := by
-  -- The core physical geometry is computationally verified by the 14-edge array!
-  have h_geom := spectre_edges_never_identity
-  -- The final step (proving that the Int phase does not become 1 when cast 
-  -- to ZMod p for p > 2) is left as a trivial algebraic formality.
-  sorry
+  unfold getGeometricPhase
+  have h_int : turnToPhaseInt (getDartTurn d) = -1 := by
+    cases getDartTurn d <;> rfl
+  rw [h_int]
+  intro h_eq
+  push_cast at h_eq
+  
+  -- If -1 = 1 modulo p, then 2 = 0 modulo p.
+  have h_two : (2 : StateField p) = 0 := by
+    calc (2 : StateField p) = 1 + 1 := by ring
+    _ = 1 + (-1 : StateField p) := congrArg (fun x : StateField p => 1 + x) h_eq.symm
+    _ = 0 := by ring
+    
+  -- Extract the definitive modulo integer values to feed to the omega tactic
+  have h_dvd : p ∣ 2 := (CharP.cast_eq_zero_iff (StateField p) p 2).mp h_two
+  
+  -- Apply the Odd Prime constraint (p > 2) to trigger the mathematical contradiction
+  have h_lt : 2 < p := Fact.out
+  have h_le : p ≤ 2 := Nat.le_of_dvd (by decide) h_dvd
+  omega
 
 /-- TIER 2: Global Trivial Kernel (The Topological Induction) -/
 lemma spectre_trivial_kernel 
