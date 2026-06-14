@@ -19,7 +19,7 @@ jobs:
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: docs/aperiodic_holography.tex
+          root_file: aperiodic_holography.tex
           working_directory: docs
 
       - name: Commit PDF back to repository
