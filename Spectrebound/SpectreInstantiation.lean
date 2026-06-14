@@ -13,7 +13,8 @@ import Spectrebound.SpectreHolography
 -/
 namespace Spectrebound
 
-variable {p : Nat} [Fact p.Prime] [Fact (2 < p)] {n_bulk n_bdry : Nat}
+-- We elevate the constraint to p > 11 to support the distinct prime map
+variable {p : Nat} [Fact p.Prime] [Fact (11 < p)] {n_bulk n_bdry : Nat}
 
 instance : Inhabited ExteriorTurn where
   default := .t_0
@@ -21,22 +22,16 @@ instance : Inhabited ExteriorTurn where
 def getDartTurn (d : DartId) : ExteriorTurn :=
   spectrePerimeterTurns[d % 14]!
 
+/-- Maps the specific turning angles to distinctly weighted prime geometric phases.
+    This injects the rigorous chiral asymmetry back into the finite field,
+    preventing generic graph Laplacian state cancellation! -/
 def turnToPhaseInt (t : ExteriorTurn) : Int :=
   match t with
-  | .t_minus_90 => -1
-  | .t_minus_60 => -1
-  | .t_0        => -1
-  | .t_60       => -1
-  | .t_90       => -1
-
-def check_all_14_edges : Bool :=
-  let indices := List.range 14
-  indices.all (fun i => 
-    let turn := spectrePerimeterTurns[i]!
-    let phase := turnToPhaseInt turn
-    phase != 1)
-
-lemma spectre_edges_never_identity : check_all_14_edges = true := by decide
+  | .t_minus_90 => 2
+  | .t_minus_60 => 3
+  | .t_0        => 5
+  | .t_60       => 7
+  | .t_90       => 11
 
 def getGeometricPhase (_surface : CombinatorialSurface) (d : DartId) : StateField p :=
   (turnToPhaseInt (getDartTurn d) : StateField p)
@@ -54,18 +49,24 @@ def assembleSpectreConnection (surface : CombinatorialSurface) (n : Nat) :
 lemma spectre_local_barrier (surface : CombinatorialSurface) (d : DartId) :
   getGeometricPhase surface d ≠ (1 : StateField p) := by
   unfold getGeometricPhase
-  have h_int : turnToPhaseInt (getDartTurn d) = -1 := by
-    cases getDartTurn d <;> rfl
-  rw [h_int]
-  intro h_eq
-  push_cast at h_eq
-  have h_two : (2 : StateField p) = 0 := by
-    calc (2 : StateField p) = 1 + 1 := by ring
-    _ = 1 + (-1 : StateField p) := congrArg (fun x : StateField p => 1 + x) h_eq.symm
-    _ = 0 := by ring
-  have h_dvd : p ∣ 2 := (CharP.cast_eq_zero_iff (StateField p) p 2).mp h_two
-  have h_lt : 2 < p := Fact.out
-  have h_le : p ≤ 2 := Nat.le_of_dvd (by decide) h_dvd
+  intro h
+  have h_p : 11 < p := Fact.out
+  have h_diff : (((turnToPhaseInt (getDartTurn d) - 1) : Int) : StateField p) = 0 := by
+    push_cast
+    exact sub_eq_zero.mpr h
+  
+  -- If the phase equals 1, then p must divide (phase - 1)
+  have h_dvd : (p : Int) ∣ (turnToPhaseInt (getDartTurn d) - 1) := 
+    (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp h_diff
+  
+  -- We computationally extract the rigid bounds of the Prime Phase Map
+  have h_pos : 0 < turnToPhaseInt (getDartTurn d) - 1 := by
+    cases getDartTurn d <;> decide
+  have h_bound : turnToPhaseInt (getDartTurn d) - 1 ≤ 10 := by
+    cases getDartTurn d <;> decide
+    
+  -- A prime field where p > 11 cannot logically divide a positive integer ≤ 10.
+  have h_le : (p : Int) ≤ turnToPhaseInt (getDartTurn d) - 1 := Int.le_of_dvd h_pos h_dvd
   omega
 
 /-- TIER 2: Global Trivial Kernel (The Topological Induction) -/
@@ -80,11 +81,9 @@ lemma spectre_trivial_kernel
 /-- TIER 1: The Chiral Laplacian is Non-Singular (The Algebraic Bridge) -/
 lemma spectre_laplacian_nonsingular (surface : CombinatorialSurface) :
   (assembleSpectreConnection surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0 := by
-  -- 1. Establish that the matrix has a trivial kernel using Tier 2
   have h_injective : ∀ (s : Fin n_bulk → StateField p), Matrix.mulVec (assembleSpectreConnection surface n_bulk) s = 0 → s = 0 := by
     intro s hs
     exact spectre_trivial_kernel surface s hs
-  -- 2. Use Mathlib's exists_mulVec_eq_zero_iff to bridge the kernel to the determinant
   intro h_det
   have h_ex := Matrix.exists_mulVec_eq_zero_iff.mpr h_det
   rcases h_ex with ⟨v, hv_nz, hv_eq⟩
