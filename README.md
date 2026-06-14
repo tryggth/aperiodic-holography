@@ -14,3 +14,7 @@ This repository bypasses traditional 2D Euclidean coordinate tracking and unprov
 
 ## Acknowledgements
 We extend our deepest gratitude to the formal peer review process for their rigorous audit of the initial architecture. Their critique of the previous 2D coordinate bounds catalyzed the shift to this algebraic fiber-bundle framework, ensuring the logic remains strictly consistent with published graph-theoretic literature.
+
+## Academic Publication
+The mathematical formalization and theoretical framework of this repository is detailed in our publication-ready manuscript. Every update to the LaTeX source automatically compiles via GitHub Actions.
+* 📄 **[Read the Aperiodic Holography Proof (PDF)](docs/aperiodic_holography.pdf)**
