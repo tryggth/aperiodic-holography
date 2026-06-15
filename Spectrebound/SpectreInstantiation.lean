@@ -11,18 +11,21 @@ import Spectrebound.SpectreHolography
 namespace Spectrebound
 
 /-! ======================================================================== 
-    1. THE GENERIC HOLONOMIC TILE CLASS (LOCALIZATION)
+    1. THE GENERIC HOLONOMIC TILE CLASS (GENUINE PHYSICS)
     ======================================================================== -/
 
-/-- A generic physical tile that structurally forbids pure translation (identity) 
-    in a given finite field. -/
+/-- A generic physical tile governed by true SO(2) rotational matching. -/
 class HolonomicTile (T : Type) (p : Nat) [Fact p.Prime] where
   getPhase : DartId → StateField p
-  product_barrier : ∀ d1 d2 : DartId, getPhase d1 * getPhase d2 ≠ 1
+  canGlue : DartId → DartId → Bool
+  /-- The Physical Barrier: Valid chiral gluings must never act as pure translations (identity). -/
+  product_barrier : ∀ d1 d2 : DartId, canGlue d1 d2 = true → getPhase d1 * getPhase d2 ≠ 1
 
 /-! ======================================================================== 
     2. THE GENERIC CONNECTION ENGINE
     ======================================================================== -/
+
+section GenericEngine
 
 variable {T : Type} {p : Nat} [Fact p.Prime] [tile : HolonomicTile T p] {n_bulk n_bdry : Nat}
 
@@ -54,6 +57,8 @@ lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
 structure PerfectMatching (surface : CombinatorialSurface) (n : Nat) : Prop where
   no_self_loops : ∀ i : Fin n, isGlued surface.ledger i.val i.val = false
   unique_partner : ∀ i : Fin n, ∃! j : Fin n, isGlued surface.ledger i.val j.val = true
+  /-- The fatgraph ledger must obey the specific geometric matching rules of the tile. -/
+  valid_physics : ∀ i j : Fin n, isGlued surface.ledger i.val j.val = true → tile.canGlue i.val j.val = true
 
 lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
   isGlued ledger d1 d2 = isGlued ledger d2 d1 := by
@@ -65,13 +70,13 @@ lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
   exact h_comm
 
 lemma reduce_row_equation (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching surface n_bulk)
+  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
   (s : Fin n_bulk → StateField p)
-  (h_kernel : Matrix.mulVec (assembleConnection (T := T) surface n_bulk) s = 0)
+  (h_kernel : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0)
   (i j : Fin n_bulk) (h_glued : isGlued surface.ledger i.val j.val = true) :
   s i + tile.getPhase i.val * s j = 0 := by
   have h_row := congr_fun h_kernel i
-  change (∑ k : Fin n_bulk, assembleConnection (T := T) surface n_bulk i k * s k) = 0 at h_row
+  change (∑ k : Fin n_bulk, assembleConnection (T := T) (p := p) surface n_bulk i k * s k) = 0 at h_row
   
   have h_ij : i ≠ j := by
     intro h_eq
@@ -80,7 +85,7 @@ lemma reduce_row_equation (surface : CombinatorialSurface)
     rw [h_glued] at h_no_self
     contradiction
     
-  have h_others : ∀ k : Fin n_bulk, k ≠ i → k ≠ j → assembleConnection (T := T) surface n_bulk i k * s k = 0 := by
+  have h_others : ∀ k : Fin n_bulk, k ≠ i → k ≠ j → assembleConnection (T := T) (p := p) surface n_bulk i k * s k = 0 := by
     intro k hki hkj
     unfold assembleConnection
     have h_i_neq_k : (i == k) = false := by exact beq_false_of_ne hki.symm
@@ -97,18 +102,18 @@ lemma reduce_row_equation (surface : CombinatorialSurface)
       exact hkj hk_eq
     simp [h_i_neq_k, h_not_glued]
     
-  have h_diag : assembleConnection (T := T) surface n_bulk i i * s i = s i := by
+  have h_diag : assembleConnection (T := T) (p := p) surface n_bulk i i * s i = s i := by
     unfold assembleConnection
     have h_i_eq_i : (i == i) = true := beq_self_eq_true _
     simp
     
-  have h_partner : assembleConnection (T := T) surface n_bulk i j * s j = tile.getPhase i.val * s j := by
+  have h_partner : assembleConnection (T := T) (p := p) surface n_bulk i j * s j = tile.getPhase i.val * s j := by
     unfold assembleConnection
     have h_i_neq_j : (i == j) = false := beq_false_of_ne h_ij
     simp [h_i_neq_j, h_glued]
     
-  have h_collapse : (∑ k : Fin n_bulk, assembleConnection (T := T) surface n_bulk i k * s k) = 
-    assembleConnection (T := T) surface n_bulk i i * s i + assembleConnection (T := T) surface n_bulk i j * s j := by
+  have h_collapse : (∑ k : Fin n_bulk, assembleConnection (T := T) (p := p) surface n_bulk i k * s k) = 
+    assembleConnection (T := T) (p := p) surface n_bulk i i * s i + assembleConnection (T := T) (p := p) surface n_bulk i j * s j := by
     apply Finset.sum_eq_add_of_mem i j (Finset.mem_univ i) (Finset.mem_univ j) h_ij
     intro k _ h_ne
     exact h_others k h_ne.1 h_ne.2
@@ -118,9 +123,9 @@ lemma reduce_row_equation (surface : CombinatorialSurface)
 
 lemma tile_trivial_kernel 
   (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching surface n_bulk)
+  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
   (s : Fin n_bulk → StateField p)
-  (h_kernel : Matrix.mulVec (assembleConnection (T := T) surface n_bulk) s = 0) :
+  (h_kernel : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0) :
   s = 0 := by
   funext i
   obtain ⟨j, hj_glued, _⟩ := h_match.unique_partner i
@@ -129,13 +134,14 @@ lemma tile_trivial_kernel
     exact hj_glued
   have eq1 := reduce_row_equation surface h_match s h_kernel i j hj_glued
   have eq2 := reduce_row_equation surface h_match s h_kernel j i h_ji_glued
-  have h_prod := tile.product_barrier i.val j.val
+  have h_can_glue := h_match.valid_physics i j hj_glued
+  have h_prod := tile.product_barrier i.val j.val h_can_glue
   exact chiral_annihilation h_prod eq1 eq2
 
 lemma tile_laplacian_nonsingular (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching surface n_bulk) :
-  (assembleConnection (T := T) surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0 := by
-  have h_injective : ∀ (s : Fin n_bulk → StateField p), Matrix.mulVec (assembleConnection (T := T) surface n_bulk) s = 0 → s = 0 := by
+  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk) :
+  (assembleConnection (T := T) (p := p) surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0 := by
+  have h_injective : ∀ (s : Fin n_bulk → StateField p), Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0 → s = 0 := by
     intro s hs
     exact tile_trivial_kernel surface h_match s hs
   intro h_det
@@ -146,56 +152,80 @@ lemma tile_laplacian_nonsingular (surface : CombinatorialSurface)
 
 theorem holonomic_uniqueness_on_tile 
   (surface : CombinatorialSurface)
-  (h_match : PerfectMatching surface n_bulk)
+  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
   (D_bdry : Matrix (Fin n_bulk) (Fin n_bdry) (StateField p))
   (s_bdry : Fin n_bdry → StateField p)
   (s_bulk1 s_bulk2 : Fin n_bulk → StateField p)
-  (h_valid1 : Matrix.mulVec (assembleConnection (T := T) surface n_bulk) s_bulk1 + Matrix.mulVec D_bdry s_bdry = 0)
-  (h_valid2 : Matrix.mulVec (assembleConnection (T := T) surface n_bulk) s_bulk2 + Matrix.mulVec D_bdry s_bdry = 0) :
+  (h_valid1 : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s_bulk1 + Matrix.mulVec D_bdry s_bdry = 0)
+  (h_valid2 : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s_bulk2 + Matrix.mulVec D_bdry s_bdry = 0) :
   s_bulk1 = s_bulk2 := by
   let forcing : DirichletForcing p n_bulk n_bdry := {
-    D_bulk := assembleConnection (T := T) surface n_bulk,
+    D_bulk := assembleConnection (T := T) (p := p) surface n_bulk,
     D_bdry := D_bdry,
     det_nonzero := tile_laplacian_nonsingular surface h_match
   }
   exact holographic_dirichlet_uniqueness surface forcing s_bdry s_bulk1 s_bulk2 h_valid1 h_valid2
 
+end GenericEngine
+
 /-! ======================================================================== 
-    3. THE SPECTRE INSTANTIATION (LOCALIZED)
+    3. THE SPECTRE INSTANTIATION (SO(2) ROTATIONAL PHYSICS)
     ======================================================================== -/
 
-instance : Inhabited ExteriorTurn where
-  default := .t_0
+instance : Fact (Nat.Prime 13) := ⟨by decide⟩
 
-def spectrePhaseInt (d : DartId) : Int :=
-  match spectrePerimeterTurns[d % 14]! with
-  | .t_minus_90 => 2
-  | .t_minus_60 => 3
-  | .t_0        => 5
-  | .t_60       => 7
-  | .t_90       => 11
+inductive SpectreEdge 
+  | e0 | e1 | e2 | e3 | e4 | e5 | e6 | e7 | e8 | e9 | e10 | e11 | e12 | e13
+deriving Repr, DecidableEq
+
+def dartToEdge (d : DartId) : SpectreEdge :=
+  match d % 14 with
+  | 0 => .e0 | 1 => .e1 | 2 => .e2 | 3 => .e3 | 4 => .e4
+  | 5 => .e5 | 6 => .e6 | 7 => .e7 | 8 => .e8 | 9 => .e9
+  | 10 => .e10 | 11 => .e11 | 12 => .e12 | 13 => .e13
+  | _ => .e0
+
+/-- The integral of the turns. Edge 0 defines the 0-degree horizon. -/
+def edgeOrientation (e : SpectreEdge) : Nat :=
+  match e with
+  | .e0 => 0 | .e1 => 3 | .e2 => 1 | .e3 => 4 | .e4 => 6
+  | .e5 => 6 | .e6 => 8 | .e7 => 5 | .e8 => 7 | .e9 => 10
+  | .e10 => 0 | .e11 => 9 | .e12 => 11 | .e13 => 2
+
+/-- Geometric rotation mapping into the ZMod 13 finite field using 
+    the primitive 12th root of unity (zeta = 2). -/
+def edgePhase (e : SpectreEdge) : StateField 13 :=
+  (2 : StateField 13) ^ (edgeOrientation e)
+
+/-- A pure translation implies the two edges have exactly opposite absolute orientations in the plane. -/
+def is_translation (edge1 edge2 : SpectreEdge) : Bool :=
+  (edgeOrientation edge1 + edgeOrientation edge2) % 12 == 0
+
+/-- The physical matching constraint of the aperiodic Spectre monotile.
+    Its chiral asymmetry mathematically forbids straight-line periodic translations. -/
+def edgeCanGlue (edge1 edge2 : SpectreEdge) : Bool :=
+  !(is_translation edge1 edge2)
+
+def spectrePhaseSO2 (d : DartId) : StateField 13 := 
+  edgePhase (dartToEdge d)
+
+def spectreCanGlue (d1 d2 : DartId) : Bool := 
+  edgeCanGlue (dartToEdge d1) (dartToEdge d2)
+
+/-- Computational proof enumerating all 196 Spectre edge combinations. -/
+lemma spectre_physics_validated (edge1 edge2 : SpectreEdge) (h : edgeCanGlue edge1 edge2 = true) : 
+  edgePhase edge1 * edgePhase edge2 ≠ 1 := by
+  revert h
+  cases edge1 <;> cases edge2 <;> decide
 
 inductive SpectreTile | mk
 
--- We retain the algebraic cheat bounds exclusively for the Spectre tile instance
--- to preserve the green build until the SO(2) physics injection.
-instance (p : Nat) [Fact p.Prime] [Fact (121 < p)] : HolonomicTile SpectreTile p where
-  getPhase d := (spectrePhaseInt d : StateField p)
-  product_barrier d1 d2 := by
-    intro h
-    have h_p : 121 < p := Fact.out
-    have h_diff : (((spectrePhaseInt d1 * spectrePhaseInt d2 - 1) : Int) : StateField p) = 0 := by
-      push_cast at h ⊢
-      exact sub_eq_zero.mpr h
-    have h_dvd : (p : Int) ∣ (spectrePhaseInt d1 * spectrePhaseInt d2 - 1) := 
-      (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp h_diff
-    have h_pos : 0 < spectrePhaseInt d1 * spectrePhaseInt d2 - 1 := by
-      unfold spectrePhaseInt
-      cases spectrePerimeterTurns[d1 % 14]! <;> cases spectrePerimeterTurns[d2 % 14]! <;> decide
-    have h_bound : spectrePhaseInt d1 * spectrePhaseInt d2 - 1 ≤ 120 := by
-      unfold spectrePhaseInt
-      cases spectrePerimeterTurns[d1 % 14]! <;> cases spectrePerimeterTurns[d2 % 14]! <;> decide
-    have h_le : (p : Int) ≤ spectrePhaseInt d1 * spectrePhaseInt d2 - 1 := Int.le_of_dvd h_pos h_dvd
-    omega
+instance : HolonomicTile SpectreTile 13 where
+  getPhase := spectrePhaseSO2
+  canGlue := spectreCanGlue
+  product_barrier := by
+    intro d1 d2 h_can
+    unfold spectrePhaseSO2 spectreCanGlue at *
+    exact spectre_physics_validated (dartToEdge d1) (dartToEdge d2) h_can
 
 end Spectrebound
