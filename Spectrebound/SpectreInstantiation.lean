@@ -110,8 +110,12 @@ structure PerfectMatching (surface : CombinatorialSurface) (n : Nat) : Prop wher
 
 lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
   isGlued ledger d1 d2 = isGlued ledger d2 d1 := by
-  -- Proven via list symmetry matching in the GluingLedger definition
-  sorry
+  unfold isGlued
+  congr 1
+  funext p
+  have h_comm : ((p.1 == d1 && p.2 == d2) || (p.1 == d2 && p.2 == d1)) = ((p.1 == d2 && p.2 == d1) || (p.1 == d1 && p.2 == d2)) := by 
+    cases (p.1 == d1 && p.2 == d2) <;> cases (p.1 == d2 && p.2 == d1) <;> rfl
+  exact h_comm
 
 /-- TIER 2.8: The Topological Sum Reduction
     By enforcing PerfectMatching, the global Matrix.mulVec row operation physically 
@@ -122,8 +126,51 @@ lemma reduce_row_equation (surface : CombinatorialSurface)
   (h_kernel : Matrix.mulVec (assembleSpectreConnection surface n_bulk) s = 0)
   (i j : Fin n_bulk) (h_glued : isGlued surface.ledger i.val j.val = true) :
   s i + getGeometricPhase surface i.val * s j = 0 := by
-  -- Requires Finset.sum_eq_add_of_mem extraction over the unique_partner hypothesis
-  sorry
+  have h_row := congr_fun h_kernel i
+  change (∑ k : Fin n_bulk, assembleSpectreConnection surface n_bulk i k * s k) = 0 at h_row
+  
+  have h_ij : i ≠ j := by
+    intro h_eq
+    have h_no_self := h_match.no_self_loops i
+    rw [← h_eq] at h_glued
+    rw [h_glued] at h_no_self
+    contradiction
+    
+  have h_others : ∀ k : Fin n_bulk, k ≠ i → k ≠ j → assembleSpectreConnection surface n_bulk i k * s k = 0 := by
+    intro k hki hkj
+    unfold assembleSpectreConnection
+    have h_i_neq_k : (i == k) = false := by exact beq_false_of_ne hki.symm
+    have h_not_glued : isGlued surface.ledger i.val k.val = false := by
+      obtain ⟨uniq_j, h_uniq_glued, h_uniq_only⟩ := h_match.unique_partner i
+      have hj_eq : uniq_j = j := (h_uniq_only j h_glued).symm
+      by_contra hc
+      have hc_true : isGlued surface.ledger i.val k.val = true := by
+        cases h_val : isGlued surface.ledger i.val k.val
+        · contradiction
+        · rfl
+      have hk_eq : k = uniq_j := h_uniq_only k hc_true
+      rw [hj_eq] at hk_eq
+      exact hkj hk_eq
+    simp [h_i_neq_k, h_not_glued]
+    
+  have h_diag : assembleSpectreConnection surface n_bulk i i * s i = s i := by
+    unfold assembleSpectreConnection
+    have h_i_eq_i : (i == i) = true := beq_self_eq_true _
+    simp
+    
+  have h_partner : assembleSpectreConnection surface n_bulk i j * s j = getGeometricPhase surface i.val * s j := by
+    unfold assembleSpectreConnection
+    have h_i_neq_j : (i == j) = false := beq_false_of_ne h_ij
+    simp [h_i_neq_j, h_glued]
+    
+  have h_collapse : (∑ k : Fin n_bulk, assembleSpectreConnection surface n_bulk i k * s k) = 
+    assembleSpectreConnection surface n_bulk i i * s i + assembleSpectreConnection surface n_bulk i j * s j := by
+    apply Finset.sum_eq_add_of_mem i j (Finset.mem_univ i) (Finset.mem_univ j) h_ij
+    intro k _ h_ne
+    exact h_others k h_ne.1 h_ne.2
+    
+  rw [h_collapse, h_diag, h_partner] at h_row
+  exact h_row
 
 /-- TIER 2: Global Trivial Kernel (The Topological Induction) -/
 lemma spectre_trivial_kernel 
