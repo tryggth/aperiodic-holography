@@ -6,3 +6,4 @@ import Spectrebound.SpectreSheaf
 import Spectrebound.SpectreHolography
 import Spectrebound.SpectreInstantiation
 import Spectrebound.HexagonCounterexample
+import Spectrebound.SpectreCapstone
