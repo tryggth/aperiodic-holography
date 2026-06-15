@@ -78,6 +78,7 @@ lemma prime_weight_product_neq_one (t1 t2 : ExteriorTurn) :
   have h_le : (p : Int) ≤ turnToPhaseInt t1 * turnToPhaseInt t2 - 1 := Int.le_of_dvd h_pos h_dvd
   omega
 
+omit [Fact (121 < p)] in
 /-- TIER 2.7: The Algebraic Annihilation -/
 lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
   (h_prod : w_i * w_j ≠ 1)
@@ -117,6 +118,7 @@ lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
     cases (p.1 == d1 && p.2 == d2) <;> cases (p.1 == d2 && p.2 == d1) <;> rfl
   exact h_comm
 
+omit [Fact (121 < p)] in
 /-- TIER 2.8: The Topological Sum Reduction
     By enforcing PerfectMatching, the global Matrix.mulVec row operation physically 
     collapses from an N-dimensional sum into exactly two non-zero algebraic terms. -/
