@@ -6,5 +6,6 @@ import Spectrebound.SpectreSheaf
 import Spectrebound.SpectreHolography
 import Spectrebound.SpectreInstantiation
 import Spectrebound.SpectreCalderon
+import Spectrebound.SpectreGraphRecovery
 import Spectrebound.HexagonCounterexample
 import Spectrebound.SpectreCapstone
