@@ -13,9 +13,6 @@ import Spectrebound.SpectreHolography
 -/
 namespace Spectrebound
 
--- We elevate the constraint to p > 121. 
--- The maximum product of two prime geometric phases is 11 * 11 = 121.
--- This structurally forces the local 2x2 edge determinants to be non-zero!
 variable {p : Nat} [Fact p.Prime] [Fact (121 < p)] {n_bulk n_bdry : Nat}
 
 instance : Inhabited ExteriorTurn where
@@ -49,7 +46,6 @@ lemma spectre_local_barrier (surface : CombinatorialSurface) (d : DartId) :
   getGeometricPhase surface d ≠ (1 : StateField p) := by
   unfold getGeometricPhase
   intro h
-  -- Because p > 121, we know p > 11.
   have h_p : 11 < p := by 
     have h_fact : 121 < p := Fact.out
     omega
@@ -65,9 +61,7 @@ lemma spectre_local_barrier (surface : CombinatorialSurface) (d : DartId) :
   have h_le : (p : Int) ≤ turnToPhaseInt (getDartTurn d) - 1 := Int.le_of_dvd h_pos h_dvd
   omega
 
-/-- TIER 2.5: The Prime Product Barrier (The 2x2 Determinant Truth)
-    Proves that the algebraic substitution of any two glued edges (1 - w_i * w_j) 
-    can never collapse to zero. -/
+/-- TIER 2.5: The Prime Product Barrier (The 2x2 Determinant Truth) -/
 lemma prime_weight_product_neq_one (t1 t2 : ExteriorTurn) :
   (((turnToPhaseInt t1 * turnToPhaseInt t2) : Int) : StateField p) ≠ 1 := by
   intro h
@@ -75,20 +69,45 @@ lemma prime_weight_product_neq_one (t1 t2 : ExteriorTurn) :
   have h_diff : (((turnToPhaseInt t1 * turnToPhaseInt t2 - 1) : Int) : StateField p) = 0 := by
     push_cast at h ⊢
     exact sub_eq_zero.mpr h
-  
-  -- If w_i * w_j = 1 modulo p, then p must divide the difference
   have h_dvd : (p : Int) ∣ (turnToPhaseInt t1 * turnToPhaseInt t2 - 1) := 
     (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp h_diff
-    
-  -- Computationally verify that all 25 possible turn combinations are bounded between 4 and 121
   have h_pos : 0 < turnToPhaseInt t1 * turnToPhaseInt t2 - 1 := by
     cases t1 <;> cases t2 <;> decide
   have h_bound : turnToPhaseInt t1 * turnToPhaseInt t2 - 1 ≤ 120 := by
     cases t1 <;> cases t2 <;> decide
-    
-  -- A prime strictly greater than 121 cannot divide a positive integer ≤ 120!
   have h_le : (p : Int) ≤ turnToPhaseInt t1 * turnToPhaseInt t2 - 1 := Int.le_of_dvd h_pos h_dvd
   omega
+
+/-- TIER 2.7: The Algebraic Annihilation 
+    Given any two coupled states, if their geometric phases do not multiply to the identity,
+    they cannot sustain a non-zero superposition. They strictly annihilate to zero. -/
+lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
+  (h_prod : w_i * w_j ≠ 1)
+  (eq1 : s_i + w_i * s_j = 0)
+  (eq2 : s_j + w_j * s_i = 0) :
+  s_i = 0 := by
+  have h_sub : (1 - w_i * w_j) * s_i = 0 := by
+    calc (1 - w_i * w_j) * s_i = s_i - w_i * w_j * s_i := by ring
+    _ = s_i + w_i * (- (w_j * s_i)) := by ring
+    _ = s_i + w_i * (s_j - (s_j + w_j * s_i)) := by ring
+    _ = s_i + w_i * (s_j - 0) := by rw [eq2]
+    _ = s_i + w_i * s_j := by ring
+    _ = 0 := eq1
+  cases mul_eq_zero.mp h_sub with
+  | inl h1 =>
+    have h_contra : w_i * w_j = 1 := (sub_eq_zero.mp h1).symm
+    exact False.elim (h_prod h_contra)
+  | inr hs => exact hs
+
+/-- TIER 2.8: The Topological Sum Reduction
+    In a valid Combinatorial Surface, the Holonomic Connection matrix row computationally
+    collapses to exactly two non-zero terms: the diagonal state and the glued partner. -/
+lemma reduce_row_equation (surface : CombinatorialSurface) (s : Fin n_bulk → StateField p)
+  (h_kernel : Matrix.mulVec (assembleSpectreConnection surface n_bulk) s = 0)
+  (i j : Fin n_bulk) (h_glued : isGlued surface.ledger i.val j.val) :
+  s i + getGeometricPhase surface i.val * s j = 0 := by
+  -- This requires Finset.sum extraction over the GluingLedger pairing constraints.
+  sorry
 
 /-- TIER 2: Global Trivial Kernel (The Topological Induction) -/
 lemma spectre_trivial_kernel 
@@ -96,9 +115,12 @@ lemma spectre_trivial_kernel
   (s : Fin n_bulk → StateField p)
   (h_kernel : Matrix.mulVec (assembleSpectreConnection surface n_bulk) s = 0) :
   s = 0 := by
-  -- The core mathematics of this proof are entirely resolved by `prime_weight_product_neq_one`.
-  -- The only remaining task is the standard Lean list manipulation to map 
-  -- the global `Matrix.mulVec` equations down to the localized dart pairs.
+  funext i
+  -- To fully close this, we invoke the existence of the glued partner `j`
+  -- from the CombinatorialSurface fatgraph properties.
+  -- Then we apply the pure mathematical constraint:
+  -- exact chiral_annihilation (prime_weight_product_neq_one ...) 
+  --       (reduce_row_equation ... i j) (reduce_row_equation ... j i)
   sorry
 
 /-- TIER 1: The Chiral Laplacian is Non-Singular (The Algebraic Bridge) -/
