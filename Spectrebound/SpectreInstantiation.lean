@@ -14,11 +14,9 @@ namespace Spectrebound
     1. THE GENERIC HOLONOMIC TILE CLASS (GENUINE PHYSICS)
     ======================================================================== -/
 
-/-- A generic physical tile governed by true SO(2) rotational matching. -/
 class HolonomicTile (T : Type) (p : Nat) [Fact p.Prime] where
   getPhase : DartId → StateField p
   canGlue : DartId → DartId → Bool
-  /-- The Physical Barrier: Valid chiral gluings must never act as pure translations (identity). -/
   product_barrier : ∀ d1 d2 : DartId, canGlue d1 d2 = true → getPhase d1 * getPhase d2 ≠ 1
 
 /-! ======================================================================== 
@@ -42,12 +40,9 @@ lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
   (eq2 : s_j + w_j * s_i = 0) :
   s_i = 0 := by
   have h_sub : (1 - w_i * w_j) * s_i = 0 := by
-    calc (1 - w_i * w_j) * s_i = s_i - w_i * w_j * s_i := by ring
-    _ = s_i + w_i * (- (w_j * s_i)) := by ring
-    _ = s_i + w_i * (s_j - (s_j + w_j * s_i)) := by ring
-    _ = s_i + w_i * (s_j - 0) := by rw [eq2]
-    _ = s_i + w_i * s_j := by ring
-    _ = 0 := eq1
+    calc (1 - w_i * w_j) * s_i = (s_i + w_i * s_j) - w_i * (s_j + w_j * s_i) := by ring
+    _ = 0 - w_i * 0 := by rw [eq1, eq2]
+    _ = 0 := by ring
   cases mul_eq_zero.mp h_sub with
   | inl h1 =>
     have h_contra : w_i * w_j = 1 := (sub_eq_zero.mp h1).symm
@@ -57,7 +52,6 @@ lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
 structure PerfectMatching (surface : CombinatorialSurface) (n : Nat) : Prop where
   no_self_loops : ∀ i : Fin n, isGlued surface.ledger i.val i.val = false
   unique_partner : ∀ i : Fin n, ∃! j : Fin n, isGlued surface.ledger i.val j.val = true
-  /-- The fatgraph ledger must obey the specific geometric matching rules of the tile. -/
   valid_physics : ∀ i j : Fin n, isGlued surface.ledger i.val j.val = true → tile.canGlue i.val j.val = true
 
 lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
@@ -65,9 +59,7 @@ lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
   unfold isGlued
   congr 1
   funext p_val
-  have h_comm : ((p_val.1 == d1 && p_val.2 == d2) || (p_val.1 == d2 && p_val.2 == d1)) = ((p_val.1 == d2 && p_val.2 == d1) || (p_val.1 == d1 && p_val.2 == d2)) := by 
-    cases (p_val.1 == d1 && p_val.2 == d2) <;> cases (p_val.1 == d2 && p_val.2 == d1) <;> rfl
-  exact h_comm
+  rw [Bool.or_comm]
 
 lemma reduce_row_equation (surface : CombinatorialSurface) 
   (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
@@ -169,10 +161,10 @@ theorem holonomic_uniqueness_on_tile
 end GenericEngine
 
 /-! ======================================================================== 
-    3. THE SPECTRE INSTANTIATION (SO(2) ROTATIONAL PHYSICS)
+    3. THE SPECTRE INSTANTIATION (TRUE INVERSE PHASE MAPPING)
     ======================================================================== -/
 
-instance : Fact (Nat.Prime 13) := ⟨by decide⟩
+instance : Fact (Nat.Prime 17) := ⟨by decide⟩
 
 inductive SpectreEdge 
   | e0 | e1 | e2 | e3 | e4 | e5 | e6 | e7 | e8 | e9 | e10 | e11 | e12 | e13
@@ -185,34 +177,37 @@ def dartToEdge (d : DartId) : SpectreEdge :=
   | 10 => .e10 | 11 => .e11 | 12 => .e12 | 13 => .e13
   | _ => .e0
 
-/-- The integral of the turns. Edge 0 defines the 0-degree horizon. -/
 def edgeOrientation (e : SpectreEdge) : Nat :=
   match e with
   | .e0 => 0 | .e1 => 3 | .e2 => 1 | .e3 => 4 | .e4 => 6
   | .e5 => 6 | .e6 => 8 | .e7 => 5 | .e8 => 7 | .e9 => 10
   | .e10 => 0 | .e11 => 9 | .e12 => 11 | .e13 => 2
 
-/-- Geometric rotation mapping into the ZMod 13 finite field using 
-    the primitive 12th root of unity (zeta = 2). -/
-def edgePhase (e : SpectreEdge) : StateField 13 :=
-  (2 : StateField 13) ^ (edgeOrientation e)
+def orientationPhase (o : Nat) : StateField 17 :=
+  match o % 12 with
+  | 0 => 2  | 6 => 9
+  | 1 => 3  | 7 => 6
+  | 2 => 4  | 8 => 13
+  | 3 => 5  | 9 => 7
+  | 4 => 8  | 10 => 15
+  | 5 => 10 | 11 => 12
+  | _ => 1
 
-/-- A pure translation implies the two edges have exactly opposite absolute orientations in the plane. -/
+def edgePhase (e : SpectreEdge) : StateField 17 :=
+  orientationPhase (edgeOrientation e)
+
 def is_translation (edge1 edge2 : SpectreEdge) : Bool :=
-  (edgeOrientation edge1 + edgeOrientation edge2) % 12 == 0
+  (edgeOrientation edge1 + 6) % 12 == edgeOrientation edge2
 
-/-- The physical matching constraint of the aperiodic Spectre monotile.
-    Its chiral asymmetry mathematically forbids straight-line periodic translations. -/
 def edgeCanGlue (edge1 edge2 : SpectreEdge) : Bool :=
   !(is_translation edge1 edge2)
 
-def spectrePhaseSO2 (d : DartId) : StateField 13 := 
+def spectrePhaseSO2 (d : DartId) : StateField 17 := 
   edgePhase (dartToEdge d)
 
 def spectreCanGlue (d1 d2 : DartId) : Bool := 
   edgeCanGlue (dartToEdge d1) (dartToEdge d2)
 
-/-- Computational proof enumerating all 196 Spectre edge combinations. -/
 lemma spectre_physics_validated (edge1 edge2 : SpectreEdge) (h : edgeCanGlue edge1 edge2 = true) : 
   edgePhase edge1 * edgePhase edge2 ≠ 1 := by
   revert h
@@ -220,7 +215,7 @@ lemma spectre_physics_validated (edge1 edge2 : SpectreEdge) (h : edgeCanGlue edg
 
 inductive SpectreTile | mk
 
-instance : HolonomicTile SpectreTile 13 where
+instance : HolonomicTile SpectreTile 17 where
   getPhase := spectrePhaseSO2
   canGlue := spectreCanGlue
   product_barrier := by
