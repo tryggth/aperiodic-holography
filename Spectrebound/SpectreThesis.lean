@@ -79,16 +79,14 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
               rcases h_ih with ⟨rem_fuel, h_rem⟩
               
               -- 4. Compose the fuels!
-              use (ticks + rem_fuel)
               have h_add := run_tomography_add_fuel n_bulk ticks rem_fuel state
-              simp only [h_add, h_rem]
+              have h_goal : (run_tomography n_bulk (ticks + rem_fuel) state).queue.isEmpty = true := by
+                simp only [h_add, h_rem]
+              exact ⟨ticks + rem_fuel, h_goal⟩
           | true =>
-              use ticks
-              exact h_next_empty
+              exact ⟨ticks, h_next_empty⟩
       | true =>
-          use 0
-          unfold run_tomography
-          exact h_empty
+          exact ⟨0, h_empty⟩
 
 /-- 
   THE PILLAR 2 CAPSTONE: GLOBAL LIVENESS
