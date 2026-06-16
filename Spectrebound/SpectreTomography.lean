@@ -11,10 +11,6 @@ namespace Spectrebound
 
 variable {p : Nat} [Fact p.Prime] (surface : CombinatorialSurface) (n_bulk n_bdry : Nat)
 
-/-! ========================================================================
-  PHASE 1: THE Y-Δ (STAR-MESH) TRANSFORM
-  ======================================================================== -/
-
 structure StarNode (F : Type) [Field F] where
   a : F
   b : F
@@ -33,26 +29,37 @@ def star_to_mesh {F : Type} [Field F] (star : StarNode F) (h_sum : star.a + star
 
 /-! ========================================================================
   PHASE 2: THE HOLONOMIC TENSOR UPGRADE
-  Upgrading the 1D dipole matrix into a true 2D 3-regular network.
   ======================================================================== -/
 
-/-- The Counter-Clockwise Face Permutation (Reverse of face_next). -/
 def face_prev (d : DartId) : DartId :=
   (d / 14) * 14 + (d + 13) % 14
 
-/-- 
-  THE 2D TENSOR CONNECTION
-  Unlike the 1D assembleConnection, this matrix connects darts both across 
-  glued boundaries AND along the internal faces of the tiles. 
-  Every dart is now a degree-3 node (a Star configuration).
--/
 def tensorConnection [tile : HolonomicTile SpectreTile 17] (n : Nat) : 
   Matrix (Fin n) (Fin n) (StateField 17) :=
   fun i j =>
     if i == j then 1 
     else if isGlued surface.ledger i.val j.val then tile.getPhase i.val 
-    else if j.val == face_next i.val then 1  -- Face propagation (forward)
-    else if j.val == face_prev i.val then 1  -- Face propagation (backward)
+    else if j.val == face_next i.val then 1
+    else if j.val == face_prev i.val then 1
     else 0
+
+/-! ========================================================================
+  PHASE 3: DYNAMIC SINGULARITY AVOIDANCE
+  To handle the physical "Dart 9 Singularity" (1 + 1 + 15 = 17 ≡ 0), we must 
+  construct a safe evaluator that utilizes Decidable equality to return `none` 
+  if a node is currently singular, allowing the tomography algorithm to route 
+  around it and reduce neighboring nodes first.
+  ======================================================================== -/
+
+/-- 
+  A safe wrapper around `star_to_mesh`. 
+  If the sum of the incident weights is exactly 0, it aborts the transform.
+  If the sum is non-zero, it executes the strict mathematical reduction.
+-/
+def safe_star_to_mesh {F : Type} [Field F] [DecidableEq F] (star : StarNode F) : Option (MeshTriangle F) :=
+  if h : star.a + star.b + star.c = 0 then
+    none -- Node is singular (e.g., Dart 9 before neighbor reduction). Skip and reschedule.
+  else
+    some (star_to_mesh star h)
 
 end Spectrebound
