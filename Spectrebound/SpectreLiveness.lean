@@ -88,9 +88,9 @@ lemma scheduler_preserves_anchor (n : Nat) (state : TomographyState n)
 -/
 lemma spectre_no_total_deadlock 
   (state : TomographyState n_bulk)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (_h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
   (h_has_anchor : ∃ k ∈ state.queue, is_boundary_anchor n_bulk state k)
-  (h_not_empty : state.queue ≠ []) : 
+  (_h_not_empty : state.queue ≠ []) : 
   ¬ is_deadlocked n_bulk state := by
   exact not_deadlocked_of_has_anchor n_bulk state h_has_anchor
 
@@ -199,8 +199,8 @@ lemma queue_decreases_of_safe_idx (n : Nat) (idx : Nat) (state : TomographyState
 -/
 lemma queue_decreases_within_cycle 
   (state : TomographyState n_bulk)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
-  (h_not_empty : state.queue ≠ []) 
+  (_h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (_h_not_empty : state.queue ≠ []) 
   (h_not_dead : ¬ is_deadlocked n_bulk state) : 
   ∃ (ticks : Nat), ticks ≤ state.queue.length ∧ 
     (run_tomography n_bulk ticks state).queue.length < state.queue.length := by
