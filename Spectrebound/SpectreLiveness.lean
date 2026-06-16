@@ -32,7 +32,6 @@ lemma exists_safe_index_of_not_deadlocked
     let k := state.queue.get ⟨idx, h_bound⟩;
     let star := extract_star n_bulk state.W k;
     star.a + star.b + star.c ≠ 0 := by
-  
   unfold is_deadlocked at h_not_dead
   simp only [not_forall] at h_not_dead
   rcases h_not_dead with ⟨k, h_mem, h_neq⟩
@@ -78,12 +77,49 @@ lemma queue_decreases_of_safe_idx (n : Nat) (idx : Nat) (state : TomographyState
   (run_tomography n (idx + 1) state).queue.length < state.queue.length := by
   induction idx generalizing state with
   | zero => 
-      -- Base Case: The head of the queue is safe. A single tick marginalizes it.
-      sorry
+      rcases state with ⟨w, q⟩
+      cases q
+      · dsimp at h_bound; omega
+      · rename_i target rest
+        unfold run_tomography scheduler_step
+        dsimp
+        cases h_eval : safe_star_to_mesh (extract_star n w target)
+        · unfold safe_star_to_mesh at h_eval
+          split_ifs at h_eval with h_sing
+          dsimp at h_safe
+          exact absurd h_sing h_safe
+        · dsimp
+          exact Nat.lt_succ_self _
   | succ k ih => 
-      -- Step Case: The safe node is at k+1. We tick the engine once, shifting 
-      -- the safe node to k, and apply the inductive hypothesis.
-      sorry
+      rcases state with ⟨w, q⟩
+      cases q
+      · dsimp at h_bound; omega
+      · rename_i target rest
+        unfold run_tomography scheduler_step
+        dsimp
+        cases h_eval : safe_star_to_mesh (extract_star n w target)
+        · -- Rotate Case
+          dsimp -- evaluates match to rotate branch
+          have h_new_bound : k < (rest ++ [target]).length := by
+            simp only [List.length_append, List.length_singleton]
+            dsimp at h_bound
+            omega
+          have h_new_safe : let k_new := (rest ++ [target]).get ⟨k, h_new_bound⟩;
+                            let star := extract_star n w k_new;
+                            star.a + star.b + star.c ≠ 0 := by
+            dsimp at h_safe ⊢
+            have hk : k < rest.length := by dsimp at h_bound; omega
+            simp only [List.getElem_append_left hk]
+            exact h_safe
+          have h_ih := ih { W := w, queue := rest ++ [target] } h_new_bound h_new_safe
+          simp only [List.length_append, List.length_cons] at h_ih ⊢
+          omega
+        · -- Drop Case
+          rename_i mesh
+          dsimp -- evaluates match to drop branch
+          have h_le := run_tomography_length_le n (k + 1) { W := inject_mesh n w target mesh, queue := rest }
+          dsimp at h_le ⊢
+          omega
 
 /-- 
   THE CYCLE BOUND THEOREM
@@ -96,17 +132,11 @@ lemma queue_decreases_within_cycle
   ∃ (ticks : Nat), ticks ≤ state.queue.length ∧ 
     (run_tomography n_bulk ticks state).queue.length < state.queue.length := by
   
-  -- 1. Extract the computable index of the first safe node.
   have h_idx := exists_safe_index_of_not_deadlocked n_bulk state h_not_dead
   rcases h_idx with ⟨safe_idx, h_bound, h_safe⟩
-  
-  -- 2. Bind the fuel to the exact induction requirement.
   use (safe_idx + 1)
-  
-  -- 3. Close the theorem!
   constructor
   · omega
-  · -- Leverage the recursive induction helper to effortlessly close the physical drop!
-    exact queue_decreases_of_safe_idx n_bulk safe_idx state h_bound h_safe
+  · exact queue_decreases_of_safe_idx n_bulk safe_idx state h_bound h_safe
 
 end Spectrebound
