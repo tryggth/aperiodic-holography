@@ -57,35 +57,39 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
         dsimp at h_len
         omega
   | succ l ih =>
-      cases h_empty : state.queue.isEmpty
-      · have h_not_empty : state.queue ≠ [] := by
-          intro contra; rw [contra] at h_empty; contradiction
-        -- 1. Apply geometric and structural bedrock
-        have h_not_dead := spectre_no_total_deadlock surface n_bulk state h_match h_anchor h_not_empty
-        have h_cycle := queue_decreases_within_cycle surface n_bulk state h_match h_not_empty h_not_dead
-        rcases h_cycle with ⟨ticks, h_ticks_bound, h_drop⟩
-        
-        -- 2. Execute the cycle and verify the strict drop
-        have h_next_len : (run_tomography n_bulk ticks state).queue.length ≤ l := by omega
-        
-        -- 3. Recursively map the shrunken state into the Inductive Hypothesis
-        cases h_next_empty : (run_tomography n_bulk ticks state).queue.isEmpty
-        · have h_next_not_empty : (run_tomography n_bulk ticks state).queue ≠ [] := by
-            intro contra; rw [contra] at h_next_empty; contradiction
-          have h_next_anchor := run_tomography_preserves_anchor n_bulk ticks state h_next_not_empty h_anchor
-          have h_ih := ih (run_tomography n_bulk ticks state) h_next_len h_next_anchor
-          rcases h_ih with ⟨rem_fuel, h_rem⟩
+      cases h_empty : state.queue.isEmpty with
+      | false =>
+          have h_not_empty : state.queue ≠ [] := by
+            intro contra; rw [contra] at h_empty; contradiction
+          -- 1. Apply geometric and structural bedrock
+          have h_not_dead := spectre_no_total_deadlock surface n_bulk state h_match h_anchor h_not_empty
+          have h_cycle := queue_decreases_within_cycle surface n_bulk state h_match h_not_empty h_not_dead
+          rcases h_cycle with ⟨ticks, h_ticks_bound, h_drop⟩
           
-          -- 4. Compose the fuels!
-          use (ticks + rem_fuel)
-          have h_add := run_tomography_add_fuel n_bulk ticks rem_fuel state
-          rw [h_add]
-          exact h_rem
-        · use ticks
-          exact h_next_empty
-      · use 0
-        unfold run_tomography
-        exact h_empty
+          -- 2. Execute the cycle and verify the strict drop
+          have h_next_len : (run_tomography n_bulk ticks state).queue.length ≤ l := by omega
+          
+          -- 3. Recursively map the shrunken state into the Inductive Hypothesis
+          cases h_next_empty : (run_tomography n_bulk ticks state).queue.isEmpty with
+          | false =>
+              have h_next_not_empty : (run_tomography n_bulk ticks state).queue ≠ [] := by
+                intro contra; rw [contra] at h_next_empty; contradiction
+              have h_next_anchor := run_tomography_preserves_anchor n_bulk ticks state h_next_not_empty h_anchor
+              have h_ih := ih (run_tomography n_bulk ticks state) h_next_len h_next_anchor
+              rcases h_ih with ⟨rem_fuel, h_rem⟩
+              
+              -- 4. Compose the fuels!
+              use (ticks + rem_fuel)
+              have h_add := run_tomography_add_fuel n_bulk ticks rem_fuel state
+              rw [h_add]
+              exact h_rem
+          | true =>
+              use ticks
+              exact h_next_empty
+      | true =>
+          use 0
+          unfold run_tomography
+          exact h_empty
 
 /-- 
   THE PILLAR 2 CAPSTONE: GLOBAL LIVENESS
