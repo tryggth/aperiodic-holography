@@ -37,15 +37,15 @@ lemma off_diagonal_nonzero_iff_glued
 -/
 theorem unique_adjacency_from_matrix
   (surf1 surf2 : CombinatorialSurface) (n : Nat)
-  (h_match1 : PerfectMatching (T := SpectreTile) (p := 17) surf1 n)
-  (h_match2 : PerfectMatching (T := SpectreTile) (p := 17) surf2 n)
+  (h_match1 : PhysicalMatching (T := SpectreTile) (p := 17) surf1 n)
+  (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n)
   (h_matrix : assembleConnection (T := SpectreTile) (p := 17) surf1 n = 
               assembleConnection (T := SpectreTile) (p := 17) surf2 n) :
   ∀ i j : Fin n, isGlued surf1.ledger i.val j.val = isGlued surf2.ledger i.val j.val := by
   
   intro i j
   by_cases h_eq : i = j
-  · -- NO SORRY: Diagonal self-loops are forbidden by PerfectMatching
+  · -- NO SORRY: Diagonal self-loops are forbidden by PhysicalMatching
     rw [h_eq]
     have h_self1 := h_match1.no_self_loops j
     have h_self2 := h_match2.no_self_loops j

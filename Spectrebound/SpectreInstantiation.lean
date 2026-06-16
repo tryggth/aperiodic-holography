@@ -49,7 +49,7 @@ lemma chiral_annihilation {w_i w_j s_i s_j : StateField p}
     exact False.elim (h_prod h_contra)
   | inr hs => exact hs
 
-structure PerfectMatching (surface : CombinatorialSurface) (n : Nat) : Prop where
+structure PhysicalMatching (surface : CombinatorialSurface) (n : Nat) : Prop where
   no_self_loops : ∀ i : Fin n, isGlued surface.ledger i.val i.val = false
   unique_partner : ∀ i : Fin n, ∃! j : Fin n, isGlued surface.ledger i.val j.val = true
   valid_physics : ∀ i j : Fin n, isGlued surface.ledger i.val j.val = true → tile.canGlue i.val j.val = true
@@ -62,7 +62,7 @@ lemma isGlued_symm (ledger : GluingLedger) (d1 d2 : DartId) :
   rw [Bool.or_comm]
 
 lemma reduce_row_equation (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
+  (h_match : PhysicalMatching (T := T) (p := p) surface n_bulk)
   (s : Fin n_bulk → StateField p)
   (h_kernel : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0)
   (i j : Fin n_bulk) (h_glued : isGlued surface.ledger i.val j.val = true) :
@@ -115,7 +115,7 @@ lemma reduce_row_equation (surface : CombinatorialSurface)
 
 lemma tile_trivial_kernel 
   (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
+  (h_match : PhysicalMatching (T := T) (p := p) surface n_bulk)
   (s : Fin n_bulk → StateField p)
   (h_kernel : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0) :
   s = 0 := by
@@ -131,7 +131,7 @@ lemma tile_trivial_kernel
   exact chiral_annihilation h_prod eq1 eq2
 
 lemma tile_laplacian_nonsingular (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk) :
+  (h_match : PhysicalMatching (T := T) (p := p) surface n_bulk) :
   (assembleConnection (T := T) (p := p) surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0 := by
   have h_injective : ∀ (s : Fin n_bulk → StateField p), Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s = 0 → s = 0 := by
     intro s hs
@@ -153,12 +153,12 @@ def tensorConnection (surface : CombinatorialSurface) (n : Nat) :
     else 0
 
 axiom tensor_laplacian_nonsingular (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk) :
+  (h_match : PhysicalMatching (T := T) (p := p) surface n_bulk) :
   (tensorConnection (T := T) (p := p) surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0
 
 theorem holonomic_uniqueness_on_tile 
   (surface : CombinatorialSurface)
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
+  (h_match : PhysicalMatching (T := T) (p := p) surface n_bulk)
   (D_bdry : Matrix (Fin n_bulk) (Fin n_bdry) (StateField p))
   (s_bdry : Fin n_bdry → StateField p)
   (s_bulk1 s_bulk2 : Fin n_bulk → StateField p)

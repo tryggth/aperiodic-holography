@@ -22,7 +22,7 @@ axiom iterative_schur_quotient_formula
   (state : TomographyState n_bulk)
   (blocks_before : ConnectionBlocks surface n_bulk n_bdry)
   (blocks_after : ConnectionBlocks surface n_bulk n_bdry)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
   (h_step : scheduler_step n_bulk state ≠ state) :
   dirichlet_to_neumann surface n_bulk n_bdry blocks_before h_match = 
   dirichlet_to_neumann surface n_bulk n_bdry blocks_after h_match
@@ -31,7 +31,7 @@ theorem schur_invariance_under_reduction
   (state : TomographyState n_bulk)
   (blocks_before : ConnectionBlocks surface n_bulk n_bdry)
   (blocks_after : ConnectionBlocks surface n_bulk n_bdry)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
   (h_step : scheduler_step n_bulk state ≠ state) 
   : dirichlet_to_neumann surface n_bulk n_bdry blocks_before h_match = 
     dirichlet_to_neumann surface n_bulk n_bdry blocks_after h_match := by
@@ -85,7 +85,7 @@ lemma run_tomography_add_fuel (f1 f2 : Nat) (state : TomographyState n_bulk) :
     · exact ih (scheduler_step n_bulk state)
 
 lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
   (h_len : state.queue.length ≤ len)
   (h_anchor : ∃ k ∈ state.queue, is_boundary_anchor n_bulk state k) :
   ∃ fuel : Nat, (run_tomography n_bulk fuel state).queue.isEmpty = true := by
@@ -128,7 +128,7 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
 -/
 theorem tomography_liveness 
   (state : TomographyState n_bulk) 
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
+  (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
   (h_initial_anchor : ∃ k ∈ state.queue, is_boundary_anchor n_bulk state k)
   : ∃ fuel : Nat, (run_tomography n_bulk fuel state).queue.isEmpty = true := by
   exact liveness_by_induction surface n_bulk state.queue.length state h_match (Nat.le_refl _) h_initial_anchor
@@ -141,8 +141,8 @@ axiom finite_field_network_recovery
   (surf1 surf2 : CombinatorialSurface)
   (blocks1 : ConnectionBlocks surf1 n_bulk n_bdry)
   (blocks2 : ConnectionBlocks surf2 n_bulk n_bdry)
-  (h_match1 : PerfectMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
-  (h_match2 : PerfectMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
+  (h_match1 : PhysicalMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
+  (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
   (h_same_d2n : dirichlet_to_neumann surf1 n_bulk n_bdry blocks1 h_match1 = 
                 dirichlet_to_neumann surf2 n_bulk n_bdry blocks2 h_match2)
   : blocks1.A = blocks2.A
@@ -151,8 +151,8 @@ theorem discrete_calderon_injectivity
   (surf1 surf2 : CombinatorialSurface)
   (blocks1 : ConnectionBlocks surf1 n_bulk n_bdry)
   (blocks2 : ConnectionBlocks surf2 n_bulk n_bdry)
-  (h_match1 : PerfectMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
-  (h_match2 : PerfectMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
+  (h_match1 : PhysicalMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
+  (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
   (h_same_d2n : dirichlet_to_neumann surf1 n_bulk n_bdry blocks1 h_match1 = 
                 dirichlet_to_neumann surf2 n_bulk n_bdry blocks2 h_match2)
   : blocks1.A = blocks2.A := by

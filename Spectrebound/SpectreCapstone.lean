@@ -25,8 +25,8 @@ axiom assemble_eq_of_tensor_eq (surf1 surf2 : CombinatorialSurface) (n : Nat)
 
 theorem aperiodic_holography_capstone
   (surf1 surf2 : CombinatorialSurface) (n_bulk n_bdry : Nat)
-  (h_match1 : PerfectMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
-  (h_match2 : PerfectMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
+  (h_match1 : PhysicalMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
+  (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
   (blocks1 : ConnectionBlocks surf1 n_bulk n_bdry)
   (blocks2 : ConnectionBlocks surf2 n_bulk n_bdry)
   

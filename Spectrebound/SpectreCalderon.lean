@@ -38,7 +38,7 @@ structure ConnectionBlocks where
 -/
 noncomputable def dirichlet_to_neumann 
   (blocks : ConnectionBlocks surface n_bulk n_bdry)
-  (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk) : 
+  (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk) : 
   Matrix (Fin n_bdry) (Fin n_bdry) (StateField 17) :=
   
   -- 1. We summon our previously verified proof that the Bulk-Bulk matrix (A) 

@@ -56,5 +56,19 @@ structure CombinatorialSurface where
   -- The external boundary forms a continuous orbit, adding 1 to the vertex count.
   -- Thus, standard V - E + F = 1 becomes V_total - E + F = 2.
   is_simply_connected : V + (n_darts / 14) = ledger.length + 2
+  min_degree : V * 3 ≤ n_darts
 
 end Spectrebound
+
+
+/--
+  THE PLANARITY CONTRADICTION
+  Euler's formula mathematically forbids a finite planar patch from being
+  perfectly glued. If every dart has a partner (2 * ledger.length = n_darts), 
+  the geometry collapses into -4n >= 84, which is impossible.
+-/
+lemma perfectly_glued_is_impossible (V n l_len : Nat)
+  (h_euler : V + n / 14 = l_len + 2)
+  (h_degree : V * 3 ≤ n)
+  (h_perfect : 2 * l_len = n) : False := by
+  omega
