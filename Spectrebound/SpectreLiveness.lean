@@ -65,7 +65,7 @@ lemma queue_decreases_within_cycle
     (run_tomography n_bulk ticks state).queue.length < state.queue.length := by
   
   -- 1. Obtain the exact index of the first safe node.
-  have h_idx := exists_safe_index_of_not_deadlocked surface n_bulk n_bdry state h_not_dead
+  have h_idx := exists_safe_index_of_not_deadlocked n_bulk state h_not_dead
   rcases h_idx with ⟨safe_idx, h_bound, h_safe⟩
   
   -- 2. Provide the fuel! The exact number of ticks required is safe_idx + 1.
