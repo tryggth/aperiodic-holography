@@ -60,8 +60,7 @@ lemma exists_safe_index_of_not_deadlocked
   use idx, h_bound
   
   -- 4. Substitute the retrieved element into the field equation and close.
-  dsimp
-  rw [h_get]
+  rw [← h_get] at h_neq
   exact h_neq
 
 /-- 
