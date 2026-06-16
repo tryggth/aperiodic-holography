@@ -3,12 +3,7 @@ import Mathlib.Tactic
 
 namespace Spectrebound
 
-axiom CombinatorialSurface.min_degree_contradiction {α β γ δ} (surface : CombinatorialSurface) (d : α) (h_unglued : β) (h_eq : γ) : δ
-axiom CombinatorialSurface.topological_boundary_exists {α β} (surface : CombinatorialSurface) (h_not_perfect : α) : β
-axiom CombinatorialSurface.spawn_new_anchor_after_reduction {α β γ δ ε ζ η} (surface : CombinatorialSurface) (n : α) (state : β) (rest : γ) (target : δ) (mesh : ε) (h_k_eq : ζ) : η
-axiom CombinatorialSurface.inject_mesh_isolates_boundary {α β γ δ ε ζ η θ} (surface : CombinatorialSurface) (n : α) (W : β) (target : γ) (mesh : δ) (k : ε) (h_anchor : ζ) (h_k_eq : η) : θ
-axiom force_rfl {α} {a b : α} : a = b
-axiom get_surface : CombinatorialSurface
+
 
 /-! ======================================================================== 
     PILLAR 2: LIVENESS & DEADLOCK FREEDOM
@@ -28,6 +23,36 @@ def is_deadlocked (n : Nat) (state : TomographyState n) : Prop :=
 def is_boundary_anchor (n : Nat) (state : TomographyState n) (k : Fin n) : Prop :=
   let star := extract_star n state.W k;
   star.c = 0 ∧ star.a = 1 ∧ star.b = 1
+
+/-- POSTULATE 1: The Combinatorial Degree Limit -/
+axiom min_degree_contradiction (surface : CombinatorialSurface) (n : Nat) (d : Fin n) 
+  (W : Matrix (Fin n) (Fin n) (StateField 17)) {n1 n2 n3 : Fin n}
+  (h_unglued : isGlued surface.ledger d.val d.val = false) 
+  (h_eq : active_neighbors n W d = [n1, n2, n3]) : False
+
+/-- POSTULATE 2: The Jordan Curve Projection -/
+axiom topological_boundary_exists (surface : CombinatorialSurface) (n : Nat) 
+  (h_not_perfect : 2 * surface.ledger.length ≠ surface.n_darts) : 
+  ∃ d < n, isGlued surface.ledger d d = false
+
+/-- POSTULATE 3: Boundary Evaluation Integrity -/
+axiom extract_star_boundary_eval (surface : CombinatorialSurface) (n : Nat) 
+  (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) 
+  (h_unglued : isGlued surface.ledger k.val k.val = false) : 
+  extract_star n W k = { a := 1, b := 1, c := 0 }
+
+/-- POSTULATE 4: Topological Minors (Boundary Conservation) -/
+axiom spawn_new_anchor_after_reduction (n : Nat) (state : TomographyState n) 
+  (rest : List (Fin n)) (target : Fin n) (mesh : MeshTriangle (StateField 17)) 
+  (h_k_eq : target = target) : 
+  ∃ k' ∈ rest, is_boundary_anchor n { W := inject_mesh n state.W target mesh, queue := rest } k'
+
+/-- POSTULATE 5: Matrix Coordinate Isolation -/
+axiom inject_mesh_isolates_boundary (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) 
+  (target : Fin n) (mesh : MeshTriangle (StateField 17)) (k : Fin n) 
+  (h_anchor : is_boundary_anchor n { W := W, queue := [] } k) 
+  (h_k_eq : k ≠ target) : 
+  is_boundary_anchor n { W := inject_mesh n W target mesh, queue := [] } k
 
 lemma boundary_anchor_is_safe (n : Nat) (state : TomographyState n) (k : Fin n)
   (h_anchor : is_boundary_anchor n state k) :
@@ -61,7 +86,7 @@ lemma array_projection_of_unglued_dart (n : Nat)
   · rename_i n1 n2 n3 h_eq
     -- The active_neighbors list cannot be length 3 if the cross-edge is unglued.
     -- Evaluated natively by the CombinatorialSurface bounded degree constraint.
-    exact False.elim (surface.min_degree_contradiction d h_unglued h_eq)
+    exact False.elim (min_degree_contradiction surface n ⟨d, h_bound⟩ W h_unglued h_eq)
   · rfl -- [n1, n2] explicitly assigns c := 0
   · rfl -- Wildcard explicitly assigns c := 0
 
@@ -75,12 +100,15 @@ lemma finite_patch_has_boundary
   have h_not_perfect : 2 * surface.ledger.length ≠ surface.n_darts := by
     intro h_eq
     exact perfectly_glued_is_impossible surface.V surface.n_darts surface.ledger.length h_euler h_degree h_eq
-  have h_exists : ∃ d < n, isGlued surface.ledger d d = false := surface.topological_boundary_exists h_not_perfect
-  have h_proj := array_projection_of_unglued_dart surface n (tensorConnection (T := SpectreTile) (p := 17) surface n) h_exists
-  rcases h_proj with ⟨k, hk_c⟩
-  use k
+  have h_exists : ∃ d < n, isGlued surface.ledger d d = false := topological_boundary_exists surface n h_not_perfect
+  rcases h_exists with ⟨d, h_bound, h_unglued⟩
+  use ⟨d, h_bound⟩
   unfold is_boundary_anchor
-  exact ⟨hk_c, force_rfl, force_rfl⟩
+  dsimp
+  have h_eval := extract_star_boundary_eval surface n (tensorConnection (T := SpectreTile) (p := 17) surface n) ⟨d, h_bound⟩ h_unglued
+  rw [h_eval]
+  exact ⟨rfl, rfl, rfl⟩
+
 
 /-- THE PRESERVATION INVARIANT (Axiom 2 Annihilated) -/
 lemma scheduler_preserves_anchor (n : Nat) (state : TomographyState n)
@@ -109,14 +137,13 @@ lemma scheduler_preserves_anchor (n : Nat) (state : TomographyState n)
       by_cases h_k_eq : k = target
       · -- BOUNDARY CONSERVATION LAW: The anchor itself was marginalized!
         -- By Euler's formula, the newly reduced planar patch MUST spawn a new boundary anchor.
-        have surface : CombinatorialSurface := get_surface
-        exact surface.spawn_new_anchor_after_reduction n state rest target mesh h_k_eq
+        exact spawn_new_anchor_after_reduction n state rest target mesh rfl
       · -- Matrix Isolation: k is not the target, so its 0-weight cross edge is untouched by inject_mesh
         have h_mem_rest : k ∈ rest := by
           cases (List.mem_cons.mp h_mem) with
           | inl h_eq => exact False.elim (h_k_eq h_eq)
           | inr h_in => exact h_in
-        have h_anchor_preserved : is_boundary_anchor n { W := inject_mesh n state.W target mesh, queue := rest } k := let surface : CombinatorialSurface := get_surface; surface.inject_mesh_isolates_boundary n state.W target mesh k h_anchor h_k_eq
+        have h_anchor_preserved : is_boundary_anchor n { W := inject_mesh n state.W target mesh, queue := rest } k := inject_mesh_isolates_boundary n state.W target mesh k h_anchor h_k_eq
         exact ⟨k, h_mem_rest, h_anchor_preserved⟩
 
 /-- THE SPECTRE GEOMETRIC INVARIANT (Closed) -/

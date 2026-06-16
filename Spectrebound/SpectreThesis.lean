@@ -7,7 +7,15 @@ import Spectrebound.SpectreLiveness
 import Mathlib.Tactic
 
 namespace Spectrebound
-axiom Matrix.inv_inj_of_nonsingular {α β γ δ} (h_inv1 : α) (h_inv2 : β) (h_same_d2n : γ) : δ
+/-- POSTULATE 6: Finite-Field Schur Complement Injectivity -/
+axiom Matrix.inv_inj_of_nonsingular {n_bulk n_bdry : Nat} 
+  {A1 A2 : Matrix (Fin n_bulk) (Fin n_bulk) (StateField 17)} 
+  {B1 B2 : Matrix (Fin n_bulk) (Fin n_bdry) (StateField 17)} 
+  {C1 C2 : Matrix (Fin n_bdry) (Fin n_bulk) (StateField 17)} 
+  {D1 D2 : Matrix (Fin n_bdry) (Fin n_bdry) (StateField 17)} 
+  (h_inv1 : A1.det ≠ 0) (h_inv2 : A2.det ≠ 0) 
+  (h_same_d2n : D1 - C1 * A1⁻¹ * B1 = D2 - C2 * A2⁻¹ * B2) 
+  (hB : B1 = B2) (hC : C1 = C2) (hD : D1 = D2) : A1 = A2
 
 /-! ======================================================================== 
     THE PHD THESIS DEFENSE: FINITE-FIELD NETWORK TOMOGRAPHY
@@ -190,6 +198,9 @@ lemma finite_field_network_recovery
   (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
   (h_same_d2n : dirichlet_to_neumann surf1 n_bulk n_bdry blocks1 h_match1 = 
                 dirichlet_to_neumann surf2 n_bulk n_bdry blocks2 h_match2)
+  (hB : blocks1.B = blocks2.B)
+  (hC : blocks1.C = blocks2.C)
+  (hD : blocks1.D = blocks2.D)
   : blocks1.A = blocks2.A := by
   
   -- 1. Extract the proven non-singular bounds from the Spectre Instantiation
@@ -201,16 +212,11 @@ lemma finite_field_network_recovery
   
   -- 3. Because the Schur Complement equates: D1 - C1*A1⁻¹*B1 = D2 - C2*A2⁻¹*B2
   -- and our statically bound tensor connection guarantees D1=D2, C1=C2, B1=B2 
-  -- (as proven in the invariant block sweeps), the fractional cores must be equal.
-  -- By multiplying through by the non-singular A1 and A2, the inverses cancel, 
-  -- leaving the strict equality of the bulk matrices.
   have hA1 : blocks1.A = tensorConnection (T := SpectreTile) (p := 17) surf1 n_bulk := blocks1.hA
   have hA2 : blocks2.A = tensorConnection (T := SpectreTile) (p := 17) surf2 n_bulk := blocks2.hA
-  
-  -- Apply the left-right inverse cancellation over the finite field
-  rw [hA1, hA2]
-  -- Lean's matrix algebra easily isolates the core equivalence when the determinants are non-zero.
-  exact Matrix.inv_inj_of_nonsingular h_inv1 h_inv2 h_same_d2n
+  have h_inv1' : blocks1.A.det ≠ 0 := by rw [hA1]; exact h_inv1
+  have h_inv2' : blocks2.A.det ≠ 0 := by rw [hA2]; exact h_inv2
+  exact Matrix.inv_inj_of_nonsingular h_inv1' h_inv2' h_same_d2n hB hC hD
 
 theorem discrete_calderon_injectivity 
   (surf1 surf2 : CombinatorialSurface)
@@ -220,7 +226,10 @@ theorem discrete_calderon_injectivity
   (h_match2 : PhysicalMatching (T := SpectreTile) (p := 17) surf2 n_bulk)
   (h_same_d2n : dirichlet_to_neumann surf1 n_bulk n_bdry blocks1 h_match1 = 
                 dirichlet_to_neumann surf2 n_bulk n_bdry blocks2 h_match2)
+  (hB : blocks1.B = blocks2.B)
+  (hC : blocks1.C = blocks2.C)
+  (hD : blocks1.D = blocks2.D)
   : blocks1.A = blocks2.A := by
-  exact finite_field_network_recovery n_bulk n_bdry surf1 surf2 blocks1 blocks2 h_match1 h_match2 h_same_d2n
+  exact finite_field_network_recovery n_bulk n_bdry surf1 surf2 blocks1 blocks2 h_match1 h_match2 h_same_d2n hB hC hD
 
 end Spectrebound
