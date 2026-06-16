@@ -15,11 +15,36 @@ namespace Spectrebound
 
 variable {p : Nat} [Fact p.Prime] (surface : CombinatorialSurface) (n_bulk n_bdry : Nat)
 
-/- 
-  Phase 1 Foundation: Graph Reductions.
-  To prove injectivity, we must define the algebraic Y-Δ (Star-Mesh) transform 
-  over our StateField, and track how it updates the Schur complement.
+/-! 
+  ========================================================================
+  PHASE 1: THE Y-Δ (STAR-MESH) TRANSFORM
+  We define the algebraic operators to marginalize a single internal node.
+  ========================================================================
 -/
--- TODO: Define internal node marginalization (Schur complement of a 1x1 block).
+
+/-- An internal vertex connected to three neighboring nodes (A Star/Y configuration). -/
+structure StarNode (F : Type) [Field F] where
+  a : F
+  b : F
+  c : F
+
+/-- A triangular cycle connecting three nodes (A Mesh/Δ configuration). -/
+structure MeshTriangle (F : Type) [Field F] where
+  A : F
+  B : F
+  C : F
+
+/-- 
+  The Star-Mesh Algebraic Marginalization.
+  The Shortcut: By defining `h_sum` as a strict dependent type parameter, 
+  we mathematically quarantine the isotropic singularity (zero divisor) threat. 
+  Lean will physically refuse to compile this transform unless the caller provides 
+  a rigorous proof that the local node weights do not sum to 0 in the finite field!
+-/
+def star_to_mesh {F : Type} [Field F] (star : StarNode F) (h_sum : star.a + star.b + star.c ≠ 0) : MeshTriangle F := {
+  A := (star.b * star.c) / (star.a + star.b + star.c),
+  B := (star.a * star.c) / (star.a + star.b + star.c),
+  C := (star.a * star.b) / (star.a + star.b + star.c)
+}
 
 end Spectrebound
