@@ -41,14 +41,48 @@ theorem schur_invariance_under_reduction
     PILLAR 2: LIVENESS (DEADLOCK FREEDOM) - CAPSTONE
     ======================================================================== -/
 
-axiom run_tomography_preserves_anchor 
+/-- Helper: Empty queue evaluation -/
+lemma run_tomography_empty (f : Nat) (state : TomographyState n_bulk) (h : state.queue.isEmpty = true) :
+  run_tomography n_bulk f state = state := by
+  induction f with
+  | zero => rfl
+  | succ k ih =>
+    unfold run_tomography
+    simp [h]
+
+/-- PROVEN: Multi-tick anchor preservation (Lifts scheduler_preserves_anchor) -/
+lemma run_tomography_preserves_anchor 
   (fuel : Nat) (state : TomographyState n_bulk)
   (h_not_empty : (run_tomography n_bulk fuel state).queue ≠ [])
   (h_anchor : ∃ k ∈ state.queue, is_boundary_anchor n_bulk state k) :
-  ∃ k ∈ (run_tomography n_bulk fuel state).queue, is_boundary_anchor n_bulk (run_tomography n_bulk fuel state) k
+  ∃ k ∈ (run_tomography n_bulk fuel state).queue, is_boundary_anchor n_bulk (run_tomography n_bulk fuel state) k := by
+  induction fuel generalizing state with
+  | zero => exact h_anchor
+  | succ f ih =>
+    unfold run_tomography at h_not_empty ⊢
+    split_ifs at h_not_empty ⊢ with h_empty
+    · exact h_anchor
+    · have h_step_anchor := scheduler_preserves_anchor n_bulk state h_anchor
+      exact ih (scheduler_step n_bulk state) h_not_empty h_step_anchor
 
-axiom run_tomography_add_fuel (f1 f2 : Nat) (state : TomographyState n_bulk) :
-  run_tomography n_bulk (f1 + f2) state = run_tomography n_bulk f2 (run_tomography n_bulk f1 state)
+/-- PROVEN: State machine fuel composition -/
+lemma run_tomography_add_fuel (f1 f2 : Nat) (state : TomographyState n_bulk) :
+  run_tomography n_bulk (f1 + f2) state = run_tomography n_bulk f2 (run_tomography n_bulk f1 state) := by
+  induction f1 generalizing state with
+  | zero => 
+    rw [Nat.zero_add]
+    rfl
+  | succ k ih =>
+    rw [Nat.succ_add]
+    have h_lhs : run_tomography n_bulk (Nat.succ (k + f2)) state = 
+      if state.queue.isEmpty then state else run_tomography n_bulk (k + f2) (scheduler_step n_bulk state) := by rfl
+    rw [h_lhs]
+    have h_rhs_inner : run_tomography n_bulk (Nat.succ k) state = 
+      if state.queue.isEmpty then state else run_tomography n_bulk k (scheduler_step n_bulk state) := by rfl
+    rw [h_rhs_inner]
+    split_ifs with h_empty
+    · exact (run_tomography_empty n_bulk f2 state h_empty).symm
+    · exact ih (scheduler_step n_bulk state)
 
 lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
   (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
@@ -89,6 +123,9 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
       | true =>
           exact ⟨0, h_empty⟩
 
+/-- 
+  THE PILLAR 2 CAPSTONE: GLOBAL LIVENESS
+-/
 theorem tomography_liveness 
   (state : TomographyState n_bulk) 
   (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
@@ -100,14 +137,6 @@ theorem tomography_liveness
     PILLAR 3: FINITE-FIELD CALDERÓN INJECTIVITY (The Ultimate Goal)
     ======================================================================== -/
 
-/-- 
-  AXIOM: The Fundamental Theorem of Finite-Field Tomography
-  Because we have mathematically proven that the network can be completely 
-  marginalized (Liveness) and that the marginalization strictly preserves 
-  the boundary map (Schur Invariance), the Curtis-Ingerman-Morrow framework 
-  legally holds over StateField 17. The observable Dirichlet-to-Neumann shadow 
-  strictly injects into the internal bulk matrix.
--/
 axiom finite_field_network_recovery 
   (surf1 surf2 : CombinatorialSurface)
   (blocks1 : ConnectionBlocks surf1 n_bulk n_bdry)
