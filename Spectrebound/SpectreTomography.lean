@@ -47,22 +47,24 @@ def safe_star_to_mesh {F : Type} [Field F] [DecidableEq F] (star : StarNode F) :
 
 /-! ========================================================================
   PHASE 5: THE MATRIX SUPERPOSITION ENGINE
-  Dynamically reading and mutating the weights of the evolving tensor network.
   ======================================================================== -/
 
-/-- Dynamically locates the active non-zero neighbors of a given node in the matrix. -/
 def active_neighbors (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) : List (Fin n) :=
   (List.finRange n).filter (fun j => k ≠ j ∧ W k j ≠ 0)
 
-/-- Extracts the 3 incident weights of a dynamically routed degree-3 node. -/
+/-- 
+  PATCHED: Extracts incident weights, safely supporting degree-2 boundary darts 
+  by explicitly feeding c := 0 into the degenerate Y-Δ transform.
+-/
 def extract_star (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) : StarNode (StateField 17) :=
   match active_neighbors n W k with
   | [n1, n2, n3] => { a := W k n1, b := W k n2, c := W k n3 }
-  | _ => { a := 0, b := 0, c := 0 } -- Fallback gracefully if node degree dynamically shifts
+  | [n1, n2] => { a := W k n1, b := W k n2, c := 0 } -- The Boundary Anchor Catch!
+  | _ => { a := 0, b := 0, c := 0 } 
 
 /-- 
-  Injects the new Delta mesh weights via superposition (matrix addition) 
-  and mathematically annihilates the marginalized target node's connections.
+  PATCHED: Injects the new Delta mesh weights. Handles the degenerate [n1, n2] 
+  case natively by executing a Series Reduction (superimposing only mesh.C).
 -/
 def inject_mesh (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) (mesh : MeshTriangle (StateField 17)) : 
   Matrix (Fin n) (Fin n) (StateField 17) :=
@@ -70,12 +72,17 @@ def inject_mesh (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin 
   match nbrs with
   | [n1, n2, n3] => 
       fun i j =>
-        if i == k ∨ j == k then 0 -- Erase the marginalized node completely
+        if i == k ∨ j == k then 0 
         else if (i == n1 ∧ j == n2) ∨ (i == n2 ∧ j == n1) then W i j + mesh.A
         else if (i == n2 ∧ j == n3) ∨ (i == n3 ∧ j == n2) then W i j + mesh.B
         else if (i == n3 ∧ j == n1) ∨ (i == n1 ∧ j == n3) then W i j + mesh.C
         else W i j
-  | _ => W -- Abort injection if geometry is anomalous
+  | [n1, n2] => 
+      fun i j =>
+        if i == k ∨ j == k then 0 -- Erase the boundary node
+        else if (i == n1 ∧ j == n2) ∨ (i == n2 ∧ j == n1) then W i j + mesh.C -- Degenerate Series Bridge
+        else W i j
+  | _ => W 
 
 /-! ========================================================================
   PHASE 4: THE TOMOGRAPHY SCHEDULER
