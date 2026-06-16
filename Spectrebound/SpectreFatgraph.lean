@@ -72,3 +72,7 @@ lemma perfectly_glued_is_impossible (V n l_len : Nat)
   (h_degree : V * 3 ≤ n)
   (h_perfect : 2 * l_len = n) : False := by
   omega
+
+
+
+
