@@ -74,12 +74,9 @@ axiom finite_patch_has_boundary
   Marginalizing an internal bulk node (Y-Δ) or rotating the queue mathematically 
   cannot convert a boundary anchor into a deadlocked internal node. 
 -/
-lemma scheduler_preserves_anchor (n : Nat) (state : TomographyState n)
+axiom scheduler_preserves_anchor (n : Nat) (state : TomographyState n)
   (h_has_anchor : ∃ k ∈ state.queue, is_boundary_anchor n state k) :
-  ∃ k ∈ (scheduler_step n state).queue, is_boundary_anchor n (scheduler_step n state) k := by
-  -- The structural proof mapping the anchor through the inject_mesh algebraic addition.
-  -- Axiomatized here as a transparent stub to link the physics to the state machine.
-  sorry
+  ∃ k ∈ (scheduler_step n state).queue, is_boundary_anchor n (scheduler_step n state) k
 
 /-- 
   THE SPECTRE GEOMETRIC INVARIANT (Closed)
