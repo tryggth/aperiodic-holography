@@ -2,6 +2,7 @@ import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Spectrebound.SpectreFatgraph
 import Spectrebound.SpectreCalderon
 import Spectrebound.SpectreInstantiation
+import Mathlib.Data.List.FinRange
 
 namespace Spectrebound
 
@@ -21,7 +22,8 @@ structure MeshTriangle (F : Type) [Field F] where
   B : F
   C : F
 
-def star_to_mesh {F : Type} [Field F] (star : StarNode F) (h_sum : star.a + star.b + star.c ≠ 0) : MeshTriangle F := {
+-- Prefixed _h_sum to silence the unused proof parameter linter
+def star_to_mesh {F : Type} [Field F] (star : StarNode F) (_h_sum : star.a + star.b + star.c ≠ 0) : MeshTriangle F := {
   A := (star.b * star.c) / (star.a + star.b + star.c),
   B := (star.a * star.c) / (star.a + star.b + star.c),
   C := (star.a * star.b) / (star.a + star.b + star.c)
@@ -44,53 +46,58 @@ def safe_star_to_mesh {F : Type} [Field F] [DecidableEq F] (star : StarNode F) :
   else some (star_to_mesh star h)
 
 /-! ========================================================================
-  PHASE 4: THE TOMOGRAPHY SCHEDULER
-  The asynchronous state machine that physically collapses the tensor network.
+  PHASE 5: THE MATRIX SUPERPOSITION ENGINE
+  Dynamically reading and mutating the weights of the evolving tensor network.
   ======================================================================== -/
 
-/-- The formal state of the network at any point during the inverse recovery. -/
+/-- Dynamically locates the active non-zero neighbors of a given node in the matrix. -/
+def active_neighbors (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) : List (Fin n) :=
+  (List.finRange n).filter (fun j => k ≠ j ∧ W k j ≠ 0)
+
+/-- Extracts the 3 incident weights of a dynamically routed degree-3 node. -/
+def extract_star (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) : StarNode (StateField 17) :=
+  match active_neighbors n W k with
+  | [n1, n2, n3] => { a := W k n1, b := W k n2, c := W k n3 }
+  | _ => { a := 0, b := 0, c := 0 } -- Fallback gracefully if node degree dynamically shifts
+
+/-- 
+  Injects the new Delta mesh weights via superposition (matrix addition) 
+  and mathematically annihilates the marginalized target node's connections.
+-/
+def inject_mesh (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) (mesh : MeshTriangle (StateField 17)) : 
+  Matrix (Fin n) (Fin n) (StateField 17) :=
+  let nbrs := active_neighbors n W k
+  match nbrs with
+  | [n1, n2, n3] => 
+      fun i j =>
+        if i == k ∨ j == k then 0 -- Erase the marginalized node completely
+        else if (i == n1 ∧ j == n2) ∨ (i == n2 ∧ j == n1) then W i j + mesh.A
+        else if (i == n2 ∧ j == n3) ∨ (i == n3 ∧ j == n2) then W i j + mesh.B
+        else if (i == n3 ∧ j == n1) ∨ (i == n1 ∧ j == n3) then W i j + mesh.C
+        else W i j
+  | _ => W -- Abort injection if geometry is anomalous
+
+/-! ========================================================================
+  PHASE 4: THE TOMOGRAPHY SCHEDULER
+  ======================================================================== -/
+
 structure TomographyState (n : Nat) where
   W : Matrix (Fin n) (Fin n) (StateField 17)
   queue : List (Fin n)
 
-/-- Extracts the 3 incident weights of a specific node. -/
-def extract_star (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) : StarNode (StateField 17) :=
-  -- Topological Extraction Stub (Requires mapping to non-zero neighbor indices)
-  { a := 1, b := 1, c := W k k } 
-
-/-- Injects the new Delta mesh weights and removes the marginalized node's connections. -/
-def inject_mesh (n : Nat) (W : Matrix (Fin n) (Fin n) (StateField 17)) (k : Fin n) (mesh : MeshTriangle (StateField 17)) : 
-  Matrix (Fin n) (Fin n) (StateField 17) :=
-  -- Matrix Superposition Stub
-  W
-
-/-- 
-  The Core Scheduler Tick.
-  Evaluates the head of the queue. If it hits a singularity, it gracefully 
-  reschedules the node to the back of the queue. If safe, it permanently marginalizes.
--/
 def scheduler_step (n : Nat) (state : TomographyState n) : TomographyState n :=
   match state.queue with
   | [] => state
   | target :: rest =>
       let star := extract_star n state.W target
       match safe_star_to_mesh star with
-      | none => 
-          -- LANDMINE DETECTED: Push to the back of the queue.
-          { W := state.W, queue := rest ++ [target] }
-      | some mesh => 
-          -- CLEAR: Marginalize and drop from the queue.
-          { W := inject_mesh n state.W target mesh, queue := rest }
+      | none => { W := state.W, queue := rest ++ [target] }
+      | some mesh => { W := inject_mesh n state.W target mesh, queue := rest }
 
-/-- 
-  The Execution Loop. 
-  Uses a `fuel` integer to satisfy Lean 4's strict termination checker, ensuring 
-  the compiler accepts the potential infinite loop of a permanently deadlocked graph.
--/
 def run_tomography (n : Nat) : Nat → TomographyState n → TomographyState n
-  | 0, state => state -- Out of fuel (Deadlock or Success)
+  | 0, state => state 
   | fuel + 1, state => 
-      if state.queue.isEmpty then state -- Complete!
+      if state.queue.isEmpty then state 
       else run_tomography n fuel (scheduler_step n state)
 
 end Spectrebound
