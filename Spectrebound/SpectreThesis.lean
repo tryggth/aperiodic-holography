@@ -53,7 +53,9 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
       unfold run_tomography
       cases h : state.queue
       · rfl
-      · simp [List.length_cons] at h_len
+      · rw [h] at h_len
+        dsimp at h_len
+        omega
   | succ l ih =>
       cases h_empty : state.queue.isEmpty
       · have h_not_empty : state.queue ≠ [] := by
@@ -64,20 +66,20 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
         rcases h_cycle with ⟨ticks, h_ticks_bound, h_drop⟩
         
         -- 2. Execute the cycle and verify the strict drop
-        let next_state := run_tomography n_bulk ticks state
-        have h_next_len : next_state.queue.length ≤ l := by omega
+        have h_next_len : (run_tomography n_bulk ticks state).queue.length ≤ l := by omega
         
         -- 3. Recursively map the shrunken state into the Inductive Hypothesis
-        cases h_next_empty : next_state.queue.isEmpty
-        · have h_next_not_empty : next_state.queue ≠ [] := by
+        cases h_next_empty : (run_tomography n_bulk ticks state).queue.isEmpty
+        · have h_next_not_empty : (run_tomography n_bulk ticks state).queue ≠ [] := by
             intro contra; rw [contra] at h_next_empty; contradiction
           have h_next_anchor := run_tomography_preserves_anchor n_bulk ticks state h_next_not_empty h_anchor
-          have h_ih := ih next_state h_next_len h_next_anchor
+          have h_ih := ih (run_tomography n_bulk ticks state) h_next_len h_next_anchor
           rcases h_ih with ⟨rem_fuel, h_rem⟩
           
           -- 4. Compose the fuels!
           use (ticks + rem_fuel)
-          rw [run_tomography_add_fuel]
+          have h_add := run_tomography_add_fuel n_bulk ticks rem_fuel state
+          rw [h_add]
           exact h_rem
         · use ticks
           exact h_next_empty
