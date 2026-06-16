@@ -81,8 +81,7 @@ lemma liveness_by_induction (len : Nat) (state : TomographyState n_bulk)
               -- 4. Compose the fuels!
               use (ticks + rem_fuel)
               have h_add := run_tomography_add_fuel n_bulk ticks rem_fuel state
-              rw [h_add]
-              exact h_rem
+              simp only [h_add, h_rem]
           | true =>
               use ticks
               exact h_next_empty
