@@ -18,11 +18,6 @@ namespace Spectrebound
   Zero smuggled typeclasses. The inverse recovery is explicitly declared 
   as a strict conditional premise.
 -/
-
-axiom assemble_eq_of_tensor_eq (surf1 surf2 : CombinatorialSurface) (n : Nat)
-  (h : tensorConnection (T := SpectreTile) (p := 17) surf1 n = tensorConnection (T := SpectreTile) (p := 17) surf2 n) :
-  assembleConnection (T := SpectreTile) (p := 17) surf1 n = assembleConnection (T := SpectreTile) (p := 17) surf2 n
-
 theorem aperiodic_holography_capstone
   (surf1 surf2 : CombinatorialSurface) (n_bulk n_bdry : Nat)
   (h_match1 : PerfectMatching (T := SpectreTile) (p := 17) surf1 n_bulk)
@@ -49,11 +44,10 @@ theorem aperiodic_holography_capstone
     exact calderon_injectivity h_same_d2n
     
   -- 2. Extract the full Connection matrices from the Block A structural definitions.
-  have h_tensor_eq : tensorConnection (T := SpectreTile) (p := 17) surf1 n_bulk = tensorConnection (T := SpectreTile) (p := 17) surf2 n_bulk := by
+  have h_full_matrix_eq : assembleConnection (T := SpectreTile) (p := 17) surf1 n_bulk = 
+                          assembleConnection (T := SpectreTile) (p := 17) surf2 n_bulk := by
     rw [← blocks1.hA, ← blocks2.hA]
     exact h_same_bulk_matrix
-  have h_full_matrix_eq : assembleConnection (T := SpectreTile) (p := 17) surf1 n_bulk = assembleConnection (T := SpectreTile) (p := 17) surf2 n_bulk := by
-    exact assemble_eq_of_tensor_eq surf1 surf2 n_bulk h_tensor_eq
     
   -- 3. Apply our ZERO-SORRY Graph Recovery theorem to prove identical adjacency!
   exact unique_adjacency_from_matrix surf1 surf2 n_bulk h_match1 h_match2 h_full_matrix_eq

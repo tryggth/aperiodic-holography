@@ -1,0 +1,16 @@
+import Mathlib.Data.Matrix.Basic
+import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+import Mathlib.Data.ZMod.Basic
+
+variable {p : Nat} [Fact p.Prime] {n : Nat}
+variable (M : Matrix (Fin n) (Fin n) (ZMod p)) (v1 v2 : Fin n → ZMod p)
+variable (h_det : M.det ≠ 0)
+variable (h_eq : M.mulVec v1 = M.mulVec v2)
+
+example : v1 = v2 := by
+  have h_sub : M.mulVec (v1 - v2) = 0 := by
+    rw [Matrix.mulVec_sub, h_eq, sub_self]
+  have h_diff_zero := Matrix.eq_zero_of_mulVec_eq_zero h_det h_sub
+  exact eq_of_sub_eq_zero h_diff_zero

@@ -142,33 +142,19 @@ lemma tile_laplacian_nonsingular (surface : CombinatorialSurface)
   have hv_z := h_injective v hv_eq
   exact hv_nz hv_z
 
-
-def tensorConnection (surface : CombinatorialSurface) (n : Nat) : 
-  Matrix (Fin n) (Fin n) (StateField p) :=
-  fun i j =>
-    if i == j then 1 
-    else if isGlued surface.ledger i.val j.val then tile.getPhase i.val 
-    else if j.val == face_next i.val then 1
-    else if j.val == face_prev i.val then 1
-    else 0
-
-axiom tensor_laplacian_nonsingular (surface : CombinatorialSurface) 
-  (h_match : PerfectMatching (T := T) (p := p) surface n_bulk) :
-  (tensorConnection (T := T) (p := p) surface n_bulk : Matrix (Fin n_bulk) (Fin n_bulk) (StateField p)).det ≠ 0
-
 theorem holonomic_uniqueness_on_tile 
   (surface : CombinatorialSurface)
   (h_match : PerfectMatching (T := T) (p := p) surface n_bulk)
   (D_bdry : Matrix (Fin n_bulk) (Fin n_bdry) (StateField p))
   (s_bdry : Fin n_bdry → StateField p)
   (s_bulk1 s_bulk2 : Fin n_bulk → StateField p)
-  (h_valid1 : Matrix.mulVec (tensorConnection (T := T) (p := p) surface n_bulk) s_bulk1 + Matrix.mulVec D_bdry s_bdry = 0)
-  (h_valid2 : Matrix.mulVec (tensorConnection (T := T) (p := p) surface n_bulk) s_bulk2 + Matrix.mulVec D_bdry s_bdry = 0) :
+  (h_valid1 : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s_bulk1 + Matrix.mulVec D_bdry s_bdry = 0)
+  (h_valid2 : Matrix.mulVec (assembleConnection (T := T) (p := p) surface n_bulk) s_bulk2 + Matrix.mulVec D_bdry s_bdry = 0) :
   s_bulk1 = s_bulk2 := by
   let forcing : DirichletForcing p n_bulk n_bdry := {
-    D_bulk := tensorConnection (T := T) (p := p) surface n_bulk,
+    D_bulk := assembleConnection (T := T) (p := p) surface n_bulk,
     D_bdry := D_bdry,
-    det_nonzero := tensor_laplacian_nonsingular surface h_match
+    det_nonzero := tile_laplacian_nonsingular surface h_match
   }
   exact holographic_dirichlet_uniqueness surface forcing s_bdry s_bulk1 s_bulk2 h_valid1 h_valid2
 

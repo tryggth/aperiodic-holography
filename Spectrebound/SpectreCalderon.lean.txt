@@ -27,7 +27,7 @@ structure ConnectionBlocks where
   C : Matrix (Fin n_bdry) (Fin n_bulk) (StateField 17) -- Bulk-to-Bdry
   D : Matrix (Fin n_bdry) (Fin n_bdry) (StateField 17) -- Bdry-to-Bdry
   -- We structurally bind block A to the actual physical Laplacian
-  hA : A = tensorConnection (T := SpectreTile) (p := 17) surface n_bulk
+  hA : A = assembleConnection (T := SpectreTile) (p := 17) surface n_bulk
 
 /-- 
   THE DIRICHLET-TO-NEUMANN MAP (SCHUR COMPLEMENT)
@@ -48,7 +48,7 @@ noncomputable def dirichlet_to_neumann
     apply isUnit_iff_ne_zero.mpr
     rw [blocks.hA]
     -- This relies entirely on our zero-sorry `tile_laplacian_nonsingular` theorem!
-    exact tensor_laplacian_nonsingular surface h_match
+    exact tile_laplacian_nonsingular surface h_match
 
   -- 2. We compute the exact Schur complement using Mathlib's nonsingular inverse.
   blocks.D - blocks.C * blocks.A⁻¹ * blocks.B

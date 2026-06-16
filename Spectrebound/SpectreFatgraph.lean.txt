@@ -20,9 +20,6 @@ def isGlued (ledger : GluingLedger) (d1 d2 : DartId) : Bool :=
 def face_next (d : DartId) : DartId :=
   (d / 14) * 14 + (d + 1) % 14
 
-def face_prev (d : DartId) : DartId :=
-  (d / 14) * 14 + (d + 13) % 14
-
 def edge_involution (ledger : GluingLedger) (d : DartId) : DartId :=
   match ledger.find? (fun p => p.1 == d || p.2 == d) with
   | some p => if p.1 == d then p.2 else p.1
