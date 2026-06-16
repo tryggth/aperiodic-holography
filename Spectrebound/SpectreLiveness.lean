@@ -14,6 +14,56 @@ def is_deadlocked (n : Nat) (state : TomographyState n) : Prop :=
     let star := extract_star n state.W k; 
     star.a + star.b + star.c = 0
 
+/-! ========================================================================
+  THE GEOMETRIC INVARIANT (THEORETICAL PHYSICS BEDROCK)
+  ======================================================================== -/
+
+/-- 
+  A node is classified as a 'Boundary Anchor' if its cross-tile edge 
+  is unglued, resulting in a strict 0 weight in the tensor connection.
+-/
+def is_boundary_anchor (n : Nat) (state : TomographyState n) (k : Fin n) : Prop :=
+  let star := extract_star n state.W k;
+  star.c = 0 ∧ star.a = 1 ∧ star.b = 1
+
+/-- 
+  THE ALGEBRAIC SHIELD
+  We computationally prove that a Boundary Anchor can never trigger a 
+  finite-field singularity, because 1 + 1 + 0 = 2, and 2 ≠ 0 mod 17.
+-/
+lemma boundary_anchor_is_safe (n : Nat) (state : TomographyState n) (k : Fin n)
+  (h_anchor : is_boundary_anchor n state k) :
+  let star := extract_star n state.W k;
+  star.a + star.b + star.c ≠ 0 := by
+  
+  dsimp
+  unfold is_boundary_anchor at h_anchor
+  rcases h_anchor with ⟨hc, ha, hb⟩
+  rw [ha, hb, hc]
+  -- We are in StateField 17 (ZMod 17). 1 + 1 + 0 = 2. 2 is not 0.
+  -- Natively evaluated by the exact decider.
+  decide
+
+/-- 
+  The Global Boundary Invariant.
+  If the queue contains at least one Boundary Anchor, the network is 
+  mathematically guaranteed to NOT be in a state of total deadlock.
+-/
+lemma not_deadlocked_of_has_anchor (n : Nat) (state : TomographyState n)
+  (h_has_anchor : ∃ k ∈ state.queue, is_boundary_anchor n state k) :
+  ¬ is_deadlocked n state := by
+  
+  unfold is_deadlocked
+  push_neg
+  rcases h_has_anchor with ⟨k, h_mem, h_anchor⟩
+  use k, h_mem
+  exact boundary_anchor_is_safe n state k h_anchor
+
+/-- 
+  THE SPECTRE GEOMETRIC INVARIANT (Staged)
+  We now reduce the massive topological proof down to a single geometric requirement:
+  The tomography engine preserves at least one Boundary Anchor until the bulk is empty.
+-/
 lemma spectre_no_total_deadlock 
   (state : TomographyState n_bulk)
   (h_match : PerfectMatching (T := SpectreTile) (p := 17) surface n_bulk)
