@@ -54,7 +54,7 @@ lemma not_deadlocked_of_has_anchor (n : Nat) (state : TomographyState n)
   ¬ is_deadlocked n state := by
   
   unfold is_deadlocked
-  push_neg
+  push Not
   rcases h_has_anchor with ⟨k, h_mem, h_anchor⟩
   use k, h_mem
   exact boundary_anchor_is_safe n state k h_anchor
