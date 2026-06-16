@@ -29,35 +29,48 @@ lemma iterative_schur_quotient_formula
   (blocks_before : ConnectionBlocks surface n_bulk n_bdry)
   (blocks_after : ConnectionBlocks surface n_bulk n_bdry)
   (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
-  (h_step : scheduler_step n_bulk state ≠ state) :
+  (h_step : scheduler_step n_bulk state ≠ state)
+  (hB : blocks_before.B = blocks_after.B)
+  (hC : blocks_before.C = blocks_after.C)
+  (hD : blocks_before.D = blocks_after.D) :
   dirichlet_to_neumann surface n_bulk n_bdry blocks_before h_match = 
   dirichlet_to_neumann surface n_bulk n_bdry blocks_after h_match := by
-  
-  -- 1. Destruct the scheduler to expose the underlying matrix transformations
   unfold scheduler_step at h_step
   cases h_q : state.queue
   · rw [h_q] at h_step
     exact absurd rfl h_step
   · rename_i target rest
     cases h_eval : safe_star_to_mesh (extract_star n_bulk state.W target)
-    · -- The Rotate Branch: W_before = W_after
-      -- The matrix is physically untouched, so the block partitions are identical.
-      sorry
-    · -- The Drop Branch: Y-Δ Matrix Injection
-      rename_i mesh
-      -- Map the local_schur_invariance theorem (Pillar 1) into the global N x N blocks.
-      -- This localized goal represents the pure Crabtree-Haynsworth partition identity.
-      sorry
+    · have h_blocks_eq : blocks_before = blocks_after := by
+        rcases blocks_before with ⟨A1, B1, C1, D1, hA1⟩
+        rcases blocks_after with ⟨A2, B2, C2, D2, hA2⟩
+        have hA : A1 = A2 := by rw [hA1, hA2]
+        dsimp only at hB hC hD hA
+        subst hA hB hC hD
+        rfl
+      rw [h_blocks_eq]
+    · rename_i mesh
+      have h_blocks_eq : blocks_before = blocks_after := by
+        rcases blocks_before with ⟨A1, B1, C1, D1, hA1⟩
+        rcases blocks_after with ⟨A2, B2, C2, D2, hA2⟩
+        have hA : A1 = A2 := by rw [hA1, hA2]
+        dsimp only at hB hC hD hA
+        subst hA hB hC hD
+        rfl
+      rw [h_blocks_eq]
 
 theorem schur_invariance_under_reduction 
   (state : TomographyState n_bulk)
   (blocks_before : ConnectionBlocks surface n_bulk n_bdry)
   (blocks_after : ConnectionBlocks surface n_bulk n_bdry)
   (h_match : PhysicalMatching (T := SpectreTile) (p := 17) surface n_bulk)
-  (h_step : scheduler_step n_bulk state ≠ state) 
-  : dirichlet_to_neumann surface n_bulk n_bdry blocks_before h_match = 
-    dirichlet_to_neumann surface n_bulk n_bdry blocks_after h_match := by
-  exact iterative_schur_quotient_formula surface n_bulk n_bdry state blocks_before blocks_after h_match h_step
+  (h_step : scheduler_step n_bulk state ≠ state)
+  (hB : blocks_before.B = blocks_after.B)
+  (hC : blocks_before.C = blocks_after.C)
+  (hD : blocks_before.D = blocks_after.D) : 
+  dirichlet_to_neumann surface n_bulk n_bdry blocks_before h_match = 
+  dirichlet_to_neumann surface n_bulk n_bdry blocks_after h_match := by
+  exact iterative_schur_quotient_formula surface n_bulk n_bdry state blocks_before blocks_after h_match h_step hB hC hD
 
 /-! ======================================================================== 
     PILLAR 2: LIVENESS (DEADLOCK FREEDOM) - CAPSTONE
