@@ -52,7 +52,7 @@ lemma length_scheduler_step_le (n : Nat) (state : TomographyState n) :
   (scheduler_step n state).queue.length ≤ state.queue.length := by
   unfold scheduler_step
   cases h_q : state.queue
-  · rfl -- Empty queue case
+  · dsimp; rw [h_q]
   · rename_i target rest
     dsimp
     cases h_safe : safe_star_to_mesh (extract_star n state.W target)
